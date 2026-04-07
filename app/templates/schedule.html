@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% block title %}Расписание{% endblock %}
+
+{% block content %}
+<div class="page-intro">
+    <div>
+        <span class="eyebrow">Учебная неделя</span>
+        <h1 class="mt-3 mb-2">Расписание с быстрым редактированием</h1>
+        <p>Добавляй пары по готовым слотам, редактируй их прямо в таблице и держи всю неделю перед глазами.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0">Добавить пары</h3>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addScheduleRow()">
+                        + Ещё пара
+                    </button>
+                </div>
+
+                {% if subjects %}
+                <form method="post" action="/schedule/add" id="schedule-form">
+                    <div id="schedule-rows">
+                        <div class="schedule-row border rounded p-3 mb-3 bg-light-subtle">
+                            <div class="mb-3">
+                                <label class="form-label">Предмет</label>
+                                <select name="subject_id" class="form-select" required>
+                                    {% for subject in subjects %}
+                                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">День недели</label>
+                                <select name="weekday" class="form-select" required>
+                                    {% for key, value in weekdays.items() %}
+                                        <option value="{{ key }}">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Время пары</label>
+                                <select class="form-select schedule-slot-select" required onchange="applyTimeSlot(this)">
+                                    <option value="">Выбери пару</option>
+                                    {% for slot in time_slots %}
+                                        <option value="{{ slot.key }}" data-start="{{ slot.start }}" data-end="{{ slot.end }}">
+                                            {{ slot.label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <input type="hidden" name="start_time" class="schedule-start-time" required>
+                                <input type="hidden" name="end_time" class="schedule-end-time" required>
+                                <div class="form-text schedule-time-preview">Время заполнится автоматически.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Тип</label>
+                                <input type="text" name="lesson_type" class="form-control" placeholder="лекция / практика / лаба">
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Аудитория</label>
+                                <input type="text" name="room" class="form-control" placeholder="например, 2-212">
+                            </div>
+
+                            <div class="text-end mt-3">
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeScheduleRow(this)">
+                                    Удалить эту строку
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary w-100">Сохранить пары</button>
+                </form>
+                {% else %}
+                    <div class="alert alert-warning mb-0">
+                        Сначала добавь хотя бы один предмет, а потом заполняй расписание.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="mb-3">Расписание на неделю</h3>
+
+                {% for weekday, items in grouped.items() %}
+                    <h5 class="mt-4">{{ weekdays[weekday] }}</h5>
+
+                    {% if items %}
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Время</th>
+                                        <th>Предмет</th>
+                                        <th>День</th>
+                                        <th>Тип</th>
+                                        <th>Аудитория</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in items %}
+                                        <tr>
+                                            <td>{{ item.start_time.strftime('%H:%M') }}–{{ item.end_time.strftime('%H:%M') }}</td>
+                                            <td>{{ item.subject.name }}</td>
+                                            <td>{{ weekdays[item.weekday] }}</td>
+                                            <td>{{ item.lesson_type or '—' }}</td>
+                                            <td>{{ item.room or '—' }}</td>
+                                            <td>
+                                                <div class="action-group">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm action-btn action-btn-edit"
+                                                    onclick="toggleScheduleEdit({{ item.id }})"
+                                                >
+                                                    Изменить
+                                                </button>
+                                                <a href="/schedule/delete/{{ item.id }}" class="btn btn-sm action-btn action-btn-delete">
+                                                    Удалить
+                                                </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="schedule-edit-{{ item.id }}" class="d-none">
+                                            <td colspan="6">
+                                                <form method="post" action="/schedule/edit/{{ item.id }}" class="border rounded p-3 bg-light-subtle">
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label">Предмет</label>
+                                                            <select name="subject_id" class="form-select" required>
+                                                                {% for subject in subjects %}
+                                                                    <option value="{{ subject.id }}" {% if subject.id == item.subject_id %}selected{% endif %}>
+                                                                        {{ subject.name }}
+                                                                    </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label">День недели</label>
+                                                            <select name="weekday" class="form-select" required>
+                                                                {% for key, value in weekdays.items() %}
+                                                                    <option value="{{ key }}" {% if key == item.weekday %}selected{% endif %}>{{ value }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <label class="form-label">Время пары</label>
+                                                            <select
+                                                                class="form-select schedule-slot-select"
+                                                                required
+                                                                onchange="applyTimeSlot(this)"
+                                                            >
+                                                                <option value="">Выбери пару</option>
+                                                                {% for slot in time_slots %}
+                                                                    <option
+                                                                        value="{{ slot.key }}"
+                                                                        data-start="{{ slot.start }}"
+                                                                        data-end="{{ slot.end }}"
+                                                                        {% if slot.key == item.time_slot_key %}selected{% endif %}
+                                                                    >
+                                                                        {{ slot.label }}
+                                                                    </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                            <input type="hidden" name="start_time" class="schedule-start-time" value="{{ item.start_time.hour }}:{{ item.start_time.strftime('%M') }}" required>
+                                                            <input type="hidden" name="end_time" class="schedule-end-time" value="{{ item.end_time.hour }}:{{ item.end_time.strftime('%M') }}" required>
+                                                            <div class="form-text schedule-time-preview">
+                                                                Сейчас: {{ item.start_time.hour }}:{{ item.start_time.strftime('%M') }} - {{ item.end_time.hour }}:{{ item.end_time.strftime('%M') }}
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label">Тип</label>
+                                                            <input type="text" name="lesson_type" class="form-control" value="{{ item.lesson_type or '' }}" placeholder="лекция / практика / лаба">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label">Аудитория</label>
+                                                            <input type="text" name="room" class="form-control" value="{{ item.room or '' }}" placeholder="например, 2-212">
+                                                        </div>
+                                                        <div class="col-12 d-flex justify-content-end gap-2">
+                                                            <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleScheduleEdit({{ item.id }})">
+                                                                Отмена
+                                                            </button>
+                                                            <button type="submit" class="btn btn-primary">
+                                                                Сохранить изменения
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Нет занятий.</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if subjects %}
+<template id="schedule-row-template">
+    <div class="schedule-row border rounded p-3 mb-3 bg-light-subtle">
+        <div class="mb-3">
+            <label class="form-label">Предмет</label>
+            <select name="subject_id" class="form-select" required>
+                {% for subject in subjects %}
+                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">День недели</label>
+            <select name="weekday" class="form-select" required>
+                {% for key, value in weekdays.items() %}
+                    <option value="{{ key }}">{{ value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Время пары</label>
+            <select class="form-select schedule-slot-select" required onchange="applyTimeSlot(this)">
+                <option value="">Выбери пару</option>
+                {% for slot in time_slots %}
+                    <option value="{{ slot.key }}" data-start="{{ slot.start }}" data-end="{{ slot.end }}">
+                        {{ slot.label }}
+                    </option>
+                {% endfor %}
+            </select>
+            <input type="hidden" name="start_time" class="schedule-start-time" required>
+            <input type="hidden" name="end_time" class="schedule-end-time" required>
+            <div class="form-text schedule-time-preview">Время заполнится автоматически.</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Тип</label>
+            <input type="text" name="lesson_type" class="form-control" placeholder="лекция / практика / лаба">
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Аудитория</label>
+            <input type="text" name="room" class="form-control" placeholder="например, 2-212">
+        </div>
+
+        <div class="text-end mt-3">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeScheduleRow(this)">
+                Удалить эту строку
+            </button>
+        </div>
+    </div>
+</template>
+
+<script>
+function applyTimeSlot(select) {
+    const row = select.closest('.schedule-row, form');
+    const selectedOption = select.options[select.selectedIndex];
+    const startInput = row.querySelector('.schedule-start-time');
+    const endInput = row.querySelector('.schedule-end-time');
+    const preview = row.querySelector('.schedule-time-preview');
+
+    if (!selectedOption || !selectedOption.dataset.start || !selectedOption.dataset.end) {
+        if (startInput.value && endInput.value) {
+            preview.textContent = `Сейчас выбрано: ${startInput.value} - ${endInput.value}`;
+            return;
+        }
+
+        startInput.value = '';
+        endInput.value = '';
+        preview.textContent = 'Время заполнится автоматически.';
+        return;
+    }
+
+    startInput.value = selectedOption.dataset.start;
+    endInput.value = selectedOption.dataset.end;
+    preview.textContent = `Выбрано время: ${selectedOption.dataset.start} - ${selectedOption.dataset.end}`;
+}
+
+function initializeScheduleSlotSelects(scope = document) {
+    const selects = scope.querySelectorAll('.schedule-slot-select');
+
+    selects.forEach((select) => {
+        applyTimeSlot(select);
+    });
+}
+
+function toggleScheduleEdit(itemId) {
+    const row = document.getElementById(`schedule-edit-${itemId}`);
+    if (!row) {
+        return;
+    }
+
+    row.classList.toggle('d-none');
+}
+
+function addScheduleRow() {
+    const template = document.getElementById('schedule-row-template');
+    const container = document.getElementById('schedule-rows');
+    const clone = template.content.cloneNode(true);
+    container.appendChild(clone);
+    initializeScheduleSlotSelects(container.lastElementChild);
+}
+
+function removeScheduleRow(button) {
+    const rows = document.querySelectorAll('.schedule-row');
+    if (rows.length <= 1) {
+        alert('Нужна хотя бы одна строка для ввода.');
+        return;
+    }
+    button.closest('.schedule-row').remove();
+}
+
+initializeScheduleSlotSelects();
+</script>
+{% endif %}
+{% endblock %}

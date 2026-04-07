@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Предметы{% endblock %}
+{% block content %}
+<div class="page-intro">
+    <div>
+        <span class="eyebrow">Каталог предметов</span>
+        <h1 class="mt-3 mb-2">Управляй учебными дисциплинами без беспорядка</h1>
+        <p>Добавляй предметы, цвета, преподавателей и заметки, а потом редактируй всё прямо в карточках.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="mb-3">Добавить предмет</h3>
+                <form method="post" action="/subjects/add">
+                    <div class="mb-3"><label class="form-label">Название</label><input type="text" name="name" class="form-control" required></div>
+                    <div class="mb-3"><label class="form-label">Преподаватель</label><input type="text" name="teacher" class="form-control"></div>
+                    <div class="mb-3"><label class="form-label">Аудитория</label><input type="text" name="room" class="form-control"></div>
+                    <div class="mb-3"><label class="form-label">Цвет</label><input type="color" name="color" class="form-control form-control-color" value="#0d6efd"></div>
+                    <div class="mb-3"><label class="form-label">Заметка</label><textarea name="notes" class="form-control" rows="3"></textarea></div>
+                    <button class="btn btn-primary w-100">Добавить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="mb-3">Мои предметы</h3>
+                {% if subjects %}
+                    <div class="row g-3">
+                    {% for subject in subjects %}
+                        <div class="col-md-6">
+                            <div class="card h-100 subject-card" style="--subject-color: {{ subject.color }};">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h5>{{ subject.name }}</h5>
+                                        <div class="action-group">
+                                            <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleSubjectEdit({{ subject.id }})">Изменить</button>
+                                            <a href="/subjects/delete/{{ subject.id }}" class="btn btn-sm action-btn action-btn-delete">Удалить</a>
+                                        </div>
+                                    </div>
+                                    <p class="mb-1"><strong>Преподаватель:</strong> {{ subject.teacher or '—' }}</p>
+                                    <p class="mb-1"><strong>Аудитория:</strong> {{ subject.room or '—' }}</p>
+                                    <p class="mb-0 text-muted">{{ subject.notes or 'Без заметок' }}</p>
+                                    <div id="subject-edit-{{ subject.id }}" class="d-none mt-3 pt-3 border-top">
+                                        <form method="post" action="/subjects/edit/{{ subject.id }}">
+                                            <div class="mb-3">
+                                                <label class="form-label">Название</label>
+                                                <input type="text" name="name" class="form-control" value="{{ subject.name }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Преподаватель</label>
+                                                <input type="text" name="teacher" class="form-control" value="{{ subject.teacher or '' }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Аудитория</label>
+                                                <input type="text" name="room" class="form-control" value="{{ subject.room or '' }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Цвет</label>
+                                                <input type="color" name="color" class="form-control form-control-color" value="{{ subject.color or '#0d6efd' }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Заметка</label>
+                                                <textarea name="notes" class="form-control" rows="3">{{ subject.notes or '' }}</textarea>
+                                            </div>
+                                            <div class="d-flex justify-content-end gap-2">
+                                                <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleSubjectEdit({{ subject.id }})">Отмена</button>
+                                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">Пока предметов нет.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleSubjectEdit(subjectId) {
+    const card = document.getElementById(`subject-edit-${subjectId}`);
+    if (!card) {
+        return;
+    }
+
+    card.classList.toggle('d-none');
+}
+</script>
+{% endblock %}

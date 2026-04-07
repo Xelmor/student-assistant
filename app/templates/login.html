@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm auth-panel">
+            <div class="card-body p-4">
+                <span class="eyebrow">С возвращением</span>
+                <h2 class="mb-4 mt-3">Вход в аккаунт</h2>
+                {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+                <form method="post" action="/login">
+                    <div class="mb-3">
+                        <label class="form-label">Логин</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Пароль</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <button class="btn btn-primary w-100">Войти</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

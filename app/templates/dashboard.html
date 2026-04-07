@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}Главная{% endblock %}
+{% block content %}
+<section class="dashboard-hero">
+    <div class="dashboard-hero-main">
+        <span class="eyebrow">Личный кабинет</span>
+        <h1 class="dashboard-hero-title">Привет, {{ user.username }}</h1>
+        <p>Здесь собраны самые важные вещи на сегодня: ближайшие задачи, состояние учебы и пары по текущему дню.</p>
+        <div class="dashboard-quote">
+            <span class="dashboard-quote-mark">"</span>
+            <span>{{ motivation_quote }}</span>
+        </div>
+    </div>
+    <div class="dashboard-side">
+        <div class="dashboard-calendar-wrap">
+        <div class="dashboard-calendar-widget">
+            <div class="dashboard-calendar-head">
+                <span>{{ now.strftime('%B') }}</span>
+                <strong>{{ now.year }}</strong>
+            </div>
+            <div class="dashboard-calendar-grid dashboard-calendar-weekdays">
+                <span>Пн</span>
+                <span>Вт</span>
+                <span>Ср</span>
+                <span>Чт</span>
+                <span>Пт</span>
+                <span>Сб</span>
+                <span>Вс</span>
+            </div>
+            <div class="dashboard-calendar-grid">
+                {% for day in calendar_days %}
+                    <span class="calendar-day {% if not day.in_month %}calendar-day-muted{% endif %} {% if day.is_today %}calendar-day-today{% endif %}">
+                        {{ day.day }}
+                    </span>
+                {% endfor %}
+            </div>
+        </div>
+        </div>
+        <div class="dashboard-widget-stack">
+            <div class="dashboard-badge">Сегодня: {{ now.strftime('%d.%m.%Y') }}</div>
+            <div class="dashboard-clock" id="dashboard-live-clock" data-initial-time="{{ now.strftime('%H:%M:%S') }}">
+                {{ now.strftime('%H:%M:%S') }}
+            </div>
+            <div class="dashboard-next-widget">
+                <div class="dashboard-next-head">
+                    <span class="dashboard-next-icon">→</span>
+                    <div>
+                        <div class="dashboard-task-title">Следующее</div>
+                        <div class="dashboard-task-subtitle">Ближайшее событие дня</div>
+                    </div>
+                </div>
+                {% if today_schedule %}
+                    <div class="dashboard-next-main">{{ today_schedule[0].subject.name }}</div>
+                    <div class="dashboard-next-time">
+                        {{ today_schedule[0].start_time.strftime('%H:%M') }} - {{ today_schedule[0].end_time.strftime('%H:%M') }}
+                    </div>
+                    <div class="dashboard-next-meta">
+                        {{ today_schedule[0].lesson_type or 'Занятие' }}{% if today_schedule[0].room %} · {{ today_schedule[0].room }}{% endif %}
+                    </div>
+                    <div class="dashboard-next-chip-row">
+                        <span class="dashboard-next-chip">Пар сегодня: {{ today_schedule|length }}</span>
+                        <span class="dashboard-next-chip">День: {{ weekdays[now.weekday()] }}</span>
+                    </div>
+                {% elif urgent_tasks %}
+                    <div class="dashboard-next-main">{{ urgent_tasks[0].title }}</div>
+                    <div class="dashboard-next-time">
+                        {% if urgent_tasks[0].deadline %}До {{ urgent_tasks[0].deadline.strftime('%H:%M') }}{% else %}Без дедлайна{% endif %}
+                    </div>
+                    <div class="dashboard-next-meta">
+                        Следующая важная задача{% if urgent_tasks[0].subject %} · {{ urgent_tasks[0].subject.name }}{% endif %}
+                    </div>
+                    <div class="dashboard-next-chip-row">
+                        <span class="dashboard-next-chip">Приоритет: {{ urgent_tasks[0].priority }}</span>
+                        <span class="dashboard-next-chip">Активных: {{ pending_count }}</span>
+                    </div>
+                {% else %}
+                    <div class="dashboard-next-main">Свободное окно</div>
+                    <div class="dashboard-next-time">Можно спокойно распланировать день</div>
+                    <div class="dashboard-next-meta">
+                        На сегодня нет пар и срочных задач
+                    </div>
+                    <div class="dashboard-next-chip-row">
+                        <span class="dashboard-next-chip">Пар сегодня: 0</span>
+                        <span class="dashboard-next-chip">Активных: 0</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card stat-card stagger-in"><div class="card-body"><div class="stat-title">Предметы</div><div class="stat-value">{{ subjects_count }}</div></div></div></div>
+    <div class="col-md-3"><div class="card stat-card stagger-in"><div class="card-body"><div class="stat-title">Активные задачи</div><div class="stat-value">{{ pending_count }}</div></div></div></div>
+    <div class="col-md-3"><div class="card stat-card stagger-in"><div class="card-body"><div class="stat-title">Выполнено</div><div class="stat-value">{{ completed_count }}</div></div></div></div>
+    <div class="col-md-3"><div class="card stat-card danger stagger-in"><div class="card-body"><div class="stat-title">Просрочено</div><div class="stat-value">{{ overdue_count }}</div></div></div></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h4 class="mb-3">Что делать в первую очередь</h4>
+                {% if urgent_tasks %}
+                    <div class="list-group">
+                    {% for task in urgent_tasks %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ task.title }}</strong>
+                                <span class="badge text-bg-primary">{{ task.priority }}</span>
+                            </div>
+                            <div class="small text-muted">
+                                {% if task.subject %}{{ task.subject.name }} · {% endif %}
+                                {% if task.deadline %}до {{ task.deadline.strftime('%d.%m.%Y %H:%M') }}{% else %}без дедлайна{% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">Пока задач нет. Добавь первую задачу.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h4 class="mb-3">Пары на сегодня — {{ weekdays[now.weekday()] }}</h4>
+                {% if today_schedule %}
+                    <div class="list-group">
+                    {% for item in today_schedule %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>{{ item.subject.name }}</strong>
+                                <span>{{ item.start_time.strftime('%H:%M') }}–{{ item.end_time.strftime('%H:%M') }}</span>
+                            </div>
+                            <div class="small text-muted">{{ item.lesson_type or 'занятие' }}{% if item.room %} · {{ item.room }}{% endif %}</div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">На сегодня пар нет.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function startDashboardClock() {
+    const clock = document.getElementById('dashboard-live-clock');
+    if (!clock) {
+        return;
+    }
+
+    function renderTime() {
+        const now = new Date();
+        const time = now.toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        });
+        clock.textContent = time;
+    }
+
+    renderTime();
+    window.setInterval(renderTime, 1000);
+}
+
+startDashboardClock();
+</script>
+{% endblock %}
