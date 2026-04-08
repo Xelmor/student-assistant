@@ -12,14 +12,33 @@ from ..utils import WEEKDAYS, calculate_task_score
 
 router = APIRouter()
 templates = Jinja2Templates(directory='app/templates')
-SCHEDULE_TIME_SLOTS = [
-    {'key': '1', 'label': '1 пара: 9:00 - 10:30', 'start': '9:00', 'end': '10:30'},
-    {'key': '2', 'label': '2 пара: 10:40 - 12:10', 'start': '10:40', 'end': '12:10'},
-    {'key': '3', 'label': '3 пара: 12:40 - 14:10', 'start': '12:40', 'end': '14:10'},
-    {'key': '4', 'label': '4 пара: 14:20 - 15:50', 'start': '14:20', 'end': '15:50'},
-    {'key': '5', 'label': '5 пара: 16:20 - 17:50', 'start': '16:20', 'end': '17:50'},
-    {'key': '6', 'label': '6 пара: 18:00 - 19:30', 'start': '18:00', 'end': '19:30'},
-]
+SCHEDULE_TIME_PRESETS = {
+    'free': {
+        'label': 'Свободный',
+        'slots': [],
+    },
+    'university': {
+        'label': 'ВУЗ',
+        'slots': [
+            {'key': 'u1', 'label': '1 пара: 09:00 - 10:30', 'start': '09:00', 'end': '10:30'},
+            {'key': 'u2', 'label': '2 пара: 10:40 - 12:10', 'start': '10:40', 'end': '12:10'},
+            {'key': 'u3', 'label': '3 пара: 12:40 - 14:10', 'start': '12:40', 'end': '14:10'},
+            {'key': 'u4', 'label': '4 пара: 14:20 - 15:50', 'start': '14:20', 'end': '15:50'},
+            {'key': 'u5', 'label': '5 пара: 16:20 - 17:50', 'start': '16:20', 'end': '17:50'},
+            {'key': 'u6', 'label': '6 пара: 18:00 - 19:30', 'start': '18:00', 'end': '19:30'},
+        ],
+    },
+    'school': {
+        'label': 'Школа',
+        'slots': [
+            {'key': 's1', 'label': '1 урок: 08:00 - 08:40', 'start': '08:00', 'end': '08:40'},
+            {'key': 's2', 'label': '2 урок: 08:50 - 09:30', 'start': '08:50', 'end': '09:30'},
+            {'key': 's3', 'label': '3 урок: 09:45 - 10:25', 'start': '09:45', 'end': '10:25'},
+            {'key': 's4', 'label': '4 урок: 10:40 - 11:20', 'start': '10:40', 'end': '11:20'},
+            {'key': 's5', 'label': '5 урок: 11:30 - 12:10', 'start': '11:30', 'end': '12:10'},
+        ],
+    },
+}
 MOTIVATIONAL_QUOTES = [
     'Маленький шаг сегодня делает большую разницу к концу семестра.',
     'Не нужно делать все идеально, нужно просто двигаться вперед.',
@@ -45,15 +64,8 @@ def parse_schedule_time(value: str):
     return datetime.strptime(normalized_value, '%H:%M').time()
 
 
-def get_schedule_slot_key(start_time, end_time):
-    start_value = f'{start_time.hour}:{start_time.strftime("%M")}' if hasattr(start_time, 'hour') else ''
-    end_value = f'{end_time.hour}:{end_time.strftime("%M")}' if hasattr(end_time, 'hour') else ''
-
-    for slot in SCHEDULE_TIME_SLOTS:
-        if slot['start'] == start_value and slot['end'] == end_value:
-            return slot['key']
-
-    return ''
+def is_valid_schedule_time_range(start_time, end_time):
+    return start_time < end_time
 
 
 @router.get('/', response_class=HTMLResponse)
@@ -386,7 +398,6 @@ def schedule_page(request: Request, db: Session = Depends(get_db)):
 
     grouped = {i: [] for i in range(7)}
     for item in items:
-        item.time_slot_key = get_schedule_slot_key(item.start_time, item.end_time)
         grouped[item.weekday].append(item)
 
     return templates.TemplateResponse(
@@ -397,7 +408,7 @@ def schedule_page(request: Request, db: Session = Depends(get_db)):
             'subjects': subjects,
             'grouped': grouped,
             'weekdays': WEEKDAYS,
-            'time_slots': SCHEDULE_TIME_SLOTS,
+            'schedule_time_presets': SCHEDULE_TIME_PRESETS,
         }
     )
 
@@ -440,12 +451,17 @@ async def add_schedule_items(
         if not subject:
             continue
 
+        parsed_start_time = parse_schedule_time(current_start_time)
+        parsed_end_time = parse_schedule_time(current_end_time)
+        if not is_valid_schedule_time_range(parsed_start_time, parsed_end_time):
+            continue
+
         item = ScheduleItem(
             user_id=user.id,
             subject_id=int(current_subject_id),
             weekday=int(current_weekday),
-            start_time=parse_schedule_time(current_start_time),
-            end_time=parse_schedule_time(current_end_time),
+            start_time=parsed_start_time,
+            end_time=parsed_end_time,
             lesson_type=current_lesson_type or None,
             room=current_room or None,
         )
@@ -487,8 +503,13 @@ def edit_schedule_item(
 
     item.subject_id = subject_id
     item.weekday = weekday
-    item.start_time = parse_schedule_time(start_time)
-    item.end_time = parse_schedule_time(end_time)
+    parsed_start_time = parse_schedule_time(start_time)
+    parsed_end_time = parse_schedule_time(end_time)
+    if not is_valid_schedule_time_range(parsed_start_time, parsed_end_time):
+        return RedirectResponse('/schedule', status_code=302)
+
+    item.start_time = parsed_start_time
+    item.end_time = parsed_end_time
     item.lesson_type = lesson_type.strip() or None
     item.room = room.strip() or None
     db.commit()
