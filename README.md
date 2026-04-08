@@ -95,6 +95,26 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Быстрый запуск (почти без настроек)
+
+### Windows (рекомендуется)
+
+1. Установи Python 3.11+ (при установке включи `Add python.exe to PATH`).
+2. Открой папку проекта.
+3. Запусти файл `start_web.bat` двойным кликом.
+
+Скрипт сам:
+- создаст `venv` (если его нет);
+- установит зависимости;
+- запустит сайт.
+
+### Linux / macOS
+
+```bash
+chmod +x start_web.sh
+./start_web.sh
+```
+
 ## Запуск веб-приложения
 
 ```bash
