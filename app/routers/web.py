@@ -148,6 +148,19 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         ScheduleItem.user_id == user.id,
         ScheduleItem.weekday == today_weekday,
     ).order_by(ScheduleItem.start_time.asc()).all()
+    now_time = now.time()
+    active_schedule_item = None
+    next_schedule_item = None
+    active_schedule_remaining_seconds = 0
+
+    for item in today_schedule:
+        if item.start_time <= now_time < item.end_time:
+            active_schedule_item = item
+            lesson_end = datetime.combine(now.date(), item.end_time)
+            active_schedule_remaining_seconds = max(0, int((lesson_end - now).total_seconds()))
+            break
+        if now_time < item.start_time and next_schedule_item is None:
+            next_schedule_item = item
 
     month_matrix = calendar.Calendar(firstweekday=0).monthdatescalendar(now.year, now.month)
     calendar_days = []
@@ -167,6 +180,9 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         'overdue_count': len(overdue_tasks),
         'urgent_tasks': urgent_tasks,
         'today_schedule': today_schedule,
+        'active_schedule_item': active_schedule_item,
+        'next_schedule_item': next_schedule_item,
+        'active_schedule_remaining_seconds': active_schedule_remaining_seconds,
         'weekdays': WEEKDAYS,
         'now': now,
         'calendar_days': calendar_days,

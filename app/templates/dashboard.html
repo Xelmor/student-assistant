@@ -49,17 +49,31 @@
                         <div class="dashboard-task-subtitle">Ближайшее событие дня</div>
                     </div>
                 </div>
-                {% if today_schedule %}
-                    <div class="dashboard-next-main">{{ today_schedule[0].subject.name }}</div>
+                {% if active_schedule_item %}
+                    <div class="dashboard-next-main">{{ active_schedule_item.subject.name }}</div>
                     <div class="dashboard-next-time">
-                        {{ today_schedule[0].start_time.strftime('%H:%M') }} - {{ today_schedule[0].end_time.strftime('%H:%M') }}
+                        {{ active_schedule_item.start_time.strftime('%H:%M') }} - {{ active_schedule_item.end_time.strftime('%H:%M') }}
                     </div>
                     <div class="dashboard-next-meta">
-                        {{ today_schedule[0].lesson_type or 'Занятие' }}{% if today_schedule[0].room %} · {{ today_schedule[0].room }}{% endif %}
+                        {{ active_schedule_item.lesson_type or 'Занятие' }}{% if active_schedule_item.room %} · {{ active_schedule_item.room }}{% endif %}
                     </div>
                     <div class="dashboard-next-chip-row">
+                        <span class="dashboard-next-chip">Сейчас идёт пара</span>
+                        <span class="dashboard-next-chip" id="dashboard-lesson-remaining" data-remaining-seconds="{{ active_schedule_remaining_seconds }}">
+                            До конца: --
+                        </span>
+                    </div>
+                {% elif next_schedule_item %}
+                    <div class="dashboard-next-main">{{ next_schedule_item.subject.name }}</div>
+                    <div class="dashboard-next-time">
+                        {{ next_schedule_item.start_time.strftime('%H:%M') }} - {{ next_schedule_item.end_time.strftime('%H:%M') }}
+                    </div>
+                    <div class="dashboard-next-meta">
+                        {{ next_schedule_item.lesson_type or 'Занятие' }}{% if next_schedule_item.room %} · {{ next_schedule_item.room }}{% endif %}
+                    </div>
+                    <div class="dashboard-next-chip-row">
+                        <span class="dashboard-next-chip">Следующая пара</span>
                         <span class="dashboard-next-chip">Пар сегодня: {{ today_schedule|length }}</span>
-                        <span class="dashboard-next-chip">День: {{ weekdays[now.weekday()] }}</span>
                     </div>
                 {% elif urgent_tasks %}
                     <div class="dashboard-next-main">{{ urgent_tasks[0].title }}</div>
@@ -149,8 +163,24 @@
 <script>
 function startDashboardClock() {
     const clock = document.getElementById('dashboard-live-clock');
+    const remainingChip = document.getElementById('dashboard-lesson-remaining');
     if (!clock) {
         return;
+    }
+
+    function formatRemaining(totalSeconds) {
+        const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+        const hours = Math.floor(safeSeconds / 3600);
+        const minutes = Math.floor((safeSeconds % 3600) / 60);
+        const seconds = safeSeconds % 60;
+
+        if (hours > 0) {
+            return `До конца: ${hours} ч ${minutes} мин`;
+        }
+        if (minutes > 0) {
+            return `До конца: ${minutes} мин ${seconds} сек`;
+        }
+        return `До конца: ${seconds} сек`;
     }
 
     function renderTime() {
@@ -163,7 +193,27 @@ function startDashboardClock() {
         clock.textContent = time;
     }
 
+    function startLessonCountdown() {
+        if (!remainingChip) {
+            return;
+        }
+
+        let remainingSeconds = Number.parseInt(remainingChip.dataset.remainingSeconds || '0', 10);
+        if (Number.isNaN(remainingSeconds)) {
+            remainingSeconds = 0;
+        }
+
+        function renderRemaining() {
+            remainingChip.textContent = formatRemaining(remainingSeconds);
+            remainingSeconds = Math.max(0, remainingSeconds - 1);
+        }
+
+        renderRemaining();
+        window.setInterval(renderRemaining, 1000);
+    }
+
     renderTime();
+    startLessonCountdown();
     window.setInterval(renderTime, 1000);
 }
 
