@@ -1,12 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import calendar
 import random
+import secrets
+import string
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..models import User, Subject, Task, ScheduleItem, Note
+from ..models import User, Subject, Task, ScheduleItem, Note, TelegramBinding, TelegramLinkCode
 from ..auth import hash_password, verify_password, get_current_user
 from ..utils import WEEKDAYS, calculate_task_score
 
@@ -66,6 +68,11 @@ def parse_schedule_time(value: str):
 
 def is_valid_schedule_time_range(start_time, end_time):
     return start_time < end_time
+
+
+def generate_telegram_link_code(length: int = 8) -> str:
+    alphabet = string.ascii_uppercase + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 
 @router.get('/', response_class=HTMLResponse)
@@ -136,10 +143,131 @@ def login(
     return RedirectResponse('/dashboard', status_code=302)
 
 
+@router.get('/forgot-password', response_class=HTMLResponse)
+def forgot_password_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        'forgot_password.html',
+        {'error': None, 'success': None}
+    )
+
+
+@router.post('/forgot-password', response_class=HTMLResponse)
+def forgot_password(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    if new_password != confirm_password:
+        return templates.TemplateResponse(
+            request,
+            'forgot_password.html',
+            {'error': 'Пароли не совпадают.', 'success': None}
+        )
+
+    if len(new_password) < 6:
+        return templates.TemplateResponse(
+            request,
+            'forgot_password.html',
+            {'error': 'Пароль должен быть не короче 6 символов.', 'success': None}
+        )
+
+    user = db.query(User).filter(User.username == username, User.email == email).first()
+    if not user:
+        return templates.TemplateResponse(
+            request,
+            'forgot_password.html',
+            {'error': 'Пользователь с таким логином и email не найден.', 'success': None}
+        )
+
+    user.password_hash = hash_password(new_password)
+    db.commit()
+
+    return templates.TemplateResponse(
+        request,
+        'forgot_password.html',
+        {'error': None, 'success': 'Пароль обновлен. Теперь можно войти с новым паролем.'}
+    )
+
+
 @router.get('/logout')
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse('/', status_code=302)
+
+
+@router.get('/telegram', response_class=HTMLResponse)
+def telegram_page(request: Request, db: Session = Depends(get_db)):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    now = datetime.utcnow()
+    binding = db.query(TelegramBinding).filter(TelegramBinding.user_id == user.id).first()
+    active_code = db.query(TelegramLinkCode).filter(
+        TelegramLinkCode.user_id == user.id,
+        TelegramLinkCode.used_at.is_(None),
+        TelegramLinkCode.expires_at > now,
+    ).order_by(TelegramLinkCode.created_at.desc()).first()
+
+    return templates.TemplateResponse(
+        request,
+        'telegram.html',
+        {
+            'user': user,
+            'binding': binding,
+            'active_code': active_code,
+            'now_utc': now,
+        },
+    )
+
+
+@router.post('/telegram/generate')
+def generate_telegram_code(request: Request, db: Session = Depends(get_db)):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    now = datetime.utcnow()
+    db.query(TelegramLinkCode).filter(
+        TelegramLinkCode.user_id == user.id,
+        TelegramLinkCode.used_at.is_(None),
+    ).delete(synchronize_session=False)
+
+    code_value = ''
+    for _ in range(10):
+        candidate = generate_telegram_link_code()
+        exists = db.query(TelegramLinkCode).filter(TelegramLinkCode.code == candidate).first()
+        if not exists:
+            code_value = candidate
+            break
+
+    if not code_value:
+        return RedirectResponse('/telegram', status_code=302)
+
+    code = TelegramLinkCode(
+        user_id=user.id,
+        code=code_value,
+        expires_at=now + timedelta(minutes=15),
+    )
+    db.add(code)
+    db.commit()
+    return RedirectResponse('/telegram', status_code=302)
+
+
+@router.post('/telegram/unlink')
+def unlink_telegram(request: Request, db: Session = Depends(get_db)):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    db.query(TelegramBinding).filter(TelegramBinding.user_id == user.id).delete(synchronize_session=False)
+    db.query(TelegramLinkCode).filter(TelegramLinkCode.user_id == user.id).delete(synchronize_session=False)
+    db.commit()
+    return RedirectResponse('/telegram', status_code=302)
 
 
 @router.get('/dashboard', response_class=HTMLResponse)

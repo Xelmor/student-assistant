@@ -1,10 +1,10 @@
-import os
+﻿import os
 import sys
 from datetime import datetime
 from pathlib import Path
 
-from aiogram import Bot, Dispatcher, F
-from aiogram.filters import Command
+from aiogram import Bot, Dispatcher
+from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 from sqlalchemy.orm import Session
 
@@ -13,7 +13,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from app.database import SessionLocal
-from app.models import User, Task, ScheduleItem
+from app.models import User, Task, ScheduleItem, TelegramBinding, TelegramLinkCode
 from app.utils import WEEKDAYS
 
 BOT_TOKEN = os.getenv('BOT_TOKEN', '')
@@ -35,12 +35,25 @@ def get_user_by_telegram_username(db: Session, tg_username: str):
     return db.query(User).filter(User.username == tg_username).first()
 
 
+def get_user_by_telegram_id(db: Session, telegram_user_id: int):
+    binding = db.query(TelegramBinding).filter(
+        TelegramBinding.telegram_user_id == str(telegram_user_id)
+    ).first()
+    if not binding:
+        return None
+    return db.query(User).filter(User.id == binding.user_id).first()
+
+
 @dp.message(Command('start'))
 async def cmd_start(message: Message):
     text = (
         'Привет! Я бот Student Assistant.\n\n'
-        'Важно: чтобы бот нашёл твои данные, Telegram username должен совпадать с логином в веб-приложении.\n\n'
+        'Чтобы я связал Telegram с твоим аккаунтом на сайте, сделай так:\n'
+        '1) В веб-версии открой раздел Telegram\n'
+        '2) Сгенерируй код\n'
+        '3) Отправь сюда: /link КОД\n\n'
         'Команды:\n'
+        '/link <код> — привязать аккаунт\n'
         '/today — задачи и пары на сегодня\n'
         '/tasks — активные задачи\n'
         '/help — помощь'
@@ -50,21 +63,67 @@ async def cmd_start(message: Message):
 
 @dp.message(Command('help'))
 async def cmd_help(message: Message):
-    await message.answer('Команды: /today, /tasks')
+    await message.answer('Команды: /link <код>, /today, /tasks')
+
+
+@dp.message(Command('link'))
+async def cmd_link(message: Message, command: CommandObject):
+    db = get_db()
+    try:
+        code_value = (command.args or '').strip().upper()
+        if not code_value:
+            await message.answer('Отправь команду в формате: /link КОД')
+            return
+
+        now = datetime.utcnow()
+        link_code = db.query(TelegramLinkCode).filter(
+            TelegramLinkCode.code == code_value,
+            TelegramLinkCode.used_at.is_(None),
+            TelegramLinkCode.expires_at > now,
+        ).first()
+        if not link_code:
+            await message.answer('Код не найден или просрочен. Сгенерируй новый код в веб-версии.')
+            return
+
+        existing_for_tg = db.query(TelegramBinding).filter(
+            TelegramBinding.telegram_user_id == str(message.from_user.id)
+        ).first()
+        if existing_for_tg and existing_for_tg.user_id != link_code.user_id:
+            await message.answer('Этот Telegram уже привязан к другому аккаунту.')
+            return
+
+        db.query(TelegramBinding).filter(
+            TelegramBinding.user_id == link_code.user_id
+        ).delete(synchronize_session=False)
+
+        binding = TelegramBinding(
+            user_id=link_code.user_id,
+            telegram_user_id=str(message.from_user.id),
+            telegram_username=message.from_user.username,
+        )
+        db.add(binding)
+        link_code.used_at = now
+        db.commit()
+
+        await message.answer('Готово! Telegram успешно привязан.')
+    finally:
+        db.close()
 
 
 @dp.message(Command('tasks'))
 async def cmd_tasks(message: Message):
     db = get_db()
     try:
-        user = get_user_by_telegram_username(db, message.from_user.username)
+        user = get_user_by_telegram_id(db, message.from_user.id)
         if not user:
-            await message.answer('Пользователь не найден. Проверь, что твой Telegram username совпадает с логином в вебке.')
+            user = get_user_by_telegram_username(db, message.from_user.username)
+        if not user:
+            await message.answer('Аккаунт не привязан. На сайте открой Telegram и выполни /link КОД.')
             return
 
         tasks = db.query(Task).filter(Task.user_id == user.id, Task.is_completed == False).order_by(Task.deadline.asc()).limit(10).all()
         if not tasks:
-            await message.answer('Активных задач нет 🎉')
+            await message.answer('Активных задач нет.')
             return
 
         lines = ['Твои активные задачи:']
@@ -81,9 +140,11 @@ async def cmd_tasks(message: Message):
 async def cmd_today(message: Message):
     db = get_db()
     try:
-        user = get_user_by_telegram_username(db, message.from_user.username)
+        user = get_user_by_telegram_id(db, message.from_user.id)
         if not user:
-            await message.answer('Пользователь не найден. Проверь, что твой Telegram username совпадает с логином в вебке.')
+            user = get_user_by_telegram_username(db, message.from_user.username)
+        if not user:
+            await message.answer('Аккаунт не привязан. На сайте открой Telegram и выполни /link КОД.')
             return
 
         now = datetime.now()
