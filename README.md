@@ -1,28 +1,28 @@
-# Student Assistant
+﻿# Student Assistant
 
-Student Assistant is a study management project built with `FastAPI`, `Jinja2`, `SQLAlchemy`, `SQLite`, and `aiogram`.
+Student Assistant — проект для организации учебы на базе `FastAPI`, `Jinja2`, `SQLAlchemy`, `SQLite` и `aiogram`.
 
-The project combines:
-- a web application for managing study data
-- a Telegram bot for quick access to tasks and schedule
+Проект объединяет:
+- веб-приложение для управления учебными данными;
+- Telegram-бота для быстрого доступа к задачам и расписанию.
 
-The main goal is to keep subjects, assignments, deadlines, notes, and schedule in one place.
+Цель проекта — хранить предметы, задания, дедлайны, заметки и расписание в одном месте.
 
-## Features
+## Возможности
 
-- user registration and login
-- dashboard with:
-  - live clock
-  - calendar widget
-  - motivational quote
-  - today overview
-- subject management
-- task management
-- weekly schedule management
-- notes management
-- Telegram bot with basic commands
+- регистрация и вход пользователей;
+- дашборд с:
+  - живыми часами;
+  - календарем;
+  - мотивационной цитатой;
+  - обзором на сегодня;
+- управление предметами;
+- управление задачами;
+- управление расписанием;
+- управление заметками;
+- Telegram-бот с базовыми командами.
 
-## Tech Stack
+## Технологии
 
 - Python
 - FastAPI
@@ -32,7 +32,7 @@ The main goal is to keep subjects, assignments, deadlines, notes, and schedule i
 - aiogram
 - Bootstrap 5
 
-## Project Structure
+## Структура проекта
 
 ```text
 student_assistant_project/
@@ -52,21 +52,21 @@ student_assistant_project/
 └── README.md
 ```
 
-## Requirements
+## Требования
 
-- Python 3.11+ recommended
-- Windows, Linux, or macOS
+- Python 3.11+ (рекомендуется);
+- Windows, Linux или macOS.
 
-## Installation
+## Установка
 
-### 1. Clone the repository
+### 1. Клонирование репозитория
 
 ```bash
 git clone <your-repo-url>
 cd student_assistant_project
 ```
 
-### 2. Create and activate a virtual environment
+### 2. Создание и активация виртуального окружения
 
 #### Windows PowerShell
 
@@ -89,29 +89,27 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 3. Установка зависимостей
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Running the Web App
-
-Start the web application:
+## Запуск веб-приложения
 
 ```bash
 python run.py
 ```
 
-Then open:
+После запуска открой:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-## Running the Telegram Bot
+## Запуск Telegram-бота
 
-Create your bot in `@BotFather`, get the token, and set it as an environment variable.
+Создай бота в `@BotFather`, получи токен и передай его через переменную окружения.
 
 ### Windows PowerShell
 
@@ -134,49 +132,46 @@ export BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN"
 python -m bot.bot
 ```
 
-## Telegram Bot Note
+## Примечание по Telegram-боту
 
-The current bot logic is simple:
+Текущая логика простая:
+- бот ищет пользователя по Telegram username;
+- Telegram username должен совпадать с логином на сайте.
 
-- it searches the user by Telegram username
-- your Telegram username should match your website username
-
-Supported commands:
-
+Поддерживаемые команды:
 - `/start`
 - `/help`
 - `/today`
 - `/tasks`
 
-## Database
+## База данных
 
-The project uses SQLite:
+Используется SQLite:
 
 ```text
 student_assistant.db
 ```
 
-Tables are created automatically on first start through SQLAlchemy.
+Таблицы создаются автоматически при первом запуске через SQLAlchemy.
 
-## Useful Commands
+## Полезные команды
 
-### Run syntax check
+### Проверка синтаксиса
 
 ```bash
 python -m py_compile app\models.py app\database.py app\main.py app\routers\web.py bot\bot.py
 ```
 
-### Run with local virtual environment on Windows
+### Запуск через локальное виртуальное окружение (Windows)
 
 ```powershell
 venv\Scripts\python.exe run.py
 venv\Scripts\python.exe -m bot.bot
 ```
 
-## What to Upload to GitHub
+## Что загружать на GitHub
 
-You should upload:
-
+Нужно загружать:
 - `app/`
 - `bot/`
 - `requirements.txt`
@@ -184,14 +179,13 @@ You should upload:
 - `README.md`
 - `.env.example`
 
-You should NOT upload:
-
+Не нужно загружать:
 - `venv/`
 - `__pycache__/`
 - `.env`
-- local SQLite database if you do not want to publish test data
+- локальную SQLite-базу, если не хочешь публиковать тестовые данные.
 
-## Recommended .gitignore
+## Рекомендуемый `.gitignore`
 
 ```gitignore
 venv/
@@ -201,33 +195,31 @@ __pycache__/
 student_assistant.db
 ```
 
-## Current Status
+## Текущий статус
 
-Implemented and working in the web part:
+Реализовано и работает в веб-части:
+- предметы;
+- задачи;
+- заметки;
+- расписание;
+- редактирование в интерфейсе;
+- обновленный дизайн дашборда.
 
-- subjects
-- tasks
-- notes
-- schedule
-- editing in the interface
-- updated dashboard design
+Telegram-бот:
+- базовая версия;
+- зависит от совпадения Telegram username с логином на сайте.
 
-Telegram bot:
+## Возможные улучшения
 
-- basic version only
-- depends on matching Telegram username with website login
+- корректная привязка Telegram-аккаунта;
+- восстановление пароля;
+- уведомления и напоминания;
+- инструкция по деплою;
+- тесты;
+- поддержка Docker;
+- админ-панель.
 
-## Possible Improvements
+## Лицензия
 
-- proper Telegram account linking
-- password reset
-- notifications and reminders
-- deployment instructions
-- tests
-- Docker support
-- admin panel
-
-## License
-
-This project currently has no explicit license.
-If you plan to publish it publicly on GitHub, it is better to add a license file, for example `MIT`.
+Сейчас у проекта нет явной лицензии.
+Если планируешь публичную публикацию, лучше добавить файл лицензии, например `MIT`.
