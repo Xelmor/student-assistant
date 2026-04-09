@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}Профиль{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-10">
+        <section class="profile-hero">
+            <div class="profile-hero-main">
+                <span class="eyebrow">Личный кабинет</span>
+                <h1 class="profile-hero-title">Профиль</h1>
+                <p class="profile-hero-copy">Обновляй основные данные аккаунта, сохраняй бэкапы и держи всё в одном аккуратном месте.</p>
+            </div>
+            <div class="profile-hero-badge">
+                <div class="profile-avatar profile-avatar-large">
+                    {{ user.username[0]|upper if user.username else 'U' }}
+                </div>
+                <div>
+                    <div class="profile-hero-name">{{ user.username }}</div>
+                    <div class="profile-hero-email">{{ user.email }}</div>
+                </div>
+            </div>
+        </section>
+
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card profile-summary-card h-100">
+                    <div class="card-body">
+                        <div class="profile-card-title">Кратко</div>
+                        <div class="profile-meta-list">
+                            <div class="profile-meta-item">
+                                <span>Группа</span>
+                                <strong>{{ user.group_name or 'Не указана' }}</strong>
+                            </div>
+                            <div class="profile-meta-item">
+                                <span>Курс</span>
+                                <strong>{{ user.course or 'Не указан' }}</strong>
+                            </div>
+                            <div class="profile-meta-item">
+                                <span>Регистрация</span>
+                                <strong>{{ user.created_at.strftime('%d.%m.%Y') if user.created_at else '-' }}</strong>
+                            </div>
+                        </div>
+
+                        <div class="profile-action-stack">
+                            <a href="/forgot-password" class="btn btn-primary">Сменить пароль</a>
+                            {% if local_private_data_available %}
+                            <a href="/local-profile" class="btn btn-outline-secondary">Локальные данные</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="profile-card-title">Данные аккаунта</div>
+
+                        {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                        {% endif %}
+
+                        {% if success %}
+                        <div class="alert alert-success">{{ success }}</div>
+                        {% endif %}
+
+                        <form method="post" action="/profile" class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Логин</label>
+                                <input type="text" name="username" class="form-control" value="{{ user.username }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Группа</label>
+                                <input type="text" name="group_name" class="form-control" value="{{ user.group_name or '' }}" placeholder="Например, ИС-21">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Курс</label>
+                                <input type="number" name="course" class="form-control" min="1" max="10" value="{{ user.course or '' }}" placeholder="Например, 2">
+                            </div>
+                            <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                                <a href="/dashboard" class="btn btn-outline-secondary">На главную</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="data-hub mt-4">
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card data-card h-100">
+                        <div class="card-body">
+                            <div class="data-card-icon data-card-icon-export">↓</div>
+                            <div class="profile-card-title mb-2">Экспорт данных</div>
+                            <p class="data-card-copy">Скачай свои предметы, задачи, расписание и заметки. Для бэкапа лучше подходит JSON, для просмотра и портфолио — CSV-архив.</p>
+
+                            <div class="data-action-row">
+                                <a href="/data/export/json" class="btn btn-primary" download>Скачать JSON</a>
+                                <a href="/data/export/csv" class="btn btn-outline-secondary" download>Скачать CSV</a>
+                            </div>
+
+                            <div class="data-card-note">
+                                В JSON сохраняется структура данных для обратного импорта. CSV выгружается архивом `.zip` с отдельными таблицами.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card data-card h-100">
+                        <div class="card-body">
+                            <div class="data-card-icon data-card-icon-import">↑</div>
+                            <div class="profile-card-title mb-2">Импорт данных</div>
+                            <p class="data-card-copy">Загрузи свой JSON-бэкап обратно в систему. Можно либо добавить данные к текущим, либо полностью заменить текущее содержимое.</p>
+
+                            {% if data_error %}
+                            <div class="alert alert-danger">{{ data_error }}</div>
+                            {% endif %}
+
+                            {% if data_success %}
+                            <div class="alert alert-success">{{ data_success }}</div>
+                            {% endif %}
+
+                            <form method="post" action="/data/import" enctype="multipart/form-data" class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">JSON-файл</label>
+                                    <input type="file" name="import_file" class="form-control" accept=".json,application/json" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Режим импорта</label>
+                                    <select name="import_mode" class="form-select">
+                                        <option value="merge">Добавить к текущим данным</option>
+                                        <option value="replace">Полностью заменить мои данные</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary w-100">Импортировать данные</button>
+                                </div>
+                            </form>
+
+                            <div class="data-card-note">
+                                Сейчас импорт поддерживается из JSON-файла, который был выгружен из этого приложения.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

@@ -1,9 +1,14 @@
+import csv
+import io
+import json
+import zipfile
 from datetime import datetime
 import calendar
 import os
 import random
-from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from urllib.parse import quote_plus
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -49,6 +54,245 @@ MOTIVATIONAL_QUOTES = [
     'Даже короткая учебная сессия сегодня приближает тебя к цели.',
     'Спокойный ритм и ясный план всегда выигрывают у хаоса.',
 ]
+
+
+def serialize_datetime(value):
+    if not value:
+        return None
+    return value.isoformat()
+
+
+def serialize_time(value):
+    if not value:
+        return None
+    return value.strftime('%H:%M:%S')
+
+
+def parse_datetime_value(value):
+    if not value:
+        return None
+    return datetime.fromisoformat(value)
+
+
+def parse_time_value(value):
+    if not value:
+        return None
+    return datetime.strptime(value, '%H:%M:%S').time()
+
+
+def build_user_export_payload(user: User, db: Session):
+    subjects = db.query(Subject).filter(Subject.user_id == user.id).order_by(Subject.id.asc()).all()
+    tasks = db.query(Task).filter(Task.user_id == user.id).order_by(Task.id.asc()).all()
+    schedule_items = db.query(ScheduleItem).filter(ScheduleItem.user_id == user.id).order_by(ScheduleItem.id.asc()).all()
+    notes = db.query(Note).filter(Note.user_id == user.id).order_by(Note.id.asc()).all()
+
+    return {
+        'version': 1,
+        'exported_at': datetime.utcnow().isoformat(),
+        'user': {
+            'username': user.username,
+            'email': user.email,
+            'group_name': user.group_name,
+            'course': user.course,
+        },
+        'data': {
+            'subjects': [
+                {
+                    'id': subject.id,
+                    'name': subject.name,
+                    'teacher': subject.teacher,
+                    'room': subject.room,
+                    'color': subject.color,
+                    'notes': subject.notes,
+                }
+                for subject in subjects
+            ],
+            'tasks': [
+                {
+                    'id': task.id,
+                    'subject_id': task.subject_id,
+                    'title': task.title,
+                    'description': task.description,
+                    'deadline': serialize_datetime(task.deadline),
+                    'priority': task.priority,
+                    'difficulty': task.difficulty,
+                    'is_completed': task.is_completed,
+                    'created_at': serialize_datetime(task.created_at),
+                }
+                for task in tasks
+            ],
+            'schedule_items': [
+                {
+                    'id': item.id,
+                    'subject_id': item.subject_id,
+                    'weekday': item.weekday,
+                    'start_time': serialize_time(item.start_time),
+                    'end_time': serialize_time(item.end_time),
+                    'lesson_type': item.lesson_type,
+                    'room': item.room,
+                }
+                for item in schedule_items
+            ],
+            'notes': [
+                {
+                    'id': note.id,
+                    'subject_id': note.subject_id,
+                    'title': note.title,
+                    'content': note.content,
+                    'link': note.link,
+                    'created_at': serialize_datetime(note.created_at),
+                }
+                for note in notes
+            ],
+        },
+    }
+
+
+def build_csv_export_archive(payload):
+    archive_buffer = io.BytesIO()
+
+    csv_specs = {
+        'subjects.csv': (
+            ['id', 'name', 'teacher', 'room', 'color', 'notes'],
+            payload['data']['subjects'],
+        ),
+        'tasks.csv': (
+            ['id', 'subject_id', 'title', 'description', 'deadline', 'priority', 'difficulty', 'is_completed', 'created_at'],
+            payload['data']['tasks'],
+        ),
+        'schedule_items.csv': (
+            ['id', 'subject_id', 'weekday', 'start_time', 'end_time', 'lesson_type', 'room'],
+            payload['data']['schedule_items'],
+        ),
+        'notes.csv': (
+            ['id', 'subject_id', 'title', 'content', 'link', 'created_at'],
+            payload['data']['notes'],
+        ),
+    }
+
+    with zipfile.ZipFile(archive_buffer, mode='w', compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr('export_meta.json', json.dumps({
+            'version': payload['version'],
+            'exported_at': payload['exported_at'],
+            'user': payload['user'],
+        }, ensure_ascii=False, indent=2))
+
+        for filename, (fieldnames, rows) in csv_specs.items():
+            text_buffer = io.StringIO()
+            writer = csv.DictWriter(text_buffer, fieldnames=fieldnames)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow({field: row.get(field) for field in fieldnames})
+            archive.writestr(filename, text_buffer.getvalue().encode('utf-8-sig'))
+
+    archive_buffer.seek(0)
+    return archive_buffer
+
+
+def build_download_headers(filename: str):
+    return {
+        'Content-Disposition': f'attachment; filename="{filename}"; filename*=UTF-8\'\'{quote_plus(filename)}',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+    }
+
+
+def import_user_export_payload(user: User, payload, import_mode: str, db: Session):
+    data = payload.get('data')
+    if not isinstance(data, dict):
+        raise ValueError('В файле нет блока data с данными для импорта.')
+
+    subjects_payload = data.get('subjects', [])
+    tasks_payload = data.get('tasks', [])
+    schedule_payload = data.get('schedule_items', [])
+    notes_payload = data.get('notes', [])
+
+    for collection, label in [
+        (subjects_payload, 'subjects'),
+        (tasks_payload, 'tasks'),
+        (schedule_payload, 'schedule_items'),
+        (notes_payload, 'notes'),
+    ]:
+        if not isinstance(collection, list):
+            raise ValueError(f'Поле {label} должно быть списком.')
+
+    subject_id_map = {}
+
+    if import_mode == 'replace':
+        db.query(Note).filter(Note.user_id == user.id).delete(synchronize_session=False)
+        db.query(ScheduleItem).filter(ScheduleItem.user_id == user.id).delete(synchronize_session=False)
+        db.query(Task).filter(Task.user_id == user.id).delete(synchronize_session=False)
+        db.query(Subject).filter(Subject.user_id == user.id).delete(synchronize_session=False)
+        db.flush()
+
+    for subject_payload in subjects_payload:
+        subject = Subject(
+            user_id=user.id,
+            name=(subject_payload.get('name') or '').strip() or 'Без названия',
+            teacher=subject_payload.get('teacher') or None,
+            room=subject_payload.get('room') or None,
+            color=subject_payload.get('color') or '#0d6efd',
+            notes=subject_payload.get('notes') or None,
+        )
+        db.add(subject)
+        db.flush()
+        original_subject_id = subject_payload.get('id')
+        if original_subject_id is not None:
+            subject_id_map[original_subject_id] = subject.id
+
+    for task_payload in tasks_payload:
+        task = Task(
+            user_id=user.id,
+            subject_id=subject_id_map.get(task_payload.get('subject_id')),
+            title=(task_payload.get('title') or '').strip() or 'Без названия',
+            description=task_payload.get('description') or None,
+            deadline=parse_datetime_value(task_payload.get('deadline')),
+            priority=task_payload.get('priority') or 'medium',
+            difficulty=task_payload.get('difficulty') or 'medium',
+            is_completed=bool(task_payload.get('is_completed', False)),
+            created_at=parse_datetime_value(task_payload.get('created_at')) or datetime.utcnow(),
+        )
+        db.add(task)
+
+    for schedule_payload_item in schedule_payload:
+        mapped_subject_id = subject_id_map.get(schedule_payload_item.get('subject_id'))
+        if not mapped_subject_id:
+            continue
+
+        schedule_item = ScheduleItem(
+            user_id=user.id,
+            subject_id=mapped_subject_id,
+            weekday=int(schedule_payload_item.get('weekday', 0)),
+            start_time=parse_time_value(schedule_payload_item.get('start_time')) or datetime.strptime('09:00:00', '%H:%M:%S').time(),
+            end_time=parse_time_value(schedule_payload_item.get('end_time')) or datetime.strptime('10:00:00', '%H:%M:%S').time(),
+            lesson_type=schedule_payload_item.get('lesson_type') or None,
+            room=schedule_payload_item.get('room') or None,
+        )
+        db.add(schedule_item)
+
+    for note_payload in notes_payload:
+        note = Note(
+            user_id=user.id,
+            subject_id=subject_id_map.get(note_payload.get('subject_id')),
+            title=(note_payload.get('title') or '').strip() or 'Без названия',
+            content=note_payload.get('content') or None,
+            link=note_payload.get('link') or None,
+            created_at=parse_datetime_value(note_payload.get('created_at')) or datetime.utcnow(),
+        )
+        db.add(note)
+
+
+def profile_message_redirect(*, success: str | None = None, error: str | None = None):
+    params = []
+    if success:
+        params.append(f'data_success={quote_plus(success)}')
+    if error:
+        params.append(f'data_error={quote_plus(error)}')
+    location = '/profile'
+    if params:
+        location = f"{location}?{'&'.join(params)}"
+    return RedirectResponse(location, status_code=302)
 
 
 def require_user(request: Request, db: Session):
@@ -117,6 +361,8 @@ def register(
     db.commit()
     db.refresh(user)
     request.session['user_id'] = user.id
+    request.session['username'] = user.username
+    request.session['username_initial'] = (user.username[:1] or 'U').upper()
     return RedirectResponse('/dashboard', status_code=302)
 
 
@@ -140,6 +386,8 @@ def login(
             {'error': 'Неверный логин или пароль.'}
         )
     request.session['user_id'] = user.id
+    request.session['username'] = user.username
+    request.session['username_initial'] = (user.username[:1] or 'U').upper()
     return RedirectResponse('/dashboard', status_code=302)
 
 
@@ -197,6 +445,153 @@ def forgot_password(
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse('/', status_code=302)
+
+
+@router.get('/profile', response_class=HTMLResponse)
+def profile_page(request: Request, db: Session = Depends(get_db)):
+    data_success = request.query_params.get('data_success')
+    data_error = request.query_params.get('data_error')
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    return templates.TemplateResponse(
+        request,
+        'profile.html',
+        {
+            'user': user,
+            'error': None,
+            'success': None,
+            'local_private_data_available': is_local_private_data_enabled(request),
+            'data_success': data_success,
+            'data_error': data_error,
+        }
+    )
+
+
+@router.post('/profile', response_class=HTMLResponse)
+def update_profile(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(...),
+    group_name: str = Form(''),
+    course: int | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    existing = db.query(User).filter(
+        ((User.username == username) | (User.email == email)) & (User.id != user.id)
+    ).first()
+    if existing:
+        return templates.TemplateResponse(
+            request,
+            'profile.html',
+            {
+                'user': user,
+                'error': 'Пользователь с таким логином или email уже существует.',
+                'success': None,
+                'local_private_data_available': is_local_private_data_enabled(request),
+            }
+        )
+
+    user.username = username
+    user.email = email
+    user.group_name = group_name or None
+    user.course = course
+    db.commit()
+    db.refresh(user)
+    request.session['username'] = user.username
+    request.session['username_initial'] = (user.username[:1] or 'U').upper()
+
+    return templates.TemplateResponse(
+        request,
+        'profile.html',
+        {
+            'user': user,
+            'error': None,
+            'success': 'Профиль обновлен.',
+            'local_private_data_available': is_local_private_data_enabled(request),
+            'data_success': None,
+            'data_error': None,
+        }
+    )
+
+
+@router.get('/data/export/{export_format}')
+@router.get('/data/export/{export_format}/')
+def export_data(export_format: str, request: Request, db: Session = Depends(get_db)):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    payload = build_user_export_payload(user, db)
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M')
+    safe_username = ''.join(character for character in user.username if character.isalnum() or character in {'-', '_'}) or 'student'
+
+    if export_format == 'json':
+        json_buffer = io.BytesIO(json.dumps(payload, ensure_ascii=False, indent=2).encode('utf-8'))
+        filename = f'{safe_username}_student_assistant_backup_{timestamp}.json'
+        return StreamingResponse(
+            json_buffer,
+            media_type='application/octet-stream',
+            headers=build_download_headers(filename),
+        )
+
+    if export_format == 'csv':
+        archive_buffer = build_csv_export_archive(payload)
+        filename = f'{safe_username}_student_assistant_export_{timestamp}.zip'
+        return StreamingResponse(
+            archive_buffer,
+            media_type='application/zip',
+            headers=build_download_headers(filename),
+        )
+
+    return profile_message_redirect(error='Неподдерживаемый формат экспорта.')
+
+
+@router.post('/data/import')
+async def import_data(
+    request: Request,
+    import_file: UploadFile = File(...),
+    import_mode: str = Form('merge'),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    if import_mode not in {'merge', 'replace'}:
+        return profile_message_redirect(error='Неизвестный режим импорта.')
+
+    if not import_file.filename:
+        return profile_message_redirect(error='Выбери JSON-файл для импорта.')
+
+    if not import_file.filename.lower().endswith('.json'):
+        return profile_message_redirect(error='Сейчас импорт поддерживается только из JSON-файла.')
+
+    file_bytes = await import_file.read()
+    if not file_bytes:
+        return profile_message_redirect(error='Файл пустой.')
+
+    try:
+        payload = json.loads(file_bytes.decode('utf-8-sig'))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return profile_message_redirect(error='Не удалось прочитать JSON-файл. Проверь формат.')
+
+    try:
+        import_user_export_payload(user, payload, import_mode, db)
+        db.commit()
+    except ValueError as error:
+        db.rollback()
+        return profile_message_redirect(error=str(error))
+    except Exception:
+        db.rollback()
+        return profile_message_redirect(error='Импорт не удался из-за ошибки в данных.')
+
+    return profile_message_redirect(success='Данные успешно импортированы.')
 
 
 @router.get('/local-profile', response_class=HTMLResponse)
@@ -629,20 +1024,96 @@ def add_note(
     title: str = Form(...),
     content: str = Form(''),
     link: str = Form(''),
-    subject_id: int | None = Form(None),
+    subject_id: str = Form(''),
     db: Session = Depends(get_db),
 ):
     user = require_user(request, db)
     if not user:
         return RedirectResponse('/login', status_code=302)
+
+    subject_id_value = int(subject_id) if subject_id else None
+    if subject_id_value:
+        subject = db.query(Subject).filter(Subject.id == subject_id_value, Subject.user_id == user.id).first()
+        if not subject:
+            return RedirectResponse('/notes', status_code=302)
+
     note = Note(
         user_id=user.id,
-        subject_id=subject_id if subject_id else None,
+        subject_id=subject_id_value,
         title=title,
         content=content or None,
         link=link or None,
     )
     db.add(note)
+    db.commit()
+    return RedirectResponse('/notes', status_code=302)
+
+
+@router.post('/notes/edit/{note_id}')
+@router.post('/notes/edit/{note_id}/')
+def edit_note(
+    note_id: int,
+    request: Request,
+    title: str = Form(...),
+    content: str = Form(''),
+    link: str = Form(''),
+    subject_id: str = Form(''),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    note = db.query(Note).filter(Note.id == note_id, Note.user_id == user.id).first()
+    if not note:
+        return RedirectResponse('/notes', status_code=302)
+
+    subject_id_value = int(subject_id) if subject_id else None
+    if subject_id_value:
+        subject = db.query(Subject).filter(Subject.id == subject_id_value, Subject.user_id == user.id).first()
+        if not subject:
+            return RedirectResponse('/notes', status_code=302)
+
+    note.title = title
+    note.content = content or None
+    note.link = link or None
+    note.subject_id = subject_id_value
+    db.commit()
+    return RedirectResponse('/notes', status_code=302)
+
+
+@router.get('/notes/edit/{note_id}')
+@router.get('/notes/edit/{note_id}/')
+def edit_note_fallback(
+    note_id: int,
+    request: Request,
+    title: str | None = Query(None),
+    content: str = Query(''),
+    link: str = Query(''),
+    subject_id: str = Query(''),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    if title is None:
+        return RedirectResponse('/notes', status_code=302)
+
+    note = db.query(Note).filter(Note.id == note_id, Note.user_id == user.id).first()
+    if not note:
+        return RedirectResponse('/notes', status_code=302)
+
+    subject_id_value = int(subject_id) if subject_id else None
+    if subject_id_value:
+        subject = db.query(Subject).filter(Subject.id == subject_id_value, Subject.user_id == user.id).first()
+        if not subject:
+            return RedirectResponse('/notes', status_code=302)
+
+    note.title = title
+    note.content = content or None
+    note.link = link or None
+    note.subject_id = subject_id_value
     db.commit()
     return RedirectResponse('/notes', status_code=302)
 
