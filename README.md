@@ -10,11 +10,6 @@ Student Assistant - это учебный веб-проект, в котором
 
 [student-assistant-beby.onrender.com](https://student-assistant-beby.onrender.com/)
 
-## Превью
-
-<p align="center">
-  <img src="assets/preview.png" alt="Student Assistant Preview" width="900">
-</p>
 
 ## Что умеет проект
 
