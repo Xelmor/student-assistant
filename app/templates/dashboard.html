@@ -5,6 +5,11 @@
     <div class="dashboard-hero-main">
         <span class="eyebrow">Личный кабинет</span>
         <h1 class="dashboard-hero-title">Привет, {{ user.username }}</h1>
+        {% if local_private_data_available %}
+        <p class="mb-3">
+            <a href="/local-profile" class="btn btn-sm btn-outline-light">Мои данные (локально)</a>
+        </p>
+        {% endif %}
         <p>Здесь собраны самые важные вещи на сегодня: ближайшие задачи, состояние учебы и пары по текущему дню.</p>
         <div class="dashboard-quote">
             <span class="dashboard-quote-mark">"</span>

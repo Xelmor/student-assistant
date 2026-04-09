@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Личные данные (локально){% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="mb-3">Личные данные (только локально)</h3>
+                <div class="alert alert-warning">
+                    Эту страницу видно только при локальном запуске и при включенной переменной <code>ALLOW_LOCAL_PRIVATE_DATA=true</code>.
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <tbody>
+                            <tr>
+                                <th style="width: 260px;">ID</th>
+                                <td>{{ user.id }}</td>
+                            </tr>
+                            <tr>
+                                <th>Логин</th>
+                                <td>{{ user.username }}</td>
+                            </tr>
+                            <tr>
+                                <th>Email</th>
+                                <td>{{ user.email }}</td>
+                            </tr>
+                            <tr>
+                                <th>Группа</th>
+                                <td>{{ user.group_name or '—' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Курс</th>
+                                <td>{{ user.course or '—' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Дата регистрации</th>
+                                <td>{{ user.created_at.strftime('%d.%m.%Y %H:%M') if user.created_at else '—' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Пароль (исходный)</th>
+                                <td>Недоступен. Система хранит только хэш.</td>
+                            </tr>
+                            <tr>
+                                <th>Хэш пароля</th>
+                                <td><code>{{ user.password_hash }}</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <a href="/forgot-password" class="btn btn-outline-primary">Сменить пароль</a>
+                    <a href="/dashboard" class="btn btn-primary">Назад</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

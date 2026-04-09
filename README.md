@@ -1,38 +1,34 @@
-﻿# Student Assistant
+# Student Assistant
 
-Student Assistant — проект для организации учебы на базе `FastAPI`, `Jinja2`, `SQLAlchemy`, `SQLite` и `aiogram`.
+Небольшой учебный помощник, в котором можно держать все в одном месте: предметы, задания, дедлайны, расписание и заметки.
 
-Проект объединяет:
-- веб-приложение для управления учебными данными;
-- Telegram-бота для быстрого доступа к задачам и расписанию.
+Проект написан как веб-приложение на `FastAPI` + `Jinja2` + `SQLAlchemy` + `SQLite`. Идея простая: открыть сайт и быстро посмотреть, что у тебя по учебе происходит прямо сейчас.
 
-Цель проекта — хранить предметы, задания, дедлайны, заметки и расписание в одном месте.
+## Открыть сразу
 
-## Возможности
+Если не хочется ничего устанавливать локально, можно просто зайти в онлайн-версию:
 
-- регистрация и вход пользователей;
-- дашборд с:
-  - живыми часами;
-  - календарем;
-  - мотивационной цитатой;
-  - обзором на сегодня;
-- управление предметами;
-- управление задачами;
-- управление расписанием;
-- управление заметками;
-- Telegram-бот с базовыми командами.
+[student-assistant-beby.onrender.com](https://student-assistant-beby.onrender.com/)
 
-## Технологии
+## Что умеет
+
+- регистрация и вход
+- дашборд с общей картиной по задачам и расписанию
+- добавление и редактирование предметов
+- добавление задач с дедлайнами
+- ведение расписания
+- хранение заметок
+
+## На чем сделано
 
 - Python
 - FastAPI
 - Jinja2
 - SQLAlchemy
 - SQLite
-- aiogram
 - Bootstrap 5
 
-## Структура проекта
+## Как устроен проект
 
 ```text
 student_assistant_project/
@@ -45,201 +41,106 @@ student_assistant_project/
 │   ├── main.py
 │   ├── models.py
 │   └── utils.py
-├── bot/
-│   └── bot.py
 ├── requirements.txt
 ├── run.py
+├── start_web.bat
+├── start_web.sh
 └── README.md
 ```
 
-## Требования
+## Как запустить
 
-- Python 3.11+ (рекомендуется);
-- Windows, Linux или macOS.
+### Вариант 1. Самый простой
 
-## Установка
+Если ты на Windows, можно просто запустить `start_web.bat`.
 
-### 1. Клонирование репозитория
-
-```bash
-git clone <your-repo-url>
-cd student_assistant_project
-```
-
-### 2. Создание и активация виртуального окружения
-
-#### Windows PowerShell
-
-```powershell
-python -m venv venv
-venv\Scripts\Activate.ps1
-```
-
-#### Windows CMD
-
-```cmd
-python -m venv venv
-venv\Scripts\activate.bat
-```
-
-#### Linux / macOS
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Установка зависимостей
-
-```bash
-pip install -r requirements.txt
-```
-
-## Быстрый запуск (почти без настроек)
-
-### Windows (рекомендуется)
-
-1. Установи Python 3.11+ (при установке включи `Add python.exe to PATH`).
-2. Открой папку проекта.
-3. Запусти файл `start_web.bat` двойным кликом.
-
-Скрипт сам:
-- создаст `venv` (если его нет);
-- установит зависимости;
-- запустит сайт.
-
-### Linux / macOS
+Если ты на Linux или macOS:
 
 ```bash
 chmod +x start_web.sh
 ./start_web.sh
 ```
 
-## Запуск веб-приложения
+### Вариант 2. Вручную
+
+1. Создай виртуальное окружение:
+
+```bash
+python -m venv venv
+```
+
+2. Активируй его.
+
+Windows PowerShell:
+
+```powershell
+venv\Scripts\Activate.ps1
+```
+
+Windows CMD:
+
+```cmd
+venv\Scripts\activate.bat
+```
+
+Linux / macOS:
+
+```bash
+source venv/bin/activate
+```
+
+3. Установи зависимости:
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Запусти проект:
 
 ```bash
 python run.py
 ```
 
-После запуска открой:
+После этого сайт будет доступен по адресу:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-## Запуск Telegram-бота
-
-Создай бота в `@BotFather`, получи токен и передай его через переменную окружения.
-
-### Windows PowerShell
-
-```powershell
-$env:BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN"
-python -m bot.bot
-```
-
-### Windows CMD
-
-```cmd
-set BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN
-python -m bot.bot
-```
-
-### Linux / macOS
-
-```bash
-export BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN"
-python -m bot.bot
-```
-
-## Примечание по Telegram-боту
-
-Текущая логика простая:
-- бот ищет пользователя по Telegram username;
-- Telegram username должен совпадать с логином на сайте.
-
-Поддерживаемые команды:
-- `/start`
-- `/help`
-- `/today`
-- `/tasks`
-
 ## База данных
 
-Используется SQLite:
+По умолчанию используется локальная база `SQLite`.
+
+Файл базы:
 
 ```text
 student_assistant.db
 ```
 
-Таблицы создаются автоматически при первом запуске через SQLAlchemy.
+Таблицы создаются автоматически при первом запуске.
 
-## Полезные команды
+## Полезно знать
 
-### Проверка синтаксиса
+- файл `.env` нужен для локальных настроек
+- `.env.example` можно использовать как шаблон
+- если не хочешь загружать свои локальные данные в GitHub, не коммить `.env`, `venv` и `student_assistant.db`
+
+## Быстрая проверка кода
+
+Если нужно просто проверить, что основные файлы без синтаксических ошибок:
 
 ```bash
-python -m py_compile app\models.py app\database.py app\main.py app\routers\web.py bot\bot.py
+python -m py_compile app\models.py app\database.py app\main.py app\routers\web.py
 ```
 
-### Запуск через локальное виртуальное окружение (Windows)
+## Что можно улучшить потом
 
-```powershell
-venv\Scripts\python.exe run.py
-venv\Scripts\python.exe -m bot.bot
-```
+- уведомления и напоминания
+- тесты
+- Docker
+- деплой
+- админку
 
-## Что загружать на GitHub
+## Итог
 
-Нужно загружать:
-- `app/`
-- `bot/`
-- `requirements.txt`
-- `run.py`
-- `README.md`
-- `.env.example`
-
-Не нужно загружать:
-- `venv/`
-- `__pycache__/`
-- `.env`
-- локальную SQLite-базу, если не хочешь публиковать тестовые данные.
-
-## Рекомендуемый `.gitignore`
-
-```gitignore
-venv/
-__pycache__/
-*.pyc
-.env
-student_assistant.db
-```
-
-## Текущий статус
-
-Реализовано и работает в веб-части:
-- предметы;
-- задачи;
-- заметки;
-- расписание;
-- редактирование в интерфейсе;
-- обновленный дизайн дашборда.
-
-Telegram-бот:
-- базовая версия;
-- зависит от совпадения Telegram username с логином на сайте.
-
-## Возможные улучшения
-
-- корректная привязка Telegram-аккаунта;
-- восстановление пароля;
-- уведомления и напоминания;
-- инструкция по деплою;
-- тесты;
-- поддержка Docker;
-- админ-панель.
-
-## Лицензия
-
-Сейчас у проекта нет явной лицензии.
-Если планируешь публичную публикацию, лучше добавить файл лицензии, например `MIT`.
+Это не огромная система, а скорее удобный личный проект для учебы. Открыл, посмотрел задачи, обновил расписание, записал заметку и пошел дальше.

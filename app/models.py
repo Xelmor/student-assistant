@@ -19,8 +19,6 @@ class User(Base):
     tasks = relationship('Task', back_populates='user', cascade='all, delete-orphan')
     schedule_items = relationship('ScheduleItem', back_populates='user', cascade='all, delete-orphan')
     notes = relationship('Note', back_populates='user', cascade='all, delete-orphan')
-    telegram_binding = relationship('TelegramBinding', back_populates='user', uselist=False, cascade='all, delete-orphan')
-    telegram_link_codes = relationship('TelegramLinkCode', back_populates='user', cascade='all, delete-orphan')
 
 
 class Subject(Base):
@@ -87,28 +85,3 @@ class Note(Base):
 
     user = relationship('User', back_populates='notes')
     subject = relationship('Subject', back_populates='note_items')
-
-
-class TelegramBinding(Base):
-    __tablename__ = 'telegram_bindings'
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, unique=True, index=True)
-    telegram_user_id = Column(String(32), nullable=False, unique=True, index=True)
-    telegram_username = Column(String(64), nullable=True)
-    linked_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    user = relationship('User', back_populates='telegram_binding')
-
-
-class TelegramLinkCode(Base):
-    __tablename__ = 'telegram_link_codes'
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
-    code = Column(String(20), nullable=False, unique=True, index=True)
-    expires_at = Column(DateTime, nullable=False)
-    used_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    user = relationship('User', back_populates='telegram_link_codes')

@@ -15,7 +15,17 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Пароль</label>
-                        <input type="password" name="password" class="form-control" required>
+                        <div class="input-group">
+                            <input type="password" id="login-password" name="password" class="form-control" required>
+                            <button
+                                type="button"
+                                class="btn btn-outline-secondary"
+                                data-password-toggle
+                                data-password-target="login-password"
+                            >
+                                Показать
+                            </button>
+                        </div>
                     </div>
                     <button class="btn btn-primary w-100">Войти</button>
                 </form>

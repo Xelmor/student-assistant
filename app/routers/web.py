@@ -1,14 +1,13 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import calendar
+import os
 import random
-import secrets
-import string
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..models import User, Subject, Task, ScheduleItem, Note, TelegramBinding, TelegramLinkCode
+from ..models import User, Subject, Task, ScheduleItem, Note
 from ..auth import hash_password, verify_password, get_current_user
 from ..utils import WEEKDAYS, calculate_task_score
 
@@ -70,9 +69,10 @@ def is_valid_schedule_time_range(start_time, end_time):
     return start_time < end_time
 
 
-def generate_telegram_link_code(length: int = 8) -> str:
-    alphabet = string.ascii_uppercase + string.digits
-    return ''.join(secrets.choice(alphabet) for _ in range(length))
+def is_local_private_data_enabled(request: Request) -> bool:
+    enabled = os.getenv('ALLOW_LOCAL_PRIVATE_DATA', 'false').lower() == 'true'
+    client_host = request.client.host if request.client else ''
+    return enabled and client_host in {'127.0.0.1', '::1', 'localhost'}
 
 
 @router.get('/', response_class=HTMLResponse)
@@ -199,75 +199,22 @@ def logout(request: Request):
     return RedirectResponse('/', status_code=302)
 
 
-@router.get('/telegram', response_class=HTMLResponse)
-def telegram_page(request: Request, db: Session = Depends(get_db)):
+@router.get('/local-profile', response_class=HTMLResponse)
+def local_profile_page(request: Request, db: Session = Depends(get_db)):
     user = require_user(request, db)
     if not user:
         return RedirectResponse('/login', status_code=302)
 
-    now = datetime.utcnow()
-    binding = db.query(TelegramBinding).filter(TelegramBinding.user_id == user.id).first()
-    active_code = db.query(TelegramLinkCode).filter(
-        TelegramLinkCode.user_id == user.id,
-        TelegramLinkCode.used_at.is_(None),
-        TelegramLinkCode.expires_at > now,
-    ).order_by(TelegramLinkCode.created_at.desc()).first()
+    if not is_local_private_data_enabled(request):
+        return RedirectResponse('/dashboard', status_code=302)
 
     return templates.TemplateResponse(
         request,
-        'telegram.html',
+        'local_profile.html',
         {
             'user': user,
-            'binding': binding,
-            'active_code': active_code,
-            'now_utc': now,
-        },
+        }
     )
-
-
-@router.post('/telegram/generate')
-def generate_telegram_code(request: Request, db: Session = Depends(get_db)):
-    user = require_user(request, db)
-    if not user:
-        return RedirectResponse('/login', status_code=302)
-
-    now = datetime.utcnow()
-    db.query(TelegramLinkCode).filter(
-        TelegramLinkCode.user_id == user.id,
-        TelegramLinkCode.used_at.is_(None),
-    ).delete(synchronize_session=False)
-
-    code_value = ''
-    for _ in range(10):
-        candidate = generate_telegram_link_code()
-        exists = db.query(TelegramLinkCode).filter(TelegramLinkCode.code == candidate).first()
-        if not exists:
-            code_value = candidate
-            break
-
-    if not code_value:
-        return RedirectResponse('/telegram', status_code=302)
-
-    code = TelegramLinkCode(
-        user_id=user.id,
-        code=code_value,
-        expires_at=now + timedelta(minutes=15),
-    )
-    db.add(code)
-    db.commit()
-    return RedirectResponse('/telegram', status_code=302)
-
-
-@router.post('/telegram/unlink')
-def unlink_telegram(request: Request, db: Session = Depends(get_db)):
-    user = require_user(request, db)
-    if not user:
-        return RedirectResponse('/login', status_code=302)
-
-    db.query(TelegramBinding).filter(TelegramBinding.user_id == user.id).delete(synchronize_session=False)
-    db.query(TelegramLinkCode).filter(TelegramLinkCode.user_id == user.id).delete(synchronize_session=False)
-    db.commit()
-    return RedirectResponse('/telegram', status_code=302)
 
 
 @router.get('/dashboard', response_class=HTMLResponse)
@@ -314,6 +261,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
 
     context = {
         'user': user,
+        'local_private_data_available': is_local_private_data_enabled(request),
         'subjects_count': db.query(Subject).filter(Subject.user_id == user.id).count(),
         'pending_count': len(pending_tasks),
         'completed_count': len(completed_tasks),
