@@ -10,7 +10,7 @@
             <a href="/local-profile" class="btn btn-sm btn-outline-light">Мои данные (локально)</a>
         </p>
         {% endif %}
-        <p>Здесь собраны самые важные вещи на сегодня: ближайшие задачи, состояние учебы и пары по текущему дню.</p>
+        <p>Здесь собраны самые важные вещи на сегодня: ближайшие задачи, состояние учебы и расписание по текущему дню.</p>
         <div class="dashboard-quote">
             <span class="dashboard-quote-mark">"</span>
             <span>{{ motivation_quote }}</span>
@@ -63,7 +63,7 @@
                         {{ active_schedule_item.lesson_type or 'Занятие' }}{% if active_schedule_item.room %} · {{ active_schedule_item.room }}{% endif %}
                     </div>
                     <div class="dashboard-next-chip-row">
-                        <span class="dashboard-next-chip">Сейчас идёт пара</span>
+                        <span class="dashboard-next-chip">Сейчас идёт {{ schedule_terms.singular }}</span>
                         <span class="dashboard-next-chip" id="dashboard-lesson-remaining" data-remaining-seconds="{{ active_schedule_remaining_seconds }}">
                             До конца: --
                         </span>
@@ -77,8 +77,8 @@
                         {{ next_schedule_item.lesson_type or 'Занятие' }}{% if next_schedule_item.room %} · {{ next_schedule_item.room }}{% endif %}
                     </div>
                     <div class="dashboard-next-chip-row">
-                        <span class="dashboard-next-chip">Следующая пара</span>
-                        <span class="dashboard-next-chip">Пар сегодня: {{ today_schedule|length }}</span>
+                        <span class="dashboard-next-chip">Дальше по расписанию</span>
+                        <span class="dashboard-next-chip">{{ schedule_terms.plural_genitive|capitalize }} сегодня: {{ today_schedule|length }}</span>
                     </div>
                 {% elif urgent_tasks %}
                     <div class="dashboard-next-main">{{ urgent_tasks[0].title }}</div>
@@ -96,10 +96,10 @@
                     <div class="dashboard-next-main">Свободное окно</div>
                     <div class="dashboard-next-time">Можно спокойно распланировать день</div>
                     <div class="dashboard-next-meta">
-                        На сегодня нет пар и срочных задач
+                        На сегодня нет {{ schedule_terms.plural_genitive }} и срочных задач
                     </div>
                     <div class="dashboard-next-chip-row">
-                        <span class="dashboard-next-chip">Пар сегодня: 0</span>
+                        <span class="dashboard-next-chip">{{ schedule_terms.plural_genitive|capitalize }} сегодня: 0</span>
                         <span class="dashboard-next-chip">Активных: 0</span>
                     </div>
                 {% endif %}
@@ -144,7 +144,7 @@
     <div class="col-lg-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h4 class="mb-3">Пары на сегодня — {{ weekdays[now.weekday()] }}</h4>
+                <h4 class="mb-3">{{ schedule_terms.plural|capitalize }} на сегодня — {{ weekdays[now.weekday()] }}</h4>
                 {% if today_schedule %}
                     <div class="list-group">
                     {% for item in today_schedule %}
@@ -158,7 +158,7 @@
                     {% endfor %}
                     </div>
                 {% else %}
-                    <p class="text-muted">На сегодня пар нет.</p>
+                    <p class="text-muted">На сегодня {{ schedule_terms.plural_genitive }} нет.</p>
                 {% endif %}
             </div>
         </div>

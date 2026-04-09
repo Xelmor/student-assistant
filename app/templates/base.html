@@ -29,6 +29,7 @@
                         <li class="nav-item"><a class="nav-link {% if request.url.path.startswith('/subjects') %}active{% endif %}" href="/subjects">Предметы</a></li>
                         <li class="nav-item"><a class="nav-link {% if request.url.path.startswith('/tasks') %}active{% endif %}" href="/tasks">Задания</a></li>
                         <li class="nav-item"><a class="nav-link {% if request.url.path.startswith('/schedule') %}active{% endif %}" href="/schedule">Расписание</a></li>
+                        <li class="nav-item"><a class="nav-link {% if request.url.path.startswith('/calendar') %}active{% endif %}" href="/calendar">Календарь</a></li>
                         <li class="nav-item"><a class="nav-link {% if request.url.path.startswith('/notes') %}active{% endif %}" href="/notes">Заметки</a></li>
                         {% endif %}
                     </ul>

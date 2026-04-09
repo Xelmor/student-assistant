@@ -2,7 +2,7 @@ import csv
 import io
 import json
 import zipfile
-from datetime import datetime
+from datetime import date, datetime, timedelta
 import calendar
 import os
 import random
@@ -18,6 +18,41 @@ from ..utils import WEEKDAYS, calculate_task_score
 
 router = APIRouter()
 templates = Jinja2Templates(directory='app/templates')
+APP_TIMEZONE = 'Europe/Moscow'
+MONTH_NAMES_RU = {
+    1: 'январь',
+    2: 'февраль',
+    3: 'март',
+    4: 'апрель',
+    5: 'май',
+    6: 'июнь',
+    7: 'июль',
+    8: 'август',
+    9: 'сентябрь',
+    10: 'октябрь',
+    11: 'ноябрь',
+    12: 'декабрь',
+}
+SCHEDULE_UNIT_OPTIONS = {
+    'pair': {
+        'label': 'Пары',
+        'singular': 'пара',
+        'plural': 'пары',
+        'plural_genitive': 'пар',
+    },
+    'lesson': {
+        'label': 'Уроки',
+        'singular': 'урок',
+        'plural': 'уроки',
+        'plural_genitive': 'уроков',
+    },
+    'class': {
+        'label': 'Занятия',
+        'singular': 'занятие',
+        'plural': 'занятия',
+        'plural_genitive': 'занятий',
+    },
+}
 SCHEDULE_TIME_PRESETS = {
     'free': {
         'label': 'Свободный',
@@ -80,6 +115,245 @@ def parse_time_value(value):
     return datetime.strptime(value, '%H:%M:%S').time()
 
 
+def normalize_calendar_period(year: int | None, month: int | None):
+    today = datetime.now().date()
+    safe_year = year or today.year
+    safe_month = month or today.month
+
+    if safe_month < 1:
+        safe_month = 1
+    if safe_month > 12:
+        safe_month = 12
+
+    return safe_year, safe_month
+
+
+def shift_calendar_period(year: int, month: int, delta: int):
+    month_index = (year * 12 + (month - 1)) + delta
+    return month_index // 12, month_index % 12 + 1
+
+
+def iso_date_or_none(value: str | None):
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def format_calendar_badge(event_type: str, priority: str | None = None):
+    if event_type == 'task':
+        if priority == 'high':
+            return 'Высокий приоритет'
+        if priority == 'low':
+            return 'Низкий приоритет'
+        return 'Дедлайн'
+    return 'Пара'
+
+
+def build_calendar_event_map(user: User, db: Session, year: int, month: int):
+    month_matrix = calendar.Calendar(firstweekday=0).monthdatescalendar(year, month)
+    visible_dates = [day for week in month_matrix for day in week]
+    visible_start = visible_dates[0]
+    visible_end = visible_dates[-1]
+    today = datetime.now().date()
+
+    tasks = db.query(Task).filter(
+        Task.user_id == user.id,
+        Task.deadline.isnot(None),
+    ).all()
+
+    schedule_items = db.query(ScheduleItem).filter(
+        ScheduleItem.user_id == user.id,
+    ).order_by(ScheduleItem.weekday.asc(), ScheduleItem.start_time.asc()).all()
+
+    event_map = {day: [] for day in visible_dates}
+
+    for task in tasks:
+        deadline_date = task.deadline.date()
+        if visible_start <= deadline_date <= visible_end:
+            event_map.setdefault(deadline_date, []).append(
+                {
+                    'type': 'task',
+                    'title': task.title,
+                    'subject': task.subject.name if task.subject else None,
+                    'start': task.deadline,
+                    'end': task.deadline + timedelta(hours=1),
+                    'time_label': task.deadline.strftime('%H:%M'),
+                    'meta': task.subject.name if task.subject else 'Без предмета',
+                    'badge': format_calendar_badge('task', task.priority),
+                    'priority': task.priority,
+                    'is_completed': task.is_completed,
+                    'is_overdue': (not task.is_completed) and task.deadline < datetime.now(),
+                    'description': task.description or '',
+                    'room': None,
+                }
+            )
+
+    current_date = visible_start
+    while current_date <= visible_end:
+        matching_items = [
+            item for item in schedule_items
+            if item.weekday == current_date.weekday()
+        ]
+        for item in matching_items:
+            start_dt = datetime.combine(current_date, item.start_time)
+            end_dt = datetime.combine(current_date, item.end_time)
+            event_map.setdefault(current_date, []).append(
+                {
+                    'type': 'schedule',
+                    'title': item.subject.name,
+                    'subject': item.subject.name,
+                    'start': start_dt,
+                    'end': end_dt,
+                    'time_label': f"{item.start_time.strftime('%H:%M')} - {item.end_time.strftime('%H:%M')}",
+                    'meta': item.lesson_type or 'Занятие',
+                    'badge': format_calendar_badge('schedule'),
+                    'priority': None,
+                    'is_completed': False,
+                    'is_overdue': False,
+                    'description': item.lesson_type or '',
+                    'room': item.room,
+                }
+            )
+        current_date += timedelta(days=1)
+
+    for day_events in event_map.values():
+        day_events.sort(key=lambda event: event['start'])
+
+    weeks = []
+    for week in month_matrix:
+        week_cells = []
+        for day in week:
+            day_events = event_map.get(day, [])
+            schedule_events = [event for event in day_events if event['type'] == 'schedule']
+            task_events = [event for event in day_events if event['type'] == 'task']
+            first_schedule_start = schedule_events[0]['start'].strftime('%H:%M') if schedule_events else None
+            last_schedule_end = schedule_events[-1]['end'].strftime('%H:%M') if schedule_events else None
+            first_schedule_index = 1 if schedule_events else None
+            last_schedule_index = len(schedule_events) if schedule_events else None
+            week_cells.append(
+                {
+                    'date': day,
+                    'day': day.day,
+                    'in_month': day.month == month,
+                    'is_today': day == today,
+                    'event_count': len(day_events),
+                    'has_task': bool(task_events),
+                    'has_schedule': bool(schedule_events),
+                    'has_overdue': any(event['is_overdue'] for event in day_events),
+                    'task_count': len(task_events),
+                    'first_schedule_start': first_schedule_start,
+                    'last_schedule_end': last_schedule_end,
+                    'first_schedule_index': first_schedule_index,
+                    'last_schedule_index': last_schedule_index,
+                }
+            )
+        weeks.append(week_cells)
+
+    return {
+        'weeks': weeks,
+        'event_map': event_map,
+        'visible_start': visible_start,
+        'visible_end': visible_end,
+    }
+
+
+def build_calendar_page_context(user: User, db: Session, year: int | None = None, month: int | None = None, selected_date_raw: str | None = None):
+    safe_year, safe_month = normalize_calendar_period(year, month)
+    month_context = build_calendar_event_map(user, db, safe_year, safe_month)
+    schedule_terms = get_schedule_terms(user)
+    selected_date = iso_date_or_none(selected_date_raw)
+    if selected_date is None or selected_date not in month_context['event_map']:
+        today = datetime.now().date()
+        if today in month_context['event_map'] and today.month == safe_month and today.year == safe_year:
+            selected_date = today
+        else:
+            selected_date = next(iter(month_context['event_map'].keys()))
+
+    previous_year, previous_month = shift_calendar_period(safe_year, safe_month, -1)
+    next_year, next_month = shift_calendar_period(safe_year, safe_month, 1)
+    selected_events = month_context['event_map'].get(selected_date, [])
+    weekly_schedule_count = db.query(ScheduleItem).filter(ScheduleItem.user_id == user.id).count()
+
+    return {
+        'calendar_year': safe_year,
+        'calendar_month': safe_month,
+        'calendar_label': f"{MONTH_NAMES_RU[safe_month]} {safe_year}",
+        'calendar_weeks': month_context['weeks'],
+        'selected_date': selected_date,
+        'selected_events': selected_events,
+        'previous_year': previous_year,
+        'previous_month': previous_month,
+        'next_year': next_year,
+        'next_month': next_month,
+        'month_task_count': sum(1 for events in month_context['event_map'].values() for event in events if event['type'] == 'task'),
+        'month_schedule_count': sum(1 for events in month_context['event_map'].values() for event in events if event['type'] == 'schedule'),
+        'weekly_schedule_count': weekly_schedule_count,
+        'schedule_terms': schedule_terms,
+    }
+
+
+def escape_ics_text(value: str | None):
+    if not value:
+        return ''
+    return (
+        value.replace('\\', '\\\\')
+        .replace(';', r'\;')
+        .replace(',', r'\,')
+        .replace('\n', r'\n')
+    )
+
+
+def format_ics_datetime(value: datetime):
+    return value.strftime('%Y%m%dT%H%M%S')
+
+
+def build_ics_calendar(user: User, db: Session, year: int | None = None, month: int | None = None):
+    context = build_calendar_page_context(user, db, year, month, None)
+    safe_year = context['calendar_year']
+    safe_month = context['calendar_month']
+    event_map = build_calendar_event_map(user, db, safe_year, safe_month)['event_map']
+
+    lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Student Assistant//Calendar Export//RU',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        f'X-WR-CALNAME:Student Assistant {safe_month:02d}/{safe_year}',
+        f'X-WR-TIMEZONE:{APP_TIMEZONE}',
+    ]
+
+    for day, events in sorted(event_map.items(), key=lambda item: item[0]):
+        for index, event in enumerate(events, start=1):
+            location_parts = [event['room']] if event['room'] else []
+            if event['subject'] and event['type'] == 'task':
+                location_parts.append(event['subject'])
+            description_parts = [event['meta']]
+            if event['description']:
+                description_parts.append(event['description'])
+            summary = event['title']
+            if event['type'] == 'task':
+                summary = f"Дедлайн: {summary}"
+
+            lines.extend([
+                'BEGIN:VEVENT',
+                f'UID:{event["type"]}-{day.isoformat()}-{index}-{user.id}@student-assistant',
+                f'DTSTAMP:{format_ics_datetime(datetime.utcnow())}Z',
+                f'DTSTART;TZID={APP_TIMEZONE}:{format_ics_datetime(event["start"])}',
+                f'DTEND;TZID={APP_TIMEZONE}:{format_ics_datetime(event["end"])}',
+                f'SUMMARY:{escape_ics_text(summary)}',
+                f'DESCRIPTION:{escape_ics_text(" | ".join(part for part in description_parts if part))}',
+                f'LOCATION:{escape_ics_text(", ".join(part for part in location_parts if part))}',
+                'END:VEVENT',
+            ])
+
+    lines.append('END:VCALENDAR')
+    return '\r\n'.join(lines).encode('utf-8')
+
+
 def build_user_export_payload(user: User, db: Session):
     subjects = db.query(Subject).filter(Subject.user_id == user.id).order_by(Subject.id.asc()).all()
     tasks = db.query(Task).filter(Task.user_id == user.id).order_by(Task.id.asc()).all()
@@ -94,6 +368,7 @@ def build_user_export_payload(user: User, db: Session):
             'email': user.email,
             'group_name': user.group_name,
             'course': user.course,
+            'schedule_unit': user.schedule_unit,
         },
         'data': {
             'subjects': [
@@ -203,6 +478,12 @@ def import_user_export_payload(user: User, payload, import_mode: str, db: Sessio
     if not isinstance(data, dict):
         raise ValueError('В файле нет блока data с данными для импорта.')
 
+    user_payload = payload.get('user', {})
+    if isinstance(user_payload, dict):
+        imported_schedule_unit = user_payload.get('schedule_unit')
+        if imported_schedule_unit in SCHEDULE_UNIT_OPTIONS:
+            user.schedule_unit = imported_schedule_unit
+
     subjects_payload = data.get('subjects', [])
     tasks_payload = data.get('tasks', [])
     schedule_payload = data.get('schedule_items', [])
@@ -302,6 +583,11 @@ def require_user(request: Request, db: Session):
     return user
 
 
+def get_schedule_terms(user: User | None):
+    schedule_unit = getattr(user, 'schedule_unit', None) or 'class'
+    return SCHEDULE_UNIT_OPTIONS.get(schedule_unit, SCHEDULE_UNIT_OPTIONS['class'])
+
+
 def parse_schedule_time(value: str):
     normalized_value = value.strip()
     if len(normalized_value) == 4 and normalized_value[1] == ':':
@@ -356,6 +642,7 @@ def register(
         password_hash=hash_password(password),
         group_name=group_name or None,
         course=course,
+        schedule_unit='class',
     )
     db.add(user)
     db.commit()
@@ -465,6 +752,7 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
             'local_private_data_available': is_local_private_data_enabled(request),
             'data_success': data_success,
             'data_error': data_error,
+            'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
         }
     )
 
@@ -476,6 +764,7 @@ def update_profile(
     email: str = Form(...),
     group_name: str = Form(''),
     course: int | None = Form(None),
+    schedule_unit: str = Form('class'),
     db: Session = Depends(get_db),
 ):
     user = require_user(request, db)
@@ -494,13 +783,20 @@ def update_profile(
                 'error': 'Пользователь с таким логином или email уже существует.',
                 'success': None,
                 'local_private_data_available': is_local_private_data_enabled(request),
+                'data_success': None,
+                'data_error': None,
+                'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
             }
         )
+
+    if schedule_unit not in SCHEDULE_UNIT_OPTIONS:
+        schedule_unit = 'class'
 
     user.username = username
     user.email = email
     user.group_name = group_name or None
     user.course = course
+    user.schedule_unit = schedule_unit
     db.commit()
     db.refresh(user)
     request.session['username'] = user.username
@@ -516,6 +812,7 @@ def update_profile(
             'local_private_data_available': is_local_private_data_enabled(request),
             'data_success': None,
             'data_error': None,
+            'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
         }
     )
 
@@ -644,6 +941,8 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         if now_time < item.start_time and next_schedule_item is None:
             next_schedule_item = item
 
+    schedule_terms = get_schedule_terms(user)
+
     month_matrix = calendar.Calendar(firstweekday=0).monthdatescalendar(now.year, now.month)
     calendar_days = []
     for week in month_matrix:
@@ -670,8 +969,47 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         'now': now,
         'calendar_days': calendar_days,
         'motivation_quote': random.choice(MOTIVATIONAL_QUOTES),
+        'schedule_terms': schedule_terms,
     }
     return templates.TemplateResponse(request, 'dashboard.html', context)
+
+
+@router.get('/calendar', response_class=HTMLResponse)
+def calendar_page(
+    request: Request,
+    year: int | None = Query(None),
+    month: int | None = Query(None),
+    selected: str | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    context = build_calendar_page_context(user, db, year, month, selected)
+    context.update({'user': user, 'weekdays': WEEKDAYS})
+    return templates.TemplateResponse(request, 'calendar.html', context)
+
+
+@router.get('/calendar/export/ics')
+def export_calendar_ics(
+    request: Request,
+    year: int | None = Query(None),
+    month: int | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    safe_year, safe_month = normalize_calendar_period(year, month)
+    calendar_bytes = build_ics_calendar(user, db, safe_year, safe_month)
+    filename = f'{user.username}_calendar_{safe_year}-{safe_month:02d}.ics'
+    return StreamingResponse(
+        io.BytesIO(calendar_bytes),
+        media_type='text/calendar; charset=utf-8',
+        headers=build_download_headers(filename),
+    )
 
 
 @router.get('/subjects', response_class=HTMLResponse)

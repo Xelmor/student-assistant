@@ -80,6 +80,14 @@
                                 <label class="form-label">Курс</label>
                                 <input type="number" name="course" class="form-control" min="1" max="10" value="{{ user.course or '' }}" placeholder="Например, 2">
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Формат расписания</label>
+                                <select name="schedule_unit" class="form-select">
+                                    {% for unit_key, unit in schedule_unit_options.items() %}
+                                    <option value="{{ unit_key }}" {% if (user.schedule_unit or 'class') == unit_key %}selected{% endif %}>{{ unit.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                             <div class="col-12 d-flex flex-wrap gap-2 pt-2">
                                 <button type="submit" class="btn btn-primary">Сохранить изменения</button>
                                 <a href="/dashboard" class="btn btn-outline-secondary">На главную</a>

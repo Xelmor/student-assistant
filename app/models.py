@@ -13,6 +13,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     group_name = Column(String(50), nullable=True)
     course = Column(Integer, nullable=True)
+    schedule_unit = Column(String(20), nullable=False, default='class')
     created_at = Column(DateTime, default=datetime.utcnow)
 
     subjects = relationship('Subject', back_populates='user', cascade='all, delete-orphan')

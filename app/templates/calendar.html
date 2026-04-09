@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block title %}Календарь{% endblock %}
+{% block content %}
+<section class="calendar-hero">
+    <div class="calendar-hero-main">
+        <span class="eyebrow">Планирование по датам</span>
+        <h1 class="calendar-hero-title">Календарь учебы</h1>
+        <p class="calendar-hero-copy">Здесь в одной сетке собраны дедлайны по задачам и элементы расписания. Можно быстро посмотреть месяц, открыть конкретный день и выгрузить всё в календарь через `.ics`.</p>
+    </div>
+    <div class="calendar-hero-actions">
+        <a href="/calendar/export/ics?year={{ calendar_year }}&month={{ calendar_month }}" class="btn btn-primary" download>Скачать .ics</a>
+        <a href="/schedule" class="btn btn-outline-secondary">Редактировать расписание</a>
+    </div>
+</section>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card stagger-in h-100">
+            <div class="card-body">
+                <div class="stat-title">Задачи в месяце</div>
+                <div class="stat-value">{{ month_task_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card stagger-in h-100">
+            <div class="card-body">
+                <div class="stat-title">{{ schedule_terms.plural|capitalize }} в месяце</div>
+                <div class="stat-value">{{ month_schedule_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card danger stagger-in h-100">
+            <div class="card-body">
+                <div class="stat-title">{{ schedule_terms.plural_genitive|capitalize }} в неделю</div>
+                <div class="stat-value">{{ weekly_schedule_count }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-8">
+        <div class="card calendar-card h-100">
+            <div class="card-body">
+                <div class="calendar-toolbar">
+                    <a href="/calendar?year={{ previous_year }}&month={{ previous_month }}" class="calendar-nav-button" aria-label="Предыдущий месяц">←</a>
+                    <div>
+                        <div class="calendar-toolbar-label">Месяц</div>
+                        <h2 class="calendar-toolbar-title">{{ calendar_label }}</h2>
+                    </div>
+                    <a href="/calendar?year={{ next_year }}&month={{ next_month }}" class="calendar-nav-button" aria-label="Следующий месяц">→</a>
+                </div>
+
+                <div class="calendar-grid calendar-grid-head">
+                    <span>Пн</span>
+                    <span>Вт</span>
+                    <span>Ср</span>
+                    <span>Чт</span>
+                    <span>Пт</span>
+                    <span>Сб</span>
+                    <span>Вс</span>
+                </div>
+
+                <div class="calendar-month">
+                    {% for week in calendar_weeks %}
+                    <div class="calendar-grid calendar-grid-week">
+                        {% for cell in week %}
+                        <a
+                            href="/calendar?year={{ calendar_year }}&month={{ calendar_month }}&selected={{ cell.date.isoformat() }}"
+                            class="calendar-day-card {% if not cell.in_month %}is-muted{% endif %} {% if cell.is_today %}is-today{% endif %} {% if selected_date == cell.date %}is-selected{% endif %} {% if cell.has_overdue %}has-overdue{% endif %}"
+                        >
+                            <div class="calendar-day-head">
+                                <span class="calendar-day-number">{{ cell.day }}</span>
+                                {% if cell.event_count %}
+                                <span class="calendar-day-count">{{ cell.event_count }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="calendar-day-preview">
+                                {% if cell.has_schedule %}
+                                <div class="calendar-day-window">
+                                    <span class="calendar-day-window-start">{{ cell.first_schedule_index }}) {{ cell.first_schedule_start }}</span>
+                                    <span class="calendar-day-window-end">{{ cell.last_schedule_index }}) {{ cell.last_schedule_end }}</span>
+                                </div>
+                                {% endif %}
+                                {% if cell.has_task %}
+                                <div class="calendar-mini-event event-task">
+                                    <span class="calendar-mini-dot"></span>
+                                    <span>Дедлайны: {{ cell.task_count }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card agenda-card h-100">
+            <div class="card-body">
+                <span class="eyebrow">Выбранный день</span>
+                <h3 class="agenda-title mt-3 mb-1">{{ selected_date.strftime('%d.%m.%Y') }}</h3>
+                <p class="agenda-subtitle">{{ weekdays[selected_date.weekday()] }}</p>
+
+                {% if selected_events %}
+                <div class="agenda-list">
+                    {% for event in selected_events %}
+                    <article class="agenda-item event-{{ event.type }} {% if event.is_overdue %}agenda-item-overdue{% endif %}">
+                        <div class="agenda-item-time">{{ event.time_label }}</div>
+                        <div class="agenda-item-body">
+                            <div class="agenda-item-title">{{ event.title }}</div>
+                            <div class="agenda-item-meta">
+                                <span class="agenda-badge">{{ event.badge }}</span>
+                                {% if event.meta %}
+                                <span>{{ event.meta }}</span>
+                                {% endif %}
+                                {% if event.room %}
+                                <span>• {{ event.room }}</span>
+                                {% endif %}
+                            </div>
+                            {% if event.description %}
+                            <p class="agenda-item-copy">{{ event.description }}</p>
+                            {% endif %}
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="agenda-empty">
+                    <div class="agenda-empty-icon">+</div>
+                    <div class="agenda-empty-title">На этот день пока пусто</div>
+                    <p>Можно использовать окно для отдыха, повторения или спокойно раскидать новые задачи.</p>
+                </div>
+                {% endif %}
+
+                <div class="agenda-footer">
+                    <a href="/tasks" class="btn btn-outline-secondary w-100">Открыть задачи</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
