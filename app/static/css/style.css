@@ -1052,6 +1052,34 @@ textarea.form-control {
     text-transform: capitalize;
 }
 
+.calendar-mode-switch {
+    display: inline-flex;
+    gap: 0.35rem;
+    padding: 0.35rem;
+    margin-bottom: 1.15rem;
+    border: 1px solid rgba(104, 67, 38, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 252, 247, 0.9);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 10px 24px rgba(71, 43, 22, 0.08);
+}
+
+.calendar-mode-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 108px;
+    padding: 0.55rem 0.9rem;
+    border-radius: 999px;
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.calendar-mode-button.is-active {
+    background: linear-gradient(135deg, #ff9d68, var(--primary));
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(222, 107, 61, 0.2);
+}
+
 .calendar-nav-button {
     display: inline-grid;
     width: 2.8rem;
@@ -1107,6 +1135,23 @@ textarea.form-control {
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
+.calendar-day-card.intensity-1 {
+    background:
+        linear-gradient(180deg, rgba(255, 253, 250, 0.92), rgba(244, 255, 252, 0.9));
+}
+
+.calendar-day-card.intensity-2 {
+    background:
+        linear-gradient(180deg, rgba(255, 250, 243, 0.95), rgba(231, 249, 245, 0.92));
+}
+
+.calendar-day-card.intensity-3,
+.calendar-day-card.intensity-4 {
+    background:
+        radial-gradient(circle at top right, rgba(222, 107, 61, 0.12), transparent 28%),
+        linear-gradient(180deg, rgba(255, 247, 237, 0.98), rgba(229, 247, 243, 0.94));
+}
+
 .calendar-day-card:hover {
     color: var(--text);
     border-color: rgba(222, 107, 61, 0.24);
@@ -1138,6 +1183,44 @@ textarea.form-control {
     justify-content: space-between;
     gap: 0.5rem;
     align-items: center;
+}
+
+.calendar-load-meter {
+    width: 100%;
+    height: 0.35rem;
+    border-radius: 999px;
+    background: rgba(104, 67, 38, 0.08);
+    overflow: hidden;
+}
+
+.calendar-load-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+}
+
+.calendar-load-fill.level-0 {
+    width: 0%;
+}
+
+.calendar-load-fill.level-1 {
+    width: 30%;
+    background: linear-gradient(135deg, #9de0d7, #47b6ab);
+}
+
+.calendar-load-fill.level-2 {
+    width: 55%;
+    background: linear-gradient(135deg, #ffd18f, #f1a258);
+}
+
+.calendar-load-fill.level-3 {
+    width: 78%;
+    background: linear-gradient(135deg, #ffb36e, #de6b3d);
+}
+
+.calendar-load-fill.level-4 {
+    width: 100%;
+    background: linear-gradient(135deg, #f28f72, #cf5334);
 }
 
 .calendar-day-number {
@@ -1225,6 +1308,34 @@ textarea.form-control {
 .agenda-list {
     display: grid;
     gap: 0.9rem;
+}
+
+.agenda-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.15rem;
+}
+
+.agenda-summary-card {
+    padding: 0.9rem 0.95rem;
+    border: 1px solid rgba(104, 67, 38, 0.1);
+    border-radius: 18px;
+    background: rgba(255, 252, 247, 0.8);
+}
+
+.agenda-summary-card span {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.agenda-summary-card strong {
+    font-size: 0.95rem;
 }
 
 .agenda-item {
@@ -1318,6 +1429,205 @@ textarea.form-control {
     margin-top: 1.2rem;
 }
 
+.calendar-insight-card {
+    margin-top: 1rem;
+    padding: 1rem 1.05rem;
+    border: 1px solid rgba(104, 67, 38, 0.1);
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at top right, rgba(20, 138, 136, 0.14), transparent 24%),
+        linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(255, 239, 224, 0.88));
+}
+
+.calendar-insight-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.calendar-insight-card strong {
+    display: block;
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-size: 1.2rem;
+}
+
+.calendar-insight-card p {
+    margin: 0.35rem 0 0;
+    color: var(--muted);
+}
+
+.upcoming-panel {
+    margin-top: 1rem;
+}
+
+.upcoming-panel-title {
+    margin-bottom: 0.8rem;
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.upcoming-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.upcoming-item {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid rgba(104, 67, 38, 0.1);
+    border-radius: 18px;
+    background: rgba(255, 252, 247, 0.8);
+}
+
+.upcoming-item-date {
+    display: inline-grid;
+    width: 3.1rem;
+    height: 3.1rem;
+    place-items: center;
+    border-radius: 16px;
+    background: rgba(20, 138, 136, 0.1);
+    color: var(--accent-strong);
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-weight: 800;
+}
+
+.upcoming-item-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.upcoming-item-meta {
+    margin-top: 0.2rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.week-strip {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+}
+
+.week-strip-day {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.85rem;
+    border: 1px solid rgba(104, 67, 38, 0.1);
+    border-radius: 20px;
+    background: rgba(255, 253, 250, 0.9);
+    color: var(--text);
+}
+
+.week-strip-day.is-selected {
+    border-color: rgba(222, 107, 61, 0.3);
+    box-shadow: 0 18px 34px rgba(84, 46, 21, 0.12);
+}
+
+.week-strip-weekday {
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.week-strip-date {
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.week-strip-badges {
+    display: grid;
+    gap: 0.25rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.week-board {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.week-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 15rem;
+    padding: 0.95rem;
+    border: 1px solid rgba(104, 67, 38, 0.1);
+    border-radius: 22px;
+    background: rgba(255, 253, 250, 0.9);
+}
+
+.week-column.is-selected {
+    border-color: rgba(20, 138, 136, 0.28);
+    background: linear-gradient(180deg, rgba(237, 250, 248, 0.96), rgba(255, 253, 250, 0.92));
+}
+
+.week-column-head {
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid rgba(104, 67, 38, 0.08);
+}
+
+.week-column-title {
+    font-size: 0.92rem;
+    font-weight: 800;
+}
+
+.week-column-date {
+    color: var(--muted);
+    font-size: 0.84rem;
+}
+
+.week-column-events {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.week-chip {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 16px;
+    background: rgba(255, 250, 244, 0.88);
+    color: var(--text);
+}
+
+.week-chip strong {
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-size: 0.84rem;
+}
+
+.week-chip.event-task {
+    box-shadow: inset 3px 0 0 rgba(222, 107, 61, 0.58);
+}
+
+.week-chip.event-schedule {
+    box-shadow: inset 3px 0 0 rgba(20, 138, 136, 0.58);
+}
+
+.week-column-empty {
+    margin-top: auto;
+    padding: 0.75rem;
+    border-radius: 16px;
+    background: rgba(255, 252, 247, 0.7);
+    color: var(--muted);
+    font-weight: 700;
+    text-align: center;
+}
+
 .page-intro {
     display: flex;
     flex-wrap: wrap;
@@ -1407,6 +1717,10 @@ textarea.form-control {
     box-shadow: 0 10px 18px rgba(95, 80, 68, 0.16) !important;
 }
 
+.stat-value-small {
+    font-size: clamp(1.35rem, 2.6vw, 2rem);
+}
+
 .stagger-in {
     animation: riseIn 0.55s ease both;
 }
@@ -1470,6 +1784,11 @@ textarea.form-control {
     .calendar-day-card {
         min-height: 7.2rem;
     }
+
+    .week-strip,
+    .week-board {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 767.98px) {
@@ -1524,11 +1843,26 @@ textarea.form-control {
         padding: 0.7rem;
     }
 
+    .agenda-summary-grid,
+    .week-strip,
+    .week-board {
+        grid-template-columns: 1fr;
+    }
+
     .agenda-item {
         grid-template-columns: 1fr;
     }
 
     .calendar-mini-event {
         font-size: 0.73rem;
+    }
+
+    .calendar-mode-switch {
+        display: grid;
+        width: 100%;
+    }
+
+    .calendar-mode-button {
+        width: 100%;
     }
 }

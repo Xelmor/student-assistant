@@ -1,12 +1,13 @@
 import os
 from pathlib import Path
 from fastapi import FastAPI
+from fastapi import Request
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 from .database import Base, engine
-from .routers import web
+from .routers import router
 
 load_dotenv()
 
@@ -39,4 +40,13 @@ app.add_middleware(
 BASE_DIR = Path(__file__).resolve().parent
 app.mount('/static', StaticFiles(directory=str(BASE_DIR / 'static')), name='static')
 
-app.include_router(web.router)
+
+@app.middleware('http')
+async def force_utf8_charset(request: Request, call_next):
+    response = await call_next(request)
+    content_type = response.headers.get('content-type', '')
+    if content_type.startswith('text/html') and 'charset=' not in content_type.lower():
+        response.headers['content-type'] = 'text/html; charset=utf-8'
+    return response
+
+app.include_router(router)
