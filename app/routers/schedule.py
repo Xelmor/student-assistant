@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import ScheduleItem, Subject
 from ..utils import WEEKDAYS
-from .common import SCHEDULE_TIME_PRESETS, is_valid_schedule_time_range, parse_schedule_time, require_user, templates
+from .common import SCHEDULE_TIME_PRESETS, is_valid_schedule_time_range, parse_schedule_time, require_user, templates, validate_csrf
 
 router = APIRouter()
 
@@ -41,6 +41,7 @@ def schedule_page(request: Request, db: Session = Depends(get_db)):
 @router.post('/schedule/add')
 async def add_schedule_items(
     request: Request,
+    _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
     user = require_user(request, db)
@@ -65,7 +66,12 @@ async def add_schedule_items(
         current_lesson_type = lesson_type_values[i].strip() if i < len(lesson_type_values) else ''
         current_room = room_values[i].strip() if i < len(room_values) else ''
 
-        if not current_subject_id or current_weekday == '' or not current_start_time or not current_end_time:
+        selected_weekdays = [
+            int(value) for value in current_weekday.split(',')
+            if value.strip().isdigit() and 0 <= int(value.strip()) <= 6
+        ]
+
+        if not current_subject_id or not selected_weekdays or not current_start_time or not current_end_time:
             continue
 
         subject = db.query(Subject).filter(
@@ -81,16 +87,17 @@ async def add_schedule_items(
         if not is_valid_schedule_time_range(parsed_start_time, parsed_end_time):
             continue
 
-        item = ScheduleItem(
-            user_id=user.id,
-            subject_id=int(current_subject_id),
-            weekday=int(current_weekday),
-            start_time=parsed_start_time,
-            end_time=parsed_end_time,
-            lesson_type=current_lesson_type or None,
-            room=current_room or None,
-        )
-        db.add(item)
+        for weekday in selected_weekdays:
+            item = ScheduleItem(
+                user_id=user.id,
+                subject_id=int(current_subject_id),
+                weekday=weekday,
+                start_time=parsed_start_time,
+                end_time=parsed_end_time,
+                lesson_type=current_lesson_type or None,
+                room=current_room or None,
+            )
+            db.add(item)
 
     db.commit()
     return RedirectResponse('/schedule', status_code=302)
@@ -106,6 +113,7 @@ def edit_schedule_item(
     end_time: str = Form(...),
     lesson_type: str = Form(''),
     room: str = Form(''),
+    _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
     user = require_user(request, db)
@@ -142,8 +150,8 @@ def edit_schedule_item(
     return RedirectResponse('/schedule', status_code=302)
 
 
-@router.get('/schedule/delete/{item_id}')
-def delete_schedule_item(item_id: int, request: Request, db: Session = Depends(get_db)):
+@router.post('/schedule/delete/{item_id}')
+def delete_schedule_item(item_id: int, request: Request, _: None = Depends(validate_csrf), db: Session = Depends(get_db)):
     user = require_user(request, db)
     if not user:
         return RedirectResponse('/login', status_code=302)

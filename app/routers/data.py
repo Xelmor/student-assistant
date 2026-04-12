@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from .common import profile_message_redirect, require_user
+from .common import profile_message_redirect, require_user, validate_csrf
 from .data_utils import (
     build_csv_export_archive,
     build_download_headers,
@@ -55,6 +55,7 @@ async def import_data(
     request: Request,
     import_file: UploadFile = File(...),
     import_mode: str = Form('merge'),
+    _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
     user = require_user(request, db)

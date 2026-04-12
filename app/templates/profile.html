@@ -64,6 +64,7 @@
                         {% endif %}
 
                         <form method="post" action="/profile" class="row g-3">
+                            {{ csrf_input(request) }}
                             <div class="col-md-6">
                                 <label class="form-label">Логин</label>
                                 <input type="text" name="username" class="form-control" value="{{ user.username }}" required>
@@ -135,6 +136,7 @@
                             {% endif %}
 
                             <form method="post" action="/data/import" enctype="multipart/form-data" class="row g-3">
+                                {{ csrf_input(request) }}
                                 <div class="col-12">
                                     <label class="form-label">JSON-файл</label>
                                     <input type="file" name="import_file" class="form-control" accept=".json,application/json" required>

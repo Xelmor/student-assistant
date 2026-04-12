@@ -9,6 +9,7 @@
                 <h2 class="mb-4 mt-3">Создание аккаунта</h2>
                 {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
                 <form method="post" action="/register">
+                    {{ csrf_input(request) }}
                     <div class="mb-3"><label class="form-label">Логин</label><input type="text" name="username" class="form-control" required></div>
                     <div class="mb-3"><label class="form-label">Email</label><input type="email" name="email" class="form-control" required></div>
                     <div class="mb-3"><label class="form-label">Пароль</label><div class="input-group"><input type="password" id="register-password" name="password" class="form-control" required><button type="button" class="btn btn-outline-secondary" data-password-toggle data-password-target="register-password">Показать</button></div></div>

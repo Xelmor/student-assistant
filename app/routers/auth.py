@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_user, hash_password, verify_password
 from ..database import get_db
 from ..models import User
-from .common import templates
+from .common import templates, validate_csrf
 
 router = APIRouter()
 
@@ -31,6 +31,7 @@ def register(
     password: str = Form(...),
     group_name: str = Form(''),
     course: int | None = Form(None),
+    _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
     existing = db.query(User).filter((User.username == username) | (User.email == email)).first()
@@ -68,6 +69,7 @@ def login(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
+    _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
     user = db.query(User).filter(User.username == username).first()
@@ -99,6 +101,7 @@ def forgot_password(
     email: str = Form(...),
     new_password: str = Form(...),
     confirm_password: str = Form(...),
+    _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
     if new_password != confirm_password:
@@ -133,7 +136,7 @@ def forgot_password(
     )
 
 
-@router.get('/logout')
-def logout(request: Request):
+@router.post('/logout')
+def logout(request: Request, _: None = Depends(validate_csrf)):
     request.session.clear()
     return RedirectResponse('/', status_code=302)

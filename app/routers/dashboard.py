@@ -1,6 +1,6 @@
 import calendar
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -12,6 +12,44 @@ from ..utils import WEEKDAYS, calculate_task_score
 from .common import MOTIVATIONAL_QUOTES, get_schedule_terms, is_local_private_data_enabled, require_user, templates
 
 router = APIRouter()
+
+
+def build_streak_state(completed_tasks):
+    completed_dates = {
+        (task.completed_at or task.created_at).date()
+        for task in completed_tasks
+        if task.completed_at or task.created_at
+    }
+    today = datetime.now().date()
+
+    if not completed_dates:
+        return {
+            'days': 0,
+            'headline': '\u0421\u0442\u0440\u0438\u043a \u0435\u0449\u0435 \u043d\u0435 \u043d\u0430\u0447\u0430\u0442',
+            'message': '\u0417\u0430\u043a\u0440\u043e\u0439 \u043f\u0435\u0440\u0432\u0443\u044e \u0437\u0430\u0434\u0430\u0447\u0443 \u0441\u0435\u0433\u043e\u0434\u043d\u044f, \u0447\u0442\u043e\u0431\u044b \u0437\u0430\u0436\u0435\u0447\u044c \u0441\u0435\u0440\u0438\u044e.',
+            'emoji': '✨',
+        }
+
+    streak_days = 0
+    cursor = today if today in completed_dates else today - timedelta(days=1)
+    while cursor in completed_dates:
+        streak_days += 1
+        cursor -= timedelta(days=1)
+
+    if streak_days == 0:
+        return {
+            'days': 0,
+            'headline': '\u0421\u0442\u0440\u0438\u043a \u043f\u043e\u043a\u0430 \u043d\u0430 \u043f\u0430\u0443\u0437\u0435',
+            'message': '\u0421\u0435\u0433\u043e\u0434\u043d\u044f \u043c\u043e\u0436\u043d\u043e \u0432\u0435\u0440\u043d\u0443\u0442\u044c\u0441\u044f \u0432 \u0440\u0438\u0442\u043c \u0438 \u043d\u0430\u0447\u0430\u0442\u044c \u043d\u043e\u0432\u0443\u044e \u0441\u0435\u0440\u0438\u044e.',
+            'emoji': '⚡',
+        }
+
+    return {
+        'days': streak_days,
+        'headline': f'\u0422\u044b \u0432\u044b\u043f\u043e\u043b\u043d\u044f\u0435\u0448\u044c \u0437\u0430\u0434\u0430\u0447\u0438 {streak_days} \u0434\u043d\u044f \u043f\u043e\u0434\u0440\u044f\u0434',
+        'message': '\u0425\u043e\u0440\u043e\u0448\u0438\u0439 \u0442\u0435\u043c\u043f. \u0417\u0430\u043a\u0440\u043e\u0439 \u0435\u0449\u0435 \u043e\u0434\u043d\u0443 \u0437\u0430\u0434\u0430\u0447\u0443, \u0447\u0442\u043e\u0431\u044b \u043d\u0435 \u043f\u0440\u0435\u0440\u044b\u0432\u0430\u0442\u044c \u0441\u0435\u0440\u0438\u044e.',
+        'emoji': '🔥',
+    }
 
 
 @router.get('/dashboard', response_class=HTMLResponse)
@@ -26,6 +64,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     completed_tasks = [t for t in tasks if t.is_completed]
     overdue_tasks = [t for t in pending_tasks if t.deadline and t.deadline < now]
     urgent_tasks = sorted(pending_tasks, key=calculate_task_score, reverse=True)[:5]
+    streak = build_streak_state(completed_tasks)
 
     today_weekday = now.weekday()
     today_schedule = db.query(ScheduleItem).filter(
@@ -62,9 +101,11 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         'user': user,
         'local_private_data_available': is_local_private_data_enabled(request),
         'subjects_count': db.query(Subject).filter(Subject.user_id == user.id).count(),
+        'subjects': db.query(Subject).filter(Subject.user_id == user.id).order_by(Subject.name.asc()).all(),
         'pending_count': len(pending_tasks),
         'completed_count': len(completed_tasks),
         'overdue_count': len(overdue_tasks),
+        'streak': streak,
         'urgent_tasks': urgent_tasks,
         'today_schedule': today_schedule,
         'active_schedule_item': active_schedule_item,

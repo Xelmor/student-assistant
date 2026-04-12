@@ -38,12 +38,8 @@
                                 <td>{{ user.created_at.strftime('%d.%m.%Y %H:%M') if user.created_at else '—' }}</td>
                             </tr>
                             <tr>
-                                <th>Пароль (исходный)</th>
-                                <td>Недоступен. Система хранит только хэш.</td>
-                            </tr>
-                            <tr>
-                                <th>Хэш пароля</th>
-                                <td><code>{{ user.password_hash }}</code></td>
+                                <th>Пароль</th>
+                                <td>Пароль не отображается в целях безопасности.</td>
                             </tr>
                         </tbody>
                     </table>

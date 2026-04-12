@@ -23,6 +23,7 @@
 
                 {% if subjects %}
                 <form method="post" action="/schedule/add" id="schedule-form">
+                    {{ csrf_input(request) }}
                     <div id="schedule-rows">
                         <div class="schedule-row border rounded p-3 mb-3 bg-light-subtle">
                             <div class="mb-3">
@@ -36,11 +37,21 @@
 
                             <div class="mb-3">
                                 <label class="form-label">День недели</label>
-                                <select name="weekday" class="form-select" required>
-                                    {% for key, value in weekdays.items() %}
-                                        <option value="{{ key }}">{{ value }}</option>
-                                    {% endfor %}
-                                </select>
+                                <div class="weekday-multiselect" data-weekday-picker>
+                                    <input type="hidden" name="weekday" value="0" data-weekday-input>
+                                    <div class="weekday-chip-grid">
+                                        {% for key, value in weekdays.items() %}
+                                        <button
+                                            type="button"
+                                            class="weekday-chip {% if key == 0 %}is-selected{% endif %}"
+                                            data-weekday-option
+                                            data-weekday-value="{{ key }}"
+                                            aria-pressed="{% if key == 0 %}true{% else %}false{% endif %}"
+                                        >{{ value }}</button>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="weekday-multiselect-summary" data-weekday-summary>Выбрано: {{ weekdays[0] }}</div>
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -123,22 +134,26 @@
                                             <td>{{ item.room or '—' }}</td>
                                             <td>
                                                 <div class="action-group">
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-sm action-btn action-btn-edit"
-                                                    onclick="toggleScheduleEdit({{ item.id }})"
-                                                >
-                                                    Изменить
-                                                </button>
-                                                <a href="/schedule/delete/{{ item.id }}" class="btn btn-sm action-btn action-btn-delete">
-                                                    Удалить
-                                                </a>
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-sm action-btn action-btn-edit"
+                                                        onclick="toggleScheduleEdit({{ item.id }})"
+                                                    >
+                                                        Изменить
+                                                    </button>
+                                                    <form method="post" action="/schedule/delete/{{ item.id }}" class="d-inline">
+                                                        {{ csrf_input(request) }}
+                                                        <button type="submit" class="btn btn-sm action-btn action-btn-delete">
+                                                            Удалить
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr id="schedule-edit-{{ item.id }}" class="d-none">
                                             <td colspan="6">
                                                 <form method="post" action="/schedule/edit/{{ item.id }}" class="border rounded p-3 bg-light-subtle">
+                                                    {{ csrf_input(request) }}
                                                     <div class="row g-3">
                                                         <div class="col-md-6">
                                                             <label class="form-label">Предмет</label>
@@ -224,11 +239,21 @@
 
         <div class="mb-3">
             <label class="form-label">День недели</label>
-            <select name="weekday" class="form-select" required>
-                {% for key, value in weekdays.items() %}
-                    <option value="{{ key }}">{{ value }}</option>
-                {% endfor %}
-            </select>
+            <div class="weekday-multiselect" data-weekday-picker>
+                <input type="hidden" name="weekday" value="0" data-weekday-input>
+                <div class="weekday-chip-grid">
+                    {% for key, value in weekdays.items() %}
+                    <button
+                        type="button"
+                        class="weekday-chip {% if key == 0 %}is-selected{% endif %}"
+                        data-weekday-option
+                        data-weekday-value="{{ key }}"
+                        aria-pressed="{% if key == 0 %}true{% else %}false{% endif %}"
+                    >{{ value }}</button>
+                    {% endfor %}
+                </div>
+                <div class="weekday-multiselect-summary" data-weekday-summary>Выбрано: {{ weekdays[0] }}</div>
+            </div>
         </div>
 
         <div class="mb-3">
@@ -271,6 +296,7 @@
 
 <script>
 const scheduleTimePresets = {{ schedule_time_presets | tojson }};
+const weekdayLabels = {{ weekdays | tojson }};
 
 function findPresetMatch(startTime, endTime) {
     if (!startTime || !endTime) {
@@ -391,6 +417,54 @@ function initializeScheduleTimeControls(scope = document) {
     });
 }
 
+function updateWeekdayPickerState(picker) {
+    const hiddenInput = picker.querySelector('[data-weekday-input]');
+    const summary = picker.querySelector('[data-weekday-summary]');
+    const selectedButtons = Array.from(picker.querySelectorAll('[data-weekday-option].is-selected'));
+    const selectedValues = selectedButtons.map((button) => button.dataset.weekdayValue);
+    const selectedLabels = selectedValues.map((value) => weekdayLabels[value]).filter(Boolean);
+
+    if (hiddenInput) {
+        hiddenInput.value = selectedValues.join(',');
+    }
+
+    if (summary) {
+        summary.textContent = selectedLabels.length
+            ? `Выбрано: ${selectedLabels.join(', ')}`
+            : 'Выберите хотя бы один день';
+    }
+}
+
+function initializeWeekdayPickers(scope = document) {
+    const pickers = scope.querySelectorAll('[data-weekday-picker]');
+    pickers.forEach((picker) => {
+        if (picker.dataset.initialized === 'true') {
+            updateWeekdayPickerState(picker);
+            return;
+        }
+
+        picker.dataset.initialized = 'true';
+        const buttons = picker.querySelectorAll('[data-weekday-option]');
+
+        buttons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const selectedCount = picker.querySelectorAll('[data-weekday-option].is-selected').length;
+                const isSelected = button.classList.contains('is-selected');
+
+                if (isSelected && selectedCount === 1) {
+                    return;
+                }
+
+                button.classList.toggle('is-selected');
+                button.setAttribute('aria-pressed', button.classList.contains('is-selected') ? 'true' : 'false');
+                updateWeekdayPickerState(picker);
+            });
+        });
+
+        updateWeekdayPickerState(picker);
+    });
+}
+
 function toggleScheduleEdit(itemId) {
     const row = document.getElementById(`schedule-edit-${itemId}`);
     if (!row) {
@@ -406,6 +480,7 @@ function addScheduleRow() {
     const clone = template.content.cloneNode(true);
     container.appendChild(clone);
     initializeScheduleTimeControls(container.lastElementChild);
+    initializeWeekdayPickers(container.lastElementChild);
 }
 
 function removeScheduleRow(button) {
@@ -418,6 +493,7 @@ function removeScheduleRow(button) {
 }
 
 initializeScheduleTimeControls();
+initializeWeekdayPickers();
 </script>
 {% endif %}
 {% endblock %}

@@ -51,6 +51,7 @@ class Task(Base):
     priority = Column(String(20), default='medium')
     difficulty = Column(String(20), default='medium')
     is_completed = Column(Boolean, default=False)
+    completed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship('User', back_populates='tasks')

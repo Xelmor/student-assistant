@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import User
-from .common import SCHEDULE_UNIT_OPTIONS, is_local_private_data_enabled, require_user, templates
+from .common import SCHEDULE_UNIT_OPTIONS, is_local_private_data_enabled, require_user, templates, validate_csrf
 
 router = APIRouter()
 
@@ -40,6 +40,7 @@ def update_profile(
     group_name: str = Form(''),
     course: int | None = Form(None),
     schedule_unit: str = Form('class'),
+    _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
     user = require_user(request, db)

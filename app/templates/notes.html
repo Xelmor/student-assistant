@@ -15,6 +15,7 @@
             <div class="card-body">
                 <h3 class="mb-3">Добавить заметку</h3>
                 <form method="post" action="/notes/add">
+                    {{ csrf_input(request) }}
                     <div class="mb-3">
                         <label class="form-label">Заголовок</label>
                         <input type="text" name="title" class="form-control" required>
@@ -59,16 +60,20 @@
                                     </div>
                                     <div class="action-group">
                                         <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleNoteEdit({{ note.id }})">Изменить</button>
-                                        <a href="/notes/delete/{{ note.id }}" class="btn btn-sm action-btn action-btn-delete">Удалить</a>
+                                        <form method="post" action="/notes/delete/{{ note.id }}" class="d-inline">
+                                            {{ csrf_input(request) }}
+                                            <button type="submit" class="btn btn-sm action-btn action-btn-delete">Удалить</button>
+                                        </form>
                                     </div>
                                 </div>
                                 {% if note.link %}
-                                <p><a href="{{ note.link }}" target="_blank">{{ note.link }}</a></p>
+                                <p><a href="{{ note.link }}" target="_blank" rel="noopener noreferrer">{{ note.link }}</a></p>
                                 {% endif %}
                                 <p class="mb-0">{{ note.content or '' }}</p>
 
                                 <div id="note-edit-{{ note.id }}" class="d-none mt-3 pt-3 border-top">
                                     <form method="post" action="/notes/edit/{{ note.id }}">
+                                        {{ csrf_input(request) }}
                                         <div class="row g-3">
                                             <div class="col-12">
                                                 <label class="form-label">Заголовок</label>

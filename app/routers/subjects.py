@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Subject
-from .common import require_user, templates
+from .common import require_user, templates, validate_csrf
 
 router = APIRouter()
 
@@ -26,6 +26,7 @@ def add_subject(
     room: str = Form(''),
     color: str = Form('#0d6efd'),
     notes: str = Form(''),
+    _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
     user = require_user(request, db)
@@ -53,6 +54,7 @@ def edit_subject(
     room: str = Form(''),
     color: str = Form('#0d6efd'),
     notes: str = Form(''),
+    _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
     user = require_user(request, db)
@@ -72,8 +74,8 @@ def edit_subject(
     return RedirectResponse('/subjects', status_code=302)
 
 
-@router.get('/subjects/delete/{subject_id}')
-def delete_subject(subject_id: int, request: Request, db: Session = Depends(get_db)):
+@router.post('/subjects/delete/{subject_id}')
+def delete_subject(subject_id: int, request: Request, _: None = Depends(validate_csrf), db: Session = Depends(get_db)):
     user = require_user(request, db)
     if not user:
         return RedirectResponse('/login', status_code=302)

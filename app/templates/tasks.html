@@ -15,6 +15,7 @@
             <div class="card-body">
                 <h3 class="mb-3">Добавить задание</h3>
                 <form method="post" action="/tasks/add">
+                    {{ csrf_input(request) }}
                     <div class="mb-3"><label class="form-label">Название</label><input type="text" name="title" class="form-control" required></div>
                     <div class="mb-3"><label class="form-label">Описание</label><textarea name="description" class="form-control" rows="3"></textarea></div>
                     <div class="mb-3">
@@ -31,17 +32,17 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Приоритет</label>
                             <select name="priority" class="form-select">
-                                <option value="low">low</option>
-                                <option value="medium" selected>medium</option>
-                                <option value="high">high</option>
+                                <option value="low">Низкий</option>
+                                <option value="medium" selected>Средний</option>
+                                <option value="high">Высокий</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Сложность</label>
                             <select name="difficulty" class="form-select">
-                                <option value="low">low</option>
-                                <option value="medium" selected>medium</option>
-                                <option value="high">high</option>
+                                <option value="low">Низкая</option>
+                                <option value="medium" selected>Средняя</option>
+                                <option value="high">Высокая</option>
                             </select>
                         </div>
                     </div>
@@ -68,27 +69,42 @@
                         </thead>
                         <tbody>
                             {% for task in tasks %}
-                            <tr class="{% if task.is_completed %}table-success{% elif task.deadline and task.deadline < now %}table-danger{% endif %}">
-                                <td>{% if task.is_completed %}✅{% else %}⏳{% endif %}</td>
+                            <tr id="task-row-{{ task.id }}" class="{% if task.is_completed %}table-success{% elif task.deadline and task.deadline < now %}table-danger task-row-overdue{% endif %} {% if selected_task_id == task.id %}task-row-selected{% endif %}">
+                                <td class="{% if task.deadline and task.deadline < now and not task.is_completed %}task-cell-overdue{% endif %}">{% if task.is_completed %}✅{% else %}⏳{% endif %}</td>
                                 <td>
-                                    <strong>{{ task.title }}</strong><br>
-                                    <span class="small text-muted">{{ task.description or '' }}</span><br>
-                                    <span class="badge text-bg-secondary">{{ task.priority }}</span>
-                                    <span class="badge text-bg-light">{{ task.difficulty }}</span>
+                                    <strong class="{% if task.deadline and task.deadline < now and not task.is_completed %}task-title-overdue{% endif %}">{{ task.title }}</strong><br>
+                                    <span class="small {% if task.deadline and task.deadline < now and not task.is_completed %}task-meta-overdue{% else %}text-muted{% endif %}">{{ task.description or '' }}</span><br>
+                                    <span class="badge text-bg-secondary">{{ level_label(task.priority) }}</span>
+                                    <span class="badge text-bg-light">{{ difficulty_label(task.difficulty) }}</span>
                                 </td>
                                 <td>{{ task.subject.name if task.subject else '—' }}</td>
-                                <td>{{ task.deadline.strftime('%d.%m.%Y %H:%M') if task.deadline else '—' }}</td>
+                                <td class="{% if task.deadline and task.deadline < now and not task.is_completed %}task-deadline-overdue{% endif %}">
+                                    {% if task.deadline and task.deadline < now and not task.is_completed %}
+                                        Просрочено<br>{{ task.deadline.strftime('%d.%m.%Y %H:%M') }}
+                                    {% else %}
+                                        {{ task.deadline.strftime('%d.%m.%Y %H:%M') if task.deadline else '—' }}
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <div class="action-group">
                                         <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleTaskEdit({{ task.id }})">Изменить</button>
-                                        <a href="/tasks/toggle/{{ task.id }}" class="btn btn-sm action-btn action-btn-success">Готово</a>
-                                        <a href="/tasks/delete/{{ task.id }}" class="btn btn-sm action-btn action-btn-delete">Удалить</a>
+                                        <form method="post" action="/tasks/toggle/{{ task.id }}" class="d-inline">
+                                            {{ csrf_input(request) }}
+                                            <button type="submit" class="btn btn-sm action-btn {% if task.is_completed %}action-btn-cancel{% else %}action-btn-success{% endif %}">
+                                                {% if task.is_completed %}Вернуть{% else %}Готово{% endif %}
+                                            </button>
+                                        </form>
+                                        <form method="post" action="/tasks/delete/{{ task.id }}" class="d-inline">
+                                            {{ csrf_input(request) }}
+                                            <button type="submit" class="btn btn-sm action-btn action-btn-delete">Удалить</button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
-                            <tr id="task-edit-{{ task.id }}" class="d-none">
+                            <tr id="task-edit-{{ task.id }}" class="{% if selected_task_id != task.id %}d-none{% endif %}">
                                 <td colspan="5">
                                     <form method="post" action="/tasks/edit/{{ task.id }}" class="border rounded p-3 bg-light-subtle">
+                                        {{ csrf_input(request) }}
                                         <div class="row g-3">
                                             <div class="col-12">
                                                 <label class="form-label">Название</label>
@@ -114,17 +130,17 @@
                                             <div class="col-md-6">
                                                 <label class="form-label">Приоритет</label>
                                                 <select name="priority" class="form-select">
-                                                    <option value="low" {% if task.priority == 'low' %}selected{% endif %}>low</option>
-                                                    <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>medium</option>
-                                                    <option value="high" {% if task.priority == 'high' %}selected{% endif %}>high</option>
+                                                    <option value="low" {% if task.priority == 'low' %}selected{% endif %}>Низкий</option>
+                                                    <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>Средний</option>
+                                                    <option value="high" {% if task.priority == 'high' %}selected{% endif %}>Высокий</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">Сложность</label>
                                                 <select name="difficulty" class="form-select">
-                                                    <option value="low" {% if task.difficulty == 'low' %}selected{% endif %}>low</option>
-                                                    <option value="medium" {% if task.difficulty == 'medium' %}selected{% endif %}>medium</option>
-                                                    <option value="high" {% if task.difficulty == 'high' %}selected{% endif %}>high</option>
+                                                    <option value="low" {% if task.difficulty == 'low' %}selected{% endif %}>Низкая</option>
+                                                    <option value="medium" {% if task.difficulty == 'medium' %}selected{% endif %}>Средняя</option>
+                                                    <option value="high" {% if task.difficulty == 'high' %}selected{% endif %}>Высокая</option>
                                                 </select>
                                             </div>
                                             <div class="col-12 d-flex justify-content-end gap-2">
@@ -156,5 +172,19 @@ function toggleTaskEdit(taskId) {
 
     row.classList.toggle('d-none');
 }
+
+(function openSelectedTask() {
+    const selectedTaskId = {{ selected_task_id if selected_task_id is not none else 'null' }};
+    if (!selectedTaskId) {
+        return;
+    }
+
+    const row = document.getElementById(`task-row-${selectedTaskId}`);
+    if (!row) {
+        return;
+    }
+
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+})();
 </script>
 {% endblock %}

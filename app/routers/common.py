@@ -1,16 +1,56 @@
-import os
+import secrets
 from datetime import datetime
+from hmac import compare_digest
 from urllib.parse import quote_plus
 
-from fastapi import Request
+from fastapi import Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup, escape
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
 from ..models import User
+from ..settings import settings
 
 templates = Jinja2Templates(directory='app/templates')
+
+LEVEL_LABELS = {
+    'high': 'Высокий',
+    'medium': 'Средний',
+    'low': 'Низкий',
+}
+
+DIFFICULTY_LABELS = {
+    'high': 'Высокая',
+    'medium': 'Средняя',
+    'low': 'Низкая',
+}
+
+
+def csrf_input(request: Request) -> Markup:
+    token = request.session.get('csrf_token')
+    if not token:
+        token = secrets.token_urlsafe(32)
+        request.session['csrf_token'] = token
+    return Markup(f'<input type="hidden" name="csrf_token" value="{escape(token)}">')
+
+
+templates.env.globals['csrf_input'] = csrf_input
+
+
+def level_label(value: str | None) -> str:
+    return LEVEL_LABELS.get((value or '').lower(), value or '')
+
+
+templates.env.globals['level_label'] = level_label
+
+
+def difficulty_label(value: str | None) -> str:
+    return DIFFICULTY_LABELS.get((value or '').lower(), value or '')
+
+
+templates.env.globals['difficulty_label'] = difficulty_label
 
 SCHEDULE_UNIT_OPTIONS = {
     'pair': {
@@ -91,6 +131,16 @@ def require_user(request: Request, db: Session):
     return user
 
 
+async def validate_csrf(request: Request, csrf_token: str | None = Form(None)):
+    session_token = request.session.get('csrf_token')
+    if not session_token:
+        request.session['csrf_token'] = secrets.token_urlsafe(32)
+        session_token = request.session['csrf_token']
+
+    if not csrf_token or not compare_digest(csrf_token, session_token):
+        raise HTTPException(status_code=403, detail='Invalid CSRF token.')
+
+
 def get_schedule_terms(user: User | None):
     schedule_unit = getattr(user, 'schedule_unit', None) or 'class'
     return SCHEDULE_UNIT_OPTIONS.get(schedule_unit, SCHEDULE_UNIT_OPTIONS['class'])
@@ -108,6 +158,5 @@ def is_valid_schedule_time_range(start_time, end_time):
 
 
 def is_local_private_data_enabled(request: Request) -> bool:
-    enabled = os.getenv('ALLOW_LOCAL_PRIVATE_DATA', 'false').lower() == 'true'
     client_host = request.client.host if request.client else ''
-    return enabled and client_host in {'127.0.0.1', '::1', 'localhost'}
+    return settings.allow_local_private_data and client_host in {'127.0.0.1', '::1', 'localhost'}

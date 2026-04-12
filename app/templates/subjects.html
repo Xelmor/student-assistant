@@ -15,6 +15,7 @@
             <div class="card-body">
                 <h3 class="mb-3">Добавить предмет</h3>
                 <form method="post" action="/subjects/add">
+                    {{ csrf_input(request) }}
                     <div class="mb-3"><label class="form-label">Название</label><input type="text" name="name" class="form-control" required></div>
                     <div class="mb-3"><label class="form-label">Преподаватель</label><input type="text" name="teacher" class="form-control"></div>
                     <div class="mb-3"><label class="form-label">Аудитория</label><input type="text" name="room" class="form-control"></div>
@@ -39,7 +40,10 @@
                                         <h5>{{ subject.name }}</h5>
                                         <div class="action-group">
                                             <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleSubjectEdit({{ subject.id }})">Изменить</button>
-                                            <a href="/subjects/delete/{{ subject.id }}" class="btn btn-sm action-btn action-btn-delete">Удалить</a>
+                                            <form method="post" action="/subjects/delete/{{ subject.id }}" class="d-inline">
+                                                {{ csrf_input(request) }}
+                                                <button type="submit" class="btn btn-sm action-btn action-btn-delete">Удалить</button>
+                                            </form>
                                         </div>
                                     </div>
                                     <p class="mb-1"><strong>Преподаватель:</strong> {{ subject.teacher or '—' }}</p>
@@ -47,6 +51,7 @@
                                     <p class="mb-0 text-muted">{{ subject.notes or 'Без заметок' }}</p>
                                     <div id="subject-edit-{{ subject.id }}" class="d-none mt-3 pt-3 border-top">
                                         <form method="post" action="/subjects/edit/{{ subject.id }}">
+                                            {{ csrf_input(request) }}
                                             <div class="mb-3">
                                                 <label class="form-label">Название</label>
                                                 <input type="text" name="name" class="form-control" value="{{ subject.name }}" required>
