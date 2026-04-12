@@ -25,6 +25,15 @@ def env_flag(name: str, default: str = 'false') -> bool:
     return getenv(name, default).strip().lower() == 'true'
 
 
+def normalize_database_url(url: str) -> str:
+    normalized = url.strip()
+    if normalized.startswith('postgres://'):
+        return f"postgresql+psycopg://{normalized[len('postgres://'):]}"
+    if normalized.startswith('postgresql://'):
+        return f"postgresql+psycopg://{normalized[len('postgresql://'):]}"
+    return normalized
+
+
 @dataclass(frozen=True)
 class Settings:
     app_env: str
@@ -57,7 +66,7 @@ def get_settings() -> Settings:
         app_env=app_env,
         secret_key=secret_key,
         cookie_secure=cookie_secure,
-        database_url=getenv('DATABASE_URL', 'sqlite:///./student_assistant.db'),
+        database_url=normalize_database_url(getenv('DATABASE_URL', 'sqlite:///./student_assistant.db')),
         host=getenv('HOST', '0.0.0.0'),
         port=int(getenv('PORT', '8000')),
         reload=env_flag('RELOAD'),

@@ -34,9 +34,11 @@ def ensure_tasks_schema():
     if 'completed_at' in columns:
         return
 
+    completed_at_type = 'DATETIME' if engine.dialect.name == 'sqlite' else 'TIMESTAMP'
+
     with engine.begin() as connection:
         connection.execute(
-            text("ALTER TABLE tasks ADD COLUMN completed_at DATETIME")
+            text(f"ALTER TABLE tasks ADD COLUMN completed_at {completed_at_type}")
         )
 
 

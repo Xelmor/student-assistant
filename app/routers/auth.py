@@ -10,6 +10,14 @@ from .common import templates, validate_csrf
 router = APIRouter()
 
 
+def normalize_username(value: str) -> str:
+    return value.strip()
+
+
+def normalize_email(value: str) -> str:
+    return value.strip().lower()
+
+
 @router.get('/', response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
@@ -34,6 +42,9 @@ def register(
     _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
+    username = normalize_username(username)
+    email = normalize_email(email)
+
     existing = db.query(User).filter((User.username == username) | (User.email == email)).first()
     if existing:
         return templates.TemplateResponse(
@@ -72,7 +83,10 @@ def login(
     _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
-    user = db.query(User).filter(User.username == username).first()
+    username = normalize_username(username)
+    normalized_email = normalize_email(username)
+
+    user = db.query(User).filter((User.username == username) | (User.email == normalized_email)).first()
     if not user or not verify_password(password, user.password_hash):
         return templates.TemplateResponse(
             request,
@@ -104,6 +118,9 @@ def forgot_password(
     _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
+    username = normalize_username(username)
+    email = normalize_email(email)
+
     if new_password != confirm_password:
         return templates.TemplateResponse(
             request,
