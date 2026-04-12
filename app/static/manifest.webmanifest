@@ -1,0 +1,19 @@
+{
+  "name": "Student Assistant",
+  "short_name": "Student App",
+  "description": "Учебный помощник с задачами, расписанием, заметками и календарем.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5efe6",
+  "theme_color": "#f77f45",
+  "icons": [
+    {
+      "src": "/static/pwa/icon-app.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
