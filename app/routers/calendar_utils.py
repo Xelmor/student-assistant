@@ -4,9 +4,11 @@ from datetime import date, datetime, timedelta
 from sqlalchemy.orm import Session
 
 from ..models import ScheduleItem, Task, User
+from ..settings import settings
+from ..utils import current_date, current_time
 from .common import get_schedule_terms
 
-APP_TIMEZONE = 'Europe/Moscow'
+APP_TIMEZONE = settings.timezone
 VIEW_MODE_OPTIONS = {'month', 'week'}
 
 MONTH_NAMES_RU = {
@@ -26,7 +28,7 @@ MONTH_NAMES_RU = {
 
 
 def normalize_calendar_period(year: int | None, month: int | None):
-    today = datetime.now().date()
+    today = current_date()
     safe_year = year or today.year
     safe_month = month or today.month
 
@@ -86,7 +88,7 @@ def get_intensity_level(day_events):
 
 
 def build_day_snapshot(day: date, day_events, current_month: int | None = None):
-    today = datetime.now().date()
+    today = current_date()
     schedule_events = [event for event in day_events if event['type'] == 'schedule']
     task_events = [event for event in day_events if event['type'] == 'task']
     first_schedule_start = schedule_events[0]['start'].strftime('%H:%M') if schedule_events else None
@@ -143,7 +145,7 @@ def build_calendar_event_map(user: User, db: Session, year: int, month: int):
                     'badge': format_calendar_badge('task', task.priority),
                     'priority': task.priority,
                     'is_completed': task.is_completed,
-                    'is_overdue': (not task.is_completed) and task.deadline < datetime.now(),
+                    'is_overdue': (not task.is_completed) and task.deadline < current_time().replace(tzinfo=None),
                     'description': task.description or '',
                     'room': None,
                 }
@@ -228,7 +230,7 @@ def summarize_selected_day(selected_events):
 
 def build_upcoming_events(event_map, selected_date: date, limit: int = 6):
     upcoming = []
-    now = datetime.now()
+    now = current_time().replace(tzinfo=None)
     for day in sorted(day for day in event_map.keys() if day >= selected_date):
         for event in event_map[day]:
             if event['end'] < now:
@@ -290,7 +292,7 @@ def build_calendar_page_context(
     safe_view_mode = view_mode if view_mode in VIEW_MODE_OPTIONS else 'month'
     selected_date = iso_date_or_none(selected_date_raw)
     if selected_date is None or selected_date not in month_context['event_map']:
-        today = datetime.now().date()
+        today = current_date()
         if today in month_context['event_map'] and today.month == safe_month and today.year == safe_year:
             selected_date = today
         else:

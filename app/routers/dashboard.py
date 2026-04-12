@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import ScheduleItem, Subject, Task
-from ..utils import WEEKDAYS, calculate_task_score
+from ..utils import WEEKDAYS, calculate_task_score, current_time
 from .common import MOTIVATIONAL_QUOTES, get_schedule_terms, is_local_private_data_enabled, require_user, templates
 
 router = APIRouter()
@@ -20,7 +20,7 @@ def build_streak_state(completed_tasks):
         for task in completed_tasks
         if task.completed_at or task.created_at
     }
-    today = datetime.now().date()
+    today = current_time().date()
 
     if not completed_dates:
         return {
@@ -58,7 +58,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     if not user:
         return RedirectResponse('/login', status_code=302)
 
-    now = datetime.now()
+    now = current_time().replace(tzinfo=None)
     tasks = db.query(Task).filter(Task.user_id == user.id).all()
     pending_tasks = [t for t in tasks if not t.is_completed]
     completed_tasks = [t for t in tasks if t.is_completed]

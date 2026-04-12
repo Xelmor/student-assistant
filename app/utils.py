@@ -1,4 +1,17 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from .settings import settings
+
+APP_ZONE = ZoneInfo(settings.timezone)
+
+
+def current_time() -> datetime:
+    return datetime.now(APP_ZONE)
+
+
+def current_date():
+    return current_time().date()
 
 WEEKDAYS = {
     0: 'Понедельник',
@@ -17,7 +30,7 @@ DIFFICULTY_ORDER = {'high': 3, 'medium': 2, 'low': 1}
 def calculate_task_score(task) -> int:
     score = 0
     if task.deadline:
-        days_left = (task.deadline - datetime.now()).days
+        days_left = (task.deadline - current_time().replace(tzinfo=None)).days
         if days_left <= 0:
             score += 10
         elif days_left <= 1:

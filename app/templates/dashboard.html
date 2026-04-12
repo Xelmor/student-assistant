@@ -37,7 +37,7 @@
         </div>
         </div>
         <div class="dashboard-widget-stack">
-            <div class="dashboard-badge">&#1057;&#1077;&#1075;&#1086;&#1076;&#1085;&#1103;: {{ now.strftime('%d.%m.%Y') }}</div>
+            <div class="dashboard-badge" id="dashboard-live-date" data-server-date="{{ now.strftime('%Y-%m-%d') }}">&#1057;&#1077;&#1075;&#1086;&#1076;&#1085;&#1103;: {{ now.strftime('%d.%m.%Y') }}</div>
             <div class="dashboard-clock" id="dashboard-live-clock" data-initial-time="{{ now.strftime('%H:%M:%S') }}">
                 {{ now.strftime('%H:%M:%S') }}
             </div>
@@ -230,6 +230,7 @@
 <script>
 function startDashboardClock() {
     const clock = document.getElementById('dashboard-live-clock');
+    const liveDate = document.getElementById('dashboard-live-date');
     const remainingChip = document.getElementById('dashboard-lesson-remaining');
     if (!clock) {
         return;
@@ -258,6 +259,21 @@ function startDashboardClock() {
             second: '2-digit',
         });
         clock.textContent = time;
+
+        if (liveDate) {
+            const browserDate = now.toLocaleDateString('ru-RU');
+            liveDate.textContent = `Сегодня: ${browserDate}`;
+
+            const isoBrowserDate = [
+                now.getFullYear(),
+                String(now.getMonth() + 1).padStart(2, '0'),
+                String(now.getDate()).padStart(2, '0'),
+            ].join('-');
+
+            if (liveDate.dataset.serverDate && liveDate.dataset.serverDate !== isoBrowserDate) {
+                window.location.reload();
+            }
+        }
     }
 
     function startLessonCountdown() {

@@ -40,6 +40,7 @@ class Settings:
     secret_key: str
     cookie_secure: bool
     database_url: str
+    timezone: str
     host: str
     port: int
     reload: bool
@@ -67,6 +68,7 @@ def get_settings() -> Settings:
         secret_key=secret_key,
         cookie_secure=cookie_secure,
         database_url=normalize_database_url(getenv('DATABASE_URL', 'sqlite:///./student_assistant.db')),
+        timezone=(getenv('APP_TIMEZONE') or 'Europe/Moscow').strip() or 'Europe/Moscow',
         host=getenv('HOST', '0.0.0.0'),
         port=int(getenv('PORT', '8000')),
         reload=env_flag('RELOAD'),
