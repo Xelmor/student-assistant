@@ -1513,6 +1513,7 @@ textarea.form-control {
 
 .profile-meta-item strong {
     font-size: 1rem;
+    overflow-wrap: anywhere;
 }
 
 .profile-action-stack {
@@ -1578,6 +1579,10 @@ textarea.form-control {
     gap: 0.75rem;
 }
 
+.data-action-row .btn {
+    flex: 1 1 12rem;
+}
+
 .data-card-note {
     margin-top: 1rem;
     padding: 0.95rem 1rem;
@@ -1632,6 +1637,10 @@ textarea.form-control {
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1.25rem;
+}
+
+.calendar-toolbar > div {
+    min-width: 0;
 }
 
 .calendar-toolbar-label {
@@ -2435,16 +2444,61 @@ textarea.form-control {
 
     .profile-hero {
         padding: 1.35rem;
+        gap: 1rem;
     }
 
     .profile-hero-badge {
         width: 100%;
         align-items: flex-start;
+        padding: 0.95rem 1rem;
+        gap: 0.85rem;
     }
 
     .profile-hero-badge > div:last-child {
         min-width: 0;
         flex: 1 1 auto;
+    }
+
+    .profile-hero-copy {
+        font-size: 0.96rem;
+        line-height: 1.55;
+    }
+
+    .profile-meta-list {
+        margin-top: 1.1rem;
+        gap: 0.7rem;
+    }
+
+    .profile-meta-item {
+        padding: 0.8rem 0.9rem;
+    }
+
+    .profile-action-stack .btn,
+    .data-action-row .btn,
+    form[action="/profile"] .btn {
+        width: 100%;
+    }
+
+    form[action="/profile"] .col-12.d-flex {
+        display: grid !important;
+        gap: 0.75rem !important;
+    }
+
+    .data-card .card-body,
+    .profile-summary-card .card-body {
+        display: grid;
+        gap: 0.95rem;
+    }
+
+    .data-card-copy,
+    .data-card-note {
+        font-size: 0.94rem;
+        line-height: 1.55;
+    }
+
+    .data-action-row {
+        display: grid;
+        grid-template-columns: 1fr;
     }
 
     .profile-button {
@@ -2454,25 +2508,177 @@ textarea.form-control {
 
     .calendar-hero {
         padding: 1.35rem;
+        gap: 1rem;
+    }
+
+    .calendar-hero-copy {
+        font-size: 0.96rem;
+        line-height: 1.55;
+    }
+
+    .calendar-hero-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-hero-actions .btn {
+        width: 100%;
+    }
+
+    .calendar-toolbar {
+        display: grid;
+        grid-template-columns: 2.8rem minmax(0, 1fr) 2.8rem;
+        gap: 0.6rem;
+        align-items: center;
+    }
+
+    .calendar-toolbar > div {
+        text-align: center;
+    }
+
+    .calendar-toolbar-title {
+        font-size: 1.05rem;
     }
 
     .calendar-grid {
-        gap: 0.45rem;
+        gap: 0.28rem;
     }
 
     .calendar-day-card {
-        min-height: 6.2rem;
-        padding: 0.7rem;
+        min-height: 0;
+        aspect-ratio: 1 / 1;
+        padding: 0.42rem;
+        border-radius: 16px;
+        gap: 0.35rem;
     }
 
-    .agenda-summary-grid,
-    .week-strip,
+    .calendar-grid-head {
+        margin-bottom: 0.45rem;
+    }
+
+    .calendar-grid-head span {
+        font-size: 0.62rem;
+        letter-spacing: 0.04em;
+    }
+
+    .calendar-day-head {
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .calendar-day-number {
+        font-size: 0.95rem;
+    }
+
+    .calendar-day-count {
+        min-width: 1.25rem;
+        height: 1.25rem;
+        padding: 0 0.25rem;
+        font-size: 0.62rem;
+    }
+
+    .calendar-load-meter,
+    .calendar-day-preview {
+        display: none;
+    }
+
     .week-board {
         grid-template-columns: 1fr;
     }
 
+    .agenda-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .week-strip {
+        display: flex;
+        gap: 0.6rem;
+        margin-inline: -0.15rem;
+        padding: 0.1rem 0.15rem 0.35rem;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .week-strip::-webkit-scrollbar {
+        display: none;
+    }
+
+    .week-strip-day {
+        flex: 0 0 8.6rem;
+        scroll-snap-align: start;
+        padding: 0.75rem;
+        border-radius: 18px;
+    }
+
+    .week-strip-date {
+        font-size: 1rem;
+    }
+
+    .week-strip-badges {
+        font-size: 0.74rem;
+    }
+
+    .week-column {
+        display: none;
+    }
+
+    .week-column.is-selected {
+        display: flex;
+        min-height: 0;
+        padding: 0.85rem;
+        border-radius: 20px;
+    }
+
+    .week-column-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    .week-column-title {
+        font-size: 1rem;
+    }
+
     .agenda-item {
         grid-template-columns: 1fr;
+        gap: 0.45rem;
+        padding: 0.85rem 0.9rem;
+    }
+
+    .agenda-item-time {
+        font-size: 0.9rem;
+    }
+
+    .agenda-item-title {
+        font-size: 0.96rem;
+    }
+
+    .agenda-summary-grid {
+        gap: 0.6rem;
+    }
+
+    .agenda-summary-card {
+        padding: 0.8rem 0.85rem;
+        border-radius: 16px;
+    }
+
+    .agenda-summary-card strong {
+        font-size: 0.9rem;
+        line-height: 1.35;
+    }
+
+    .upcoming-item {
+        grid-template-columns: 2.85rem minmax(0, 1fr);
+        padding: 0.75rem 0.8rem;
+    }
+
+    .upcoming-item-date {
+        width: 2.85rem;
+        height: 2.85rem;
+        border-radius: 14px;
     }
 
     .calendar-mini-event {
@@ -2484,7 +2690,7 @@ textarea.form-control {
         width: 100%;
     }
 
-.calendar-mode-button {
+    .calendar-mode-button {
         width: 100%;
     }
 }
