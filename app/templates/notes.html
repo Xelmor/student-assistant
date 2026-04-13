@@ -5,7 +5,7 @@
     <div>
         <span class="eyebrow">База знаний</span>
         <h1 class="mt-3 mb-2">Заметки, ссылки и идеи по учебе</h1>
-        <p>Храни конспекты, полезные ссылки и быстрые мысли в аккуратном личном пространстве.</p>
+        <p>Храни конспекты, полезные ссылки и быстрые мысли. На телефоне заметки открываются карточками и редактируются прямо на месте.</p>
     </div>
 </div>
 
@@ -25,7 +25,7 @@
                         <select name="subject_id" class="form-select">
                             <option value="">Без предмета</option>
                             {% for subject in subjects %}
-                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                            <option value="{{ subject.id }}">{{ subject.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -42,72 +42,140 @@
             </div>
         </div>
     </div>
+
     <div class="col-lg-8">
         <div class="card shadow-sm">
             <div class="card-body">
                 <h3 class="mb-3">Мои заметки</h3>
                 {% if notes %}
+                <div class="notes-desktop-list">
                     {% for note in notes %}
-                        <div class="card mb-3 note-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                    <div>
-                                        <h5>{{ note.title }}</h5>
-                                        <div class="small text-muted mb-2">
-                                            {% if note.subject %}{{ note.subject.name }} · {% endif %}
-                                            {{ note.created_at.strftime('%d.%m.%Y %H:%M') }}
-                                        </div>
-                                    </div>
-                                    <div class="action-group">
-                                        <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleNoteEdit({{ note.id }})">Изменить</button>
-                                        <form method="post" action="/notes/delete/{{ note.id }}" class="d-inline">
-                                            {{ csrf_input(request) }}
-                                            <button type="submit" class="btn btn-sm action-btn action-btn-delete">Удалить</button>
-                                        </form>
+                    <div class="card mb-3 note-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <div>
+                                    <h5>{{ note.title }}</h5>
+                                    <div class="small text-muted mb-2">
+                                        {% if note.subject %}{{ note.subject.name }} · {% endif %}
+                                        {{ note.created_at.strftime('%d.%m.%Y %H:%M') }}
                                     </div>
                                 </div>
-                                {% if note.link %}
-                                <p><a href="{{ note.link }}" target="_blank" rel="noopener noreferrer">{{ note.link }}</a></p>
-                                {% endif %}
-                                <p class="mb-0">{{ note.content or '' }}</p>
-
-                                <div id="note-edit-{{ note.id }}" class="d-none mt-3 pt-3 border-top">
-                                    <form method="post" action="/notes/edit/{{ note.id }}">
+                                <div class="action-group">
+                                    <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleNoteEdit({{ note.id }})">Изменить</button>
+                                    <form method="post" action="/notes/delete/{{ note.id }}" class="d-inline">
                                         {{ csrf_input(request) }}
-                                        <div class="row g-3">
-                                            <div class="col-12">
-                                                <label class="form-label">Заголовок</label>
-                                                <input type="text" name="title" class="form-control" value="{{ note.title }}" required>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Предмет</label>
-                                                <select name="subject_id" class="form-select">
-                                                    <option value="">Без предмета</option>
-                                                    {% for subject in subjects %}
-                                                        <option value="{{ subject.id }}" {% if note.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Ссылка</label>
-                                                <input type="url" name="link" class="form-control" value="{{ note.link or '' }}">
-                                            </div>
-                                            <div class="col-12">
-                                                <label class="form-label">Текст</label>
-                                                <textarea name="content" class="form-control" rows="5">{{ note.content or '' }}</textarea>
-                                            </div>
-                                            <div class="col-12 d-flex justify-content-end gap-2">
-                                                <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleNoteEdit({{ note.id }})">Отмена</button>
-                                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                            </div>
-                                        </div>
+                                        <button type="submit" class="btn btn-sm action-btn action-btn-delete">Удалить</button>
                                     </form>
                                 </div>
                             </div>
+                            {% if note.link %}
+                            <p><a href="{{ note.link }}" target="_blank" rel="noopener noreferrer">{{ note.link }}</a></p>
+                            {% endif %}
+                            <p class="mb-0">{{ note.content or '' }}</p>
+
+                            <div id="note-edit-{{ note.id }}" class="d-none mt-3 pt-3 border-top">
+                                <form method="post" action="/notes/edit/{{ note.id }}">
+                                    {{ csrf_input(request) }}
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="form-label">Заголовок</label>
+                                            <input type="text" name="title" class="form-control" value="{{ note.title }}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Предмет</label>
+                                            <select name="subject_id" class="form-select">
+                                                <option value="">Без предмета</option>
+                                                {% for subject in subjects %}
+                                                <option value="{{ subject.id }}" {% if note.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Ссылка</label>
+                                            <input type="url" name="link" class="form-control" value="{{ note.link or '' }}">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Текст</label>
+                                            <textarea name="content" class="form-control" rows="5">{{ note.content or '' }}</textarea>
+                                        </div>
+                                        <div class="col-12 d-flex justify-content-end gap-2">
+                                            <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleNoteEdit({{ note.id }})">Отмена</button>
+                                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
+                    </div>
                     {% endfor %}
+                </div>
+
+                <div class="notes-mobile-list">
+                    {% for note in notes %}
+                    <article class="note-mobile-card" id="note-mobile-card-{{ note.id }}">
+                        <div class="note-mobile-head">
+                            <div class="note-mobile-main">
+                                <div class="note-mobile-title">{{ note.title }}</div>
+                                <div class="note-mobile-subtitle">
+                                    {% if note.subject %}{{ note.subject.name }} · {% endif %}
+                                    {{ note.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if note.link %}
+                        <a href="{{ note.link }}" target="_blank" rel="noopener noreferrer" class="note-mobile-link">{{ note.link }}</a>
+                        {% endif %}
+
+                        {% if note.content %}
+                        <div class="note-mobile-copy">{{ note.content }}</div>
+                        {% endif %}
+
+                        <div class="note-mobile-actions">
+                            <button type="button" class="btn action-btn action-btn-edit" onclick="toggleNoteEdit({{ note.id }})">Изменить</button>
+                            <form method="post" action="/notes/delete/{{ note.id }}">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn action-btn action-btn-delete">Удалить</button>
+                            </form>
+                        </div>
+
+                        <div id="note-mobile-edit-{{ note.id }}" class="note-mobile-edit d-none">
+                            <form method="post" action="/notes/edit/{{ note.id }}" class="note-mobile-edit-form">
+                                {{ csrf_input(request) }}
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Заголовок</label>
+                                        <input type="text" name="title" class="form-control" value="{{ note.title }}" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Предмет</label>
+                                        <select name="subject_id" class="form-select">
+                                            <option value="">Без предмета</option>
+                                            {% for subject in subjects %}
+                                            <option value="{{ subject.id }}" {% if note.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Ссылка</label>
+                                        <input type="url" name="link" class="form-control" value="{{ note.link or '' }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Текст</label>
+                                        <textarea name="content" class="form-control" rows="5">{{ note.content or '' }}</textarea>
+                                    </div>
+                                    <div class="col-12 note-mobile-edit-actions">
+                                        <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleNoteEdit({{ note.id }})">Отмена</button>
+                                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
                 {% else %}
-                    <p class="text-muted">Пока заметок нет.</p>
+                <p class="text-muted">Пока заметок нет.</p>
                 {% endif %}
             </div>
         </div>
@@ -116,12 +184,32 @@
 
 <script>
 function toggleNoteEdit(noteId) {
-    const block = document.getElementById(`note-edit-${noteId}`);
-    if (!block) {
+    const desktopBlock = document.getElementById(`note-edit-${noteId}`);
+    const mobileBlock = document.getElementById(`note-mobile-edit-${noteId}`);
+    const currentBlock = mobileBlock || desktopBlock;
+    if (!currentBlock) {
         return;
     }
 
-    block.classList.toggle('d-none');
+    const shouldOpen = currentBlock.classList.contains('d-none');
+
+    document.querySelectorAll('[id^="note-edit-"], [id^="note-mobile-edit-"]').forEach((element) => {
+        element.classList.add('d-none');
+    });
+
+    if (!shouldOpen) {
+        return;
+    }
+
+    if (desktopBlock) {
+        desktopBlock.classList.remove('d-none');
+    }
+
+    if (mobileBlock) {
+        mobileBlock.classList.remove('d-none');
+        const scrollTarget = document.getElementById(`note-mobile-card-${noteId}`) || mobileBlock;
+        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 </script>
 {% endblock %}

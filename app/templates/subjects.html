@@ -5,7 +5,7 @@
     <div>
         <span class="eyebrow">Каталог предметов</span>
         <h1 class="mt-3 mb-2">Управляй учебными дисциплинами без беспорядка</h1>
-        <p>Добавляй предметы, цвета, преподавателей и заметки, а потом редактируй всё прямо в карточках.</p>
+        <p>Добавляй предметы, преподавателей, аудитории и заметки, а на телефоне редактируй всё прямо в карточках.</p>
     </div>
 </div>
 
@@ -16,75 +16,155 @@
                 <h3 class="mb-3">Добавить предмет</h3>
                 <form method="post" action="/subjects/add">
                     {{ csrf_input(request) }}
-                    <div class="mb-3"><label class="form-label">Название</label><input type="text" name="name" class="form-control" required></div>
-                    <div class="mb-3"><label class="form-label">Преподаватель</label><input type="text" name="teacher" class="form-control"></div>
-                    <div class="mb-3"><label class="form-label">Аудитория</label><input type="text" name="room" class="form-control"></div>
-                    <div class="mb-3"><label class="form-label">Цвет</label><input type="color" name="color" class="form-control form-control-color" value="#0d6efd"></div>
-                    <div class="mb-3"><label class="form-label">Заметка</label><textarea name="notes" class="form-control" rows="3"></textarea></div>
+                    <div class="mb-3">
+                        <label class="form-label">Название</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Преподаватель</label>
+                        <input type="text" name="teacher" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Аудитория</label>
+                        <input type="text" name="room" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Цвет</label>
+                        <input type="color" name="color" class="form-control form-control-color" value="#0d6efd">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Заметка</label>
+                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                    </div>
                     <button class="btn btn-primary w-100">Добавить</button>
                 </form>
             </div>
         </div>
     </div>
+
     <div class="col-lg-8">
         <div class="card shadow-sm">
             <div class="card-body">
                 <h3 class="mb-3">Мои предметы</h3>
                 {% if subjects %}
-                    <div class="row g-3">
+                <div class="subjects-desktop-list row g-3">
                     {% for subject in subjects %}
-                        <div class="col-md-6">
-                            <div class="card h-100 subject-card" style="--subject-color: {{ subject.color }};">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <h5>{{ subject.name }}</h5>
-                                        <div class="action-group">
-                                            <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleSubjectEdit({{ subject.id }})">Изменить</button>
-                                            <form method="post" action="/subjects/delete/{{ subject.id }}" class="d-inline">
-                                                {{ csrf_input(request) }}
-                                                <button type="submit" class="btn btn-sm action-btn action-btn-delete">Удалить</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                    <p class="mb-1"><strong>Преподаватель:</strong> {{ subject.teacher or '—' }}</p>
-                                    <p class="mb-1"><strong>Аудитория:</strong> {{ subject.room or '—' }}</p>
-                                    <p class="mb-0 text-muted">{{ subject.notes or 'Без заметок' }}</p>
-                                    <div id="subject-edit-{{ subject.id }}" class="d-none mt-3 pt-3 border-top">
-                                        <form method="post" action="/subjects/edit/{{ subject.id }}">
+                    <div class="col-md-6">
+                        <div class="card h-100 subject-card" style="--subject-color: {{ subject.color }};">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start gap-3">
+                                    <h5>{{ subject.name }}</h5>
+                                    <div class="action-group">
+                                        <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleSubjectEdit({{ subject.id }})">Изменить</button>
+                                        <form method="post" action="/subjects/delete/{{ subject.id }}" class="d-inline">
                                             {{ csrf_input(request) }}
-                                            <div class="mb-3">
-                                                <label class="form-label">Название</label>
-                                                <input type="text" name="name" class="form-control" value="{{ subject.name }}" required>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Преподаватель</label>
-                                                <input type="text" name="teacher" class="form-control" value="{{ subject.teacher or '' }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Аудитория</label>
-                                                <input type="text" name="room" class="form-control" value="{{ subject.room or '' }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Цвет</label>
-                                                <input type="color" name="color" class="form-control form-control-color" value="{{ subject.color or '#0d6efd' }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Заметка</label>
-                                                <textarea name="notes" class="form-control" rows="3">{{ subject.notes or '' }}</textarea>
-                                            </div>
-                                            <div class="d-flex justify-content-end gap-2">
-                                                <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleSubjectEdit({{ subject.id }})">Отмена</button>
-                                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                            </div>
+                                            <button type="submit" class="btn btn-sm action-btn action-btn-delete">Удалить</button>
                                         </form>
                                     </div>
                                 </div>
+                                <p class="mb-1"><strong>Преподаватель:</strong> {{ subject.teacher or '—' }}</p>
+                                <p class="mb-1"><strong>Аудитория:</strong> {{ subject.room or '—' }}</p>
+                                <p class="mb-0 text-muted">{{ subject.notes or 'Без заметок' }}</p>
+
+                                <div id="subject-edit-{{ subject.id }}" class="d-none mt-3 pt-3 border-top">
+                                    <form method="post" action="/subjects/edit/{{ subject.id }}">
+                                        {{ csrf_input(request) }}
+                                        <div class="mb-3">
+                                            <label class="form-label">Название</label>
+                                            <input type="text" name="name" class="form-control" value="{{ subject.name }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Преподаватель</label>
+                                            <input type="text" name="teacher" class="form-control" value="{{ subject.teacher or '' }}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Аудитория</label>
+                                            <input type="text" name="room" class="form-control" value="{{ subject.room or '' }}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Цвет</label>
+                                            <input type="color" name="color" class="form-control form-control-color" value="{{ subject.color or '#0d6efd' }}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Заметка</label>
+                                            <textarea name="notes" class="form-control" rows="3">{{ subject.notes or '' }}</textarea>
+                                        </div>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleSubjectEdit({{ subject.id }})">Отмена</button>
+                                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                    {% endfor %}
                     </div>
+                    {% endfor %}
+                </div>
+
+                <div class="subjects-mobile-list">
+                    {% for subject in subjects %}
+                    <article class="subject-mobile-card" style="--subject-color: {{ subject.color }};" id="subject-mobile-card-{{ subject.id }}">
+                        <div class="subject-mobile-head">
+                            <div class="subject-mobile-color" aria-hidden="true"></div>
+                            <div class="subject-mobile-main">
+                                <div class="subject-mobile-title">{{ subject.name }}</div>
+                                <div class="subject-mobile-copy">{{ subject.teacher or 'Преподаватель не указан' }}</div>
+                            </div>
+                        </div>
+
+                        <div class="subject-mobile-meta">
+                            <div class="subject-mobile-meta-item">
+                                <span>Аудитория</span>
+                                <strong>{{ subject.room or '—' }}</strong>
+                            </div>
+                            <div class="subject-mobile-meta-item">
+                                <span>Заметка</span>
+                                <strong>{{ subject.notes or 'Без заметок' }}</strong>
+                            </div>
+                        </div>
+
+                        <div class="subject-mobile-actions">
+                            <button type="button" class="btn action-btn action-btn-edit" onclick="toggleSubjectEdit({{ subject.id }})">Изменить</button>
+                            <form method="post" action="/subjects/delete/{{ subject.id }}">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn action-btn action-btn-delete">Удалить</button>
+                            </form>
+                        </div>
+
+                        <div id="subject-mobile-edit-{{ subject.id }}" class="subject-mobile-edit d-none">
+                            <form method="post" action="/subjects/edit/{{ subject.id }}" class="subject-mobile-edit-form">
+                                {{ csrf_input(request) }}
+                                <div class="mb-3">
+                                    <label class="form-label">Название</label>
+                                    <input type="text" name="name" class="form-control" value="{{ subject.name }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Преподаватель</label>
+                                    <input type="text" name="teacher" class="form-control" value="{{ subject.teacher or '' }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Аудитория</label>
+                                    <input type="text" name="room" class="form-control" value="{{ subject.room or '' }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Цвет</label>
+                                    <input type="color" name="color" class="form-control form-control-color" value="{{ subject.color or '#0d6efd' }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Заметка</label>
+                                    <textarea name="notes" class="form-control" rows="3">{{ subject.notes or '' }}</textarea>
+                                </div>
+                                <div class="subject-mobile-edit-actions">
+                                    <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleSubjectEdit({{ subject.id }})">Отмена</button>
+                                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
                 {% else %}
-                    <p class="text-muted">Пока предметов нет.</p>
+                <p class="text-muted">Пока предметов нет.</p>
                 {% endif %}
             </div>
         </div>
@@ -93,12 +173,32 @@
 
 <script>
 function toggleSubjectEdit(subjectId) {
-    const card = document.getElementById(`subject-edit-${subjectId}`);
-    if (!card) {
+    const desktopCard = document.getElementById(`subject-edit-${subjectId}`);
+    const mobileCard = document.getElementById(`subject-mobile-edit-${subjectId}`);
+    const currentBlock = mobileCard || desktopCard;
+    if (!currentBlock) {
         return;
     }
 
-    card.classList.toggle('d-none');
+    const shouldOpen = currentBlock.classList.contains('d-none');
+
+    document.querySelectorAll('[id^="subject-edit-"], [id^="subject-mobile-edit-"]').forEach((element) => {
+        element.classList.add('d-none');
+    });
+
+    if (!shouldOpen) {
+        return;
+    }
+
+    if (desktopCard) {
+        desktopCard.classList.remove('d-none');
+    }
+
+    if (mobileCard) {
+        mobileCard.classList.remove('d-none');
+        const scrollTarget = document.getElementById(`subject-mobile-card-${subjectId}`) || mobileCard;
+        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 </script>
 {% endblock %}

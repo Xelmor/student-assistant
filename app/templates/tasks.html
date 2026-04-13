@@ -56,7 +56,7 @@
             <div class="card-body">
                 <h3 class="mb-3">Список задач</h3>
                 {% if tasks %}
-                <div class="table-responsive">
+                <div class="tasks-desktop-list table-responsive">
                     <table class="table align-middle">
                         <thead>
                             <tr>
@@ -155,6 +155,108 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="tasks-mobile-list">
+                    {% for task in tasks %}
+                    <article class="task-mobile-card {% if task.is_completed %}is-completed{% elif task.deadline and task.deadline < now %}is-overdue{% endif %} {% if selected_task_id == task.id %}is-selected{% endif %}" id="task-mobile-card-{{ task.id }}">
+                        <div class="task-mobile-head">
+                            <div class="task-mobile-status {% if task.is_completed %}is-done{% elif task.deadline and task.deadline < now %}is-overdue{% endif %}">
+                                {% if task.is_completed %}✅{% else %}⏳{% endif %}
+                            </div>
+                            <div class="task-mobile-main">
+                                <div class="task-mobile-title {% if task.deadline and task.deadline < now and not task.is_completed %}task-title-overdue{% endif %}">{{ task.title }}</div>
+                                {% if task.description %}
+                                <div class="task-mobile-copy {% if task.deadline and task.deadline < now and not task.is_completed %}task-meta-overdue{% endif %}">{{ task.description }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="task-mobile-meta">
+                            <div class="task-mobile-meta-item">
+                                <span>Предмет</span>
+                                <strong>{{ task.subject.name if task.subject else '—' }}</strong>
+                            </div>
+                            <div class="task-mobile-meta-item {% if task.deadline and task.deadline < now and not task.is_completed %}task-deadline-overdue{% endif %}">
+                                <span>Дедлайн</span>
+                                <strong>
+                                    {% if task.deadline and task.deadline < now and not task.is_completed %}
+                                        Просрочено · {{ task.deadline.strftime('%d.%m.%Y %H:%M') }}
+                                    {% else %}
+                                        {{ task.deadline.strftime('%d.%m.%Y %H:%M') if task.deadline else '—' }}
+                                    {% endif %}
+                                </strong>
+                            </div>
+                        </div>
+
+                        <div class="task-mobile-chip-row">
+                            <span class="badge text-bg-secondary">{{ level_label(task.priority) }}</span>
+                            <span class="badge text-bg-light">{{ difficulty_label(task.difficulty) }}</span>
+                        </div>
+
+                        <div class="task-mobile-actions">
+                            <button type="button" class="btn action-btn action-btn-edit" onclick="toggleTaskEdit({{ task.id }})">Изменить</button>
+                            <form method="post" action="/tasks/toggle/{{ task.id }}">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn action-btn {% if task.is_completed %}action-btn-cancel{% else %}action-btn-success{% endif %}">
+                                    {% if task.is_completed %}Вернуть{% else %}Готово{% endif %}
+                                </button>
+                            </form>
+                            <form method="post" action="/tasks/delete/{{ task.id }}">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn action-btn action-btn-delete">Удалить</button>
+                            </form>
+                        </div>
+
+                        <div id="task-mobile-edit-{{ task.id }}" class="task-mobile-edit {% if selected_task_id != task.id %}d-none{% endif %}">
+                            <form method="post" action="/tasks/edit/{{ task.id }}" class="task-mobile-edit-form">
+                                {{ csrf_input(request) }}
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Название</label>
+                                        <input type="text" name="title" class="form-control" value="{{ task.title }}" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Описание</label>
+                                        <textarea name="description" class="form-control" rows="3">{{ task.description or '' }}</textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Предмет</label>
+                                        <select name="subject_id" class="form-select">
+                                            <option value="">Без предмета</option>
+                                            {% for subject in subjects %}
+                                                <option value="{{ subject.id }}" {% if task.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Дедлайн</label>
+                                        <input type="datetime-local" name="deadline" class="form-control" value="{{ task.deadline.strftime('%Y-%m-%dT%H:%M') if task.deadline else '' }}">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">Приоритет</label>
+                                        <select name="priority" class="form-select">
+                                            <option value="low" {% if task.priority == 'low' %}selected{% endif %}>Низкий</option>
+                                            <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>Средний</option>
+                                            <option value="high" {% if task.priority == 'high' %}selected{% endif %}>Высокий</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">Сложность</label>
+                                        <select name="difficulty" class="form-select">
+                                            <option value="low" {% if task.difficulty == 'low' %}selected{% endif %}>Низкая</option>
+                                            <option value="medium" {% if task.difficulty == 'medium' %}selected{% endif %}>Средняя</option>
+                                            <option value="high" {% if task.difficulty == 'high' %}selected{% endif %}>Высокая</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 task-mobile-edit-actions">
+                                        <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleTaskEdit({{ task.id }})">Отмена</button>
+                                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
                 {% else %}
                     <p class="text-muted">Пока задач нет.</p>
                 {% endif %}
@@ -165,12 +267,36 @@
 
 <script>
 function toggleTaskEdit(taskId) {
-    const row = document.getElementById(`task-edit-${taskId}`);
-    if (!row) {
+    const desktopRow = document.getElementById(`task-edit-${taskId}`);
+    const mobilePanel = document.getElementById(`task-mobile-edit-${taskId}`);
+    const currentPanel = mobilePanel || desktopRow;
+    if (!currentPanel) {
         return;
     }
 
-    row.classList.toggle('d-none');
+    const shouldOpen = currentPanel.classList.contains('d-none');
+
+    document.querySelectorAll('[id^="task-edit-"], [id^="task-mobile-edit-"]').forEach((element) => {
+        element.classList.add('d-none');
+    });
+
+    if (!shouldOpen) {
+        return;
+    }
+
+    if (desktopRow) {
+        desktopRow.classList.remove('d-none');
+    }
+
+    if (mobilePanel) {
+        mobilePanel.classList.remove('d-none');
+    }
+
+    const mobileCard = document.getElementById(`task-mobile-card-${taskId}`);
+    const scrollTarget = window.innerWidth < 768 ? (mobileCard || mobilePanel) : (desktopRow || mobilePanel);
+    if (scrollTarget) {
+        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 (function openSelectedTask() {
@@ -179,12 +305,14 @@ function toggleTaskEdit(taskId) {
         return;
     }
 
-    const row = document.getElementById(`task-row-${selectedTaskId}`);
-    if (!row) {
+    const desktopRow = document.getElementById(`task-row-${selectedTaskId}`);
+    const mobileCard = document.getElementById(`task-mobile-card-${selectedTaskId}`);
+    const target = window.innerWidth < 768 ? mobileCard : desktopRow;
+    if (!target) {
         return;
     }
 
-    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 })();
 </script>
 {% endblock %}
