@@ -1,23 +1,26 @@
 :root {
     --bg: #f7efe4;
     --bg-secondary: #fff8ef;
-    --surface: rgba(255, 250, 244, 0.78);
-    --surface-strong: rgba(255, 248, 240, 0.92);
-    --surface-muted: rgba(255, 244, 232, 0.9);
+    --surface: rgba(255, 250, 244, 0.84);
+    --surface-strong: rgba(255, 248, 240, 0.94);
+    --surface-muted: rgba(255, 244, 232, 0.92);
     --border: rgba(104, 67, 38, 0.14);
     --border-strong: rgba(104, 67, 38, 0.24);
     --text: #2f2116;
     --muted: #715b4b;
     --primary: #de6b3d;
     --primary-dark: #b84a22;
-    --accent: #148a88;
-    --accent-strong: #0f6e6c;
-    --accent-soft: #daf5f2;
+    --accent: #4f9a8a;
+    --accent-strong: #3e7f72;
+    --accent-soft: #e6f1ed;
     --danger-soft: #fff0ec;
-    --shadow: 0 26px 70px rgba(82, 46, 23, 0.14);
-    --radius-xl: 28px;
-    --radius-lg: 22px;
-    --radius-md: 16px;
+    --shadow: 0 16px 36px rgba(82, 46, 23, 0.10);
+    --shadow-hover: 0 14px 30px rgba(82, 46, 23, 0.12);
+    --radius-xl: 22px;
+    --radius-lg: 18px;
+    --radius-md: 14px;
+    --section-gap: 1.25rem;
+    --interactive-lift: translateY(-2px);
 }
 
 html {
@@ -29,9 +32,8 @@ body {
     color: var(--text);
     font-family: "Manrope", "Segoe UI", sans-serif;
     background:
-        radial-gradient(circle at top left, rgba(222, 107, 61, 0.24), transparent 24%),
-        radial-gradient(circle at top right, rgba(20, 138, 136, 0.22), transparent 26%),
-        radial-gradient(circle at 50% 120%, rgba(255, 191, 120, 0.16), transparent 30%),
+        radial-gradient(circle at top left, rgba(222, 107, 61, 0.14), transparent 22%),
+        radial-gradient(circle at 50% 120%, rgba(255, 191, 120, 0.10), transparent 26%),
         linear-gradient(180deg, #fff4e6 0%, #f7efe4 42%, #efe2d4 100%);
 }
 
@@ -42,21 +44,21 @@ body::after {
     width: 24rem;
     height: 24rem;
     border-radius: 50%;
-    filter: blur(16px);
+    filter: blur(10px);
     content: "";
-    opacity: 0.45;
+    opacity: 0.25;
 }
 
 body::before {
     top: -8rem;
     left: -6rem;
-    background: rgba(222, 107, 61, 0.34);
+    background: rgba(222, 107, 61, 0.22);
 }
 
 body::after {
     right: -7rem;
     bottom: 10rem;
-    background: rgba(20, 138, 136, 0.26);
+    background: rgba(255, 185, 123, 0.18);
 }
 
 h1, h2, h3, h4, h5, h6,
@@ -85,7 +87,7 @@ a:hover {
     top: 0;
     z-index: 1030;
     padding: 1rem 0 0;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(4px);
 }
 
 .topbar {
@@ -93,8 +95,8 @@ a:hover {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 999px;
     background:
-        linear-gradient(135deg, rgba(54, 35, 23, 0.96), rgba(93, 48, 27, 0.92) 52%, rgba(15, 110, 108, 0.9));
-    box-shadow: 0 22px 48px rgba(49, 31, 17, 0.22);
+        linear-gradient(135deg, rgba(54, 35, 23, 0.94), rgba(93, 48, 27, 0.92) 68%);
+    box-shadow: 0 14px 30px rgba(49, 31, 17, 0.16);
 }
 
 .navbar-brand {
@@ -110,11 +112,11 @@ a:hover {
     width: 2.4rem;
     height: 2.4rem;
     place-items: center;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #ffb36e, #d96c3f 62%, #8f3b1f);
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ffbf86, #d96c3f 70%);
     color: white;
     font-weight: 800;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
 .topbar .nav-link,
@@ -148,20 +150,20 @@ a:hover {
 }
 
 .btn {
-    border-radius: 14px;
+    border-radius: 12px;
     font-weight: 700;
     box-shadow: none !important;
 }
 
 .btn-primary {
     border-color: var(--primary);
-    background: linear-gradient(135deg, #ff9d68, var(--primary));
+    background: linear-gradient(135deg, #f4a16f, var(--primary));
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
     border-color: var(--primary-dark);
-    background: linear-gradient(135deg, #e67f4d, var(--primary-dark));
+    background: linear-gradient(135deg, #e28a59, var(--primary-dark));
 }
 
 .btn-outline-light,
@@ -224,9 +226,9 @@ a:hover {
     padding: 0;
     border: 2px solid rgba(255, 255, 255, 0.36);
     border-radius: 50%;
-    background: linear-gradient(135deg, #ffb97b, #e47746 58%, #99461f);
+    background: linear-gradient(135deg, #f6b98b, #e47746 70%);
     color: #fff !important;
-    box-shadow: 0 12px 28px rgba(22, 14, 10, 0.2);
+    box-shadow: 0 8px 18px rgba(22, 14, 10, 0.14);
     transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -234,9 +236,9 @@ a:hover {
 .profile-button:focus,
 .profile-button.active {
     color: #fff !important;
-    background: linear-gradient(135deg, #ffc58f, #ee8755 58%, #ad552b);
+    background: linear-gradient(135deg, #f8c39a, #ee8755 70%);
     border-color: rgba(255, 255, 255, 0.52);
-    box-shadow: 0 16px 32px rgba(22, 14, 10, 0.26);
+    box-shadow: 0 10px 22px rgba(22, 14, 10, 0.18);
     transform: translateY(-1px) scale(1.03);
 }
 
@@ -256,7 +258,7 @@ a:hover {
     background:
         linear-gradient(180deg, rgba(255, 252, 247, 0.92), rgba(255, 246, 236, 0.78)),
         var(--surface);
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(8px);
     box-shadow: var(--shadow);
 }
 
@@ -269,7 +271,7 @@ a:hover {
 }
 
 .page-heading {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--section-gap);
 }
 
 .eyebrow {
@@ -292,18 +294,18 @@ a:hover {
     overflow: hidden;
     padding: 2rem;
     background:
-        radial-gradient(circle at top right, rgba(20, 138, 136, 0.15), transparent 24%),
-        radial-gradient(circle at left center, rgba(255, 160, 90, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(79, 154, 138, 0.10), transparent 22%),
+        radial-gradient(circle at left center, rgba(255, 160, 90, 0.10), transparent 24%),
         linear-gradient(145deg, rgba(255, 251, 245, 0.95), rgba(255, 239, 224, 0.92));
 }
 
 .hero-panel::before {
     position: absolute;
     inset: auto -6rem -8rem auto;
-    width: 18rem;
-    height: 18rem;
+    width: 13rem;
+    height: 13rem;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(31, 143, 122, 0.24), transparent 68%);
+    background: radial-gradient(circle, rgba(79, 154, 138, 0.14), transparent 68%);
     content: "";
 }
 
@@ -358,8 +360,8 @@ a:hover {
 }
 
 .feature-panel:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 30px 58px rgba(76, 45, 25, 0.2);
+    transform: var(--interactive-lift);
+    box-shadow: var(--shadow-hover);
 }
 
 .feature-icon {
@@ -368,8 +370,8 @@ a:hover {
     height: 3rem;
     align-items: center;
     justify-content: center;
-    border-radius: 18px;
-    background: linear-gradient(135deg, rgba(217, 108, 63, 0.16), rgba(31, 143, 122, 0.18));
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(217, 108, 63, 0.12), rgba(79, 154, 138, 0.12));
     color: var(--primary-dark);
     font-weight: 800;
 }
@@ -377,15 +379,15 @@ a:hover {
 .dashboard-hero {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.5rem;
+    gap: 1.25rem;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--section-gap);
     padding: 1.75rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
     background:
-        radial-gradient(circle at top right, rgba(20, 138, 136, 0.16), transparent 24%),
+        radial-gradient(circle at top right, rgba(79, 154, 138, 0.10), transparent 20%),
         linear-gradient(135deg, rgba(255, 252, 247, 0.94), rgba(255, 237, 219, 0.9));
     box-shadow: var(--shadow);
 }
@@ -421,7 +423,7 @@ a:hover {
     margin-top: 1.15rem;
     padding: 0.95rem 1.05rem;
     border: 1px solid rgba(104, 67, 38, 0.1);
-    border-radius: 20px;
+    border-radius: 16px;
     background: rgba(255, 251, 246, 0.62);
     color: #5f4b3d;
     font-size: 1rem;
@@ -465,7 +467,7 @@ a:hover {
 .dashboard-widget-stack {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 0.85rem;
     width: 260px;
 }
 
@@ -474,9 +476,9 @@ a:hover {
     max-width: 240px;
     padding: 1rem;
     border: 1px solid rgba(104, 67, 38, 0.12);
-    border-radius: 24px;
+    border-radius: 20px;
     background: linear-gradient(180deg, rgba(255, 251, 246, 0.94), rgba(255, 239, 224, 0.88));
-    box-shadow: 0 18px 34px rgba(84, 46, 21, 0.12);
+    box-shadow: 0 12px 24px rgba(84, 46, 21, 0.10);
 }
 
 .dashboard-calendar-head {
@@ -527,8 +529,8 @@ a:hover {
 }
 
 .calendar-day-today {
-    background: linear-gradient(135deg, #ff9d68, var(--primary));
-    box-shadow: 0 10px 18px rgba(222, 107, 61, 0.24);
+    background: linear-gradient(135deg, #f2a167, var(--primary));
+    box-shadow: 0 8px 16px rgba(222, 107, 61, 0.16);
     color: #fff;
 }
 
@@ -536,9 +538,9 @@ a:hover {
     width: 100%;
     padding: 0.8rem 1rem;
     border: 1px solid rgba(104, 67, 38, 0.12);
-    border-radius: 22px;
-    background: linear-gradient(135deg, rgba(55, 35, 23, 0.96), rgba(15, 110, 108, 0.92));
-    box-shadow: 0 18px 32px rgba(54, 34, 21, 0.16);
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(55, 35, 23, 0.96), rgba(93, 48, 27, 0.92));
+    box-shadow: 0 12px 24px rgba(54, 34, 21, 0.12);
     color: #fff8f2;
     font-family: "Space Grotesk", "Segoe UI", sans-serif;
     font-size: clamp(1.4rem, 3vw, 2rem);
@@ -553,13 +555,13 @@ a:hover {
     border: 1px solid rgba(104, 67, 38, 0.12);
     border-radius: 22px;
     background: linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(255, 238, 223, 0.92));
-    box-shadow: 0 16px 28px rgba(84, 46, 21, 0.12);
+    box-shadow: 0 12px 24px rgba(84, 46, 21, 0.10);
 }
 
 .dashboard-next-widget-overdue {
     border-color: rgba(185, 54, 46, 0.28);
     background: linear-gradient(180deg, rgba(255, 245, 244, 0.98), rgba(255, 228, 225, 0.94));
-    box-shadow: 0 16px 28px rgba(160, 44, 36, 0.12);
+    box-shadow: 0 12px 24px rgba(160, 44, 36, 0.10);
 }
 
 .dashboard-next-link {
@@ -576,7 +578,7 @@ a:hover {
 .dashboard-next-link:focus {
     color: inherit;
     text-decoration: none;
-    transform: translateY(-1px);
+    transform: var(--interactive-lift);
 }
 
 .dashboard-next-head {
@@ -591,9 +593,9 @@ a:hover {
     width: 2.5rem;
     height: 2.5rem;
     place-items: center;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #1aa39f, var(--accent-strong));
-    box-shadow: 0 10px 18px rgba(15, 110, 108, 0.22);
+    border-radius: 14px;
+    background: linear-gradient(135deg, #6eb3a6, var(--accent-strong));
+    box-shadow: 0 8px 16px rgba(15, 110, 108, 0.14);
     color: #fff;
     font-size: 1.2rem;
     font-weight: 700;
@@ -713,13 +715,13 @@ a:hover {
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     background:
-        radial-gradient(circle at top right, rgba(222, 107, 61, 0.22), transparent 32%),
+        radial-gradient(circle at top right, rgba(222, 107, 61, 0.14), transparent 26%),
         linear-gradient(180deg, rgba(255, 251, 246, 0.95), rgba(255, 239, 225, 0.9));
 }
 
 .stat-card.danger {
     background:
-        radial-gradient(circle at top right, rgba(217, 92, 66, 0.22), transparent 32%),
+        radial-gradient(circle at top right, rgba(217, 92, 66, 0.14), transparent 26%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 241, 238, 0.94));
 }
 
@@ -762,7 +764,7 @@ a:hover {
 }
 
 .stat-card-quick-add:focus-within {
-    box-shadow: 0 26px 70px rgba(82, 46, 23, 0.14), 0 0 0 2px rgba(222, 107, 61, 0.14);
+    box-shadow: 0 14px 28px rgba(82, 46, 23, 0.10), 0 0 0 2px rgba(222, 107, 61, 0.12);
 }
 
 .stat-card-button-head {
@@ -862,7 +864,7 @@ a:hover {
 
 .info-card {
     background:
-        radial-gradient(circle at top right, rgba(255, 157, 104, 0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(255, 157, 104, 0.12), transparent 26%),
         linear-gradient(180deg, rgba(255, 251, 246, 0.95), rgba(255, 239, 225, 0.9));
 }
 
@@ -904,8 +906,8 @@ a:hover {
 
 .streak-card {
     background:
-        radial-gradient(circle at top right, rgba(255, 157, 104, 0.26), transparent 34%),
-        radial-gradient(circle at left center, rgba(20, 138, 136, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(255, 157, 104, 0.16), transparent 28%),
+        radial-gradient(circle at left center, rgba(79, 154, 138, 0.10), transparent 22%),
         linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(255, 239, 225, 0.92));
 }
 
@@ -987,7 +989,7 @@ a:hover {
 }
 
 .table tbody tr:hover {
-    background: rgba(255, 250, 244, 0.72);
+    background: rgba(255, 250, 244, 0.64);
 }
 
 .table-success,
@@ -1022,6 +1024,12 @@ a:hover {
     font-weight: 800;
 }
 
+.subjects-desktop-list,
+.notes-desktop-list,
+.tasks-desktop-list {
+    display: block;
+}
+
 .tasks-mobile-list {
     display: none;
     gap: 1rem;
@@ -1032,10 +1040,10 @@ a:hover {
     gap: 0.9rem;
     padding: 1rem;
     border: 1px solid rgba(104, 67, 38, 0.1);
-    border-radius: 22px;
+    border-radius: 18px;
     background:
         linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(255, 243, 232, 0.88));
-    box-shadow: 0 16px 28px rgba(84, 46, 21, 0.08);
+    box-shadow: 0 12px 22px rgba(84, 46, 21, 0.07);
 }
 
 .task-mobile-card.is-overdue {
@@ -1051,7 +1059,7 @@ a:hover {
 
 .task-mobile-card.is-selected {
     border-color: rgba(20, 138, 136, 0.24);
-    box-shadow: 0 18px 32px rgba(15, 110, 108, 0.12);
+    box-shadow: 0 12px 24px rgba(15, 110, 108, 0.08);
 }
 
 .task-mobile-head {
@@ -1170,7 +1178,7 @@ a:hover {
     gap: 0.9rem;
     padding: 1rem;
     border: 1px solid rgba(104, 67, 38, 0.1);
-    border-radius: 22px;
+    border-radius: 18px;
     background:
         linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(255, 243, 232, 0.88));
     box-shadow: 0 16px 28px rgba(84, 46, 21, 0.08);
@@ -1386,8 +1394,8 @@ textarea.form-control {
 
 .profile-summary-card {
     background:
-        radial-gradient(circle at top right, rgba(20, 138, 136, 0.18), transparent 28%),
-        radial-gradient(circle at top left, rgba(222, 107, 61, 0.16), transparent 24%),
+        radial-gradient(circle at top right, rgba(79, 154, 138, 0.10), transparent 22%),
+        radial-gradient(circle at top left, rgba(222, 107, 61, 0.10), transparent 20%),
         linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(255, 238, 223, 0.9));
 }
 
@@ -1395,14 +1403,14 @@ textarea.form-control {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
+    gap: 1.25rem;
+    margin-bottom: var(--section-gap);
     padding: 1.6rem 1.75rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
     background:
-        radial-gradient(circle at top right, rgba(20, 138, 136, 0.16), transparent 22%),
-        radial-gradient(circle at left center, rgba(255, 160, 90, 0.18), transparent 26%),
+        radial-gradient(circle at top right, rgba(79, 154, 138, 0.10), transparent 18%),
+        radial-gradient(circle at left center, rgba(255, 160, 90, 0.12), transparent 22%),
         linear-gradient(135deg, rgba(255, 252, 247, 0.96), rgba(255, 239, 224, 0.92));
     box-shadow: var(--shadow);
 }
@@ -1429,9 +1437,9 @@ textarea.form-control {
     min-width: 0;
     padding: 1rem 1.15rem;
     border: 1px solid rgba(104, 67, 38, 0.12);
-    border-radius: 24px;
+    border-radius: 20px;
     background: rgba(255, 255, 255, 0.56);
-    box-shadow: 0 14px 28px rgba(84, 46, 21, 0.1);
+    box-shadow: 0 10px 20px rgba(84, 46, 21, 0.08);
 }
 
 .profile-avatar {
@@ -1440,13 +1448,13 @@ textarea.form-control {
     height: 5.6rem;
     margin-bottom: 1rem;
     place-items: center;
-    border-radius: 24px;
-    background: linear-gradient(135deg, #ffb36e, #d96c3f 58%, #8f3b1f);
+    border-radius: 18px;
+    background: linear-gradient(135deg, #ffbf86, #d96c3f 72%);
     color: #fff;
     font-family: "Space Grotesk", "Segoe UI", sans-serif;
     font-size: 2rem;
     font-weight: 800;
-    box-shadow: 0 18px 32px rgba(143, 59, 31, 0.18);
+    box-shadow: 0 12px 22px rgba(143, 59, 31, 0.12);
 }
 
 .profile-summary-name {
@@ -1530,18 +1538,18 @@ textarea.form-control {
     position: relative;
     overflow: hidden;
     background:
-        radial-gradient(circle at top right, rgba(20, 138, 136, 0.14), transparent 24%),
-        radial-gradient(circle at bottom left, rgba(222, 107, 61, 0.14), transparent 24%),
+        radial-gradient(circle at top right, rgba(79, 154, 138, 0.10), transparent 20%),
+        radial-gradient(circle at bottom left, rgba(222, 107, 61, 0.10), transparent 20%),
         linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(255, 241, 229, 0.9));
 }
 
 .data-card::before {
     position: absolute;
     inset: auto -3rem -4rem auto;
-    width: 10rem;
-    height: 10rem;
+    width: 7rem;
+    height: 7rem;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 190, 129, 0.18), transparent 68%);
+    background: radial-gradient(circle, rgba(255, 190, 129, 0.12), transparent 68%);
     content: "";
 }
 
@@ -1559,13 +1567,13 @@ textarea.form-control {
 }
 
 .data-card-icon-export {
-    background: linear-gradient(135deg, #148a88, #0f6e6c);
-    box-shadow: 0 12px 24px rgba(15, 110, 108, 0.22);
+    background: linear-gradient(135deg, #6eb3a6, var(--accent-strong));
+    box-shadow: 0 8px 16px rgba(15, 110, 108, 0.14);
 }
 
 .data-card-icon-import {
-    background: linear-gradient(135deg, #ff9d68, #b84a22);
-    box-shadow: 0 12px 24px rgba(184, 74, 34, 0.22);
+    background: linear-gradient(135deg, #f2a167, #b84a22);
+    box-shadow: 0 8px 16px rgba(184, 74, 34, 0.14);
 }
 
 .data-card-copy {
@@ -1598,14 +1606,14 @@ textarea.form-control {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
+    gap: 1.25rem;
+    margin-bottom: var(--section-gap);
     padding: 1.6rem 1.75rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
     background:
-        radial-gradient(circle at top right, rgba(20, 138, 136, 0.16), transparent 22%),
-        radial-gradient(circle at left center, rgba(255, 160, 90, 0.18), transparent 26%),
+        radial-gradient(circle at top right, rgba(79, 154, 138, 0.10), transparent 18%),
+        radial-gradient(circle at left center, rgba(255, 160, 90, 0.12), transparent 22%),
         linear-gradient(135deg, rgba(255, 252, 247, 0.96), rgba(255, 239, 224, 0.92));
     box-shadow: var(--shadow);
 }
@@ -1636,7 +1644,7 @@ textarea.form-control {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
 }
 
 .calendar-toolbar > div {
@@ -1664,7 +1672,7 @@ textarea.form-control {
     border: 1px solid rgba(104, 67, 38, 0.1);
     border-radius: 999px;
     background: rgba(255, 252, 247, 0.9);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 10px 24px rgba(71, 43, 22, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 8px 18px rgba(71, 43, 22, 0.06);
 }
 
 .calendar-mode-button {
@@ -1679,9 +1687,9 @@ textarea.form-control {
 }
 
 .calendar-mode-button.is-active {
-    background: linear-gradient(135deg, #ff9d68, var(--primary));
+    background: linear-gradient(135deg, #f2a167, var(--primary));
     color: #fff;
-    box-shadow: 0 12px 24px rgba(222, 107, 61, 0.2);
+    box-shadow: 0 8px 16px rgba(222, 107, 61, 0.14);
 }
 
 .calendar-nav-button {
@@ -1695,12 +1703,12 @@ textarea.form-control {
     color: var(--text);
     font-size: 1.1rem;
     font-weight: 800;
-    box-shadow: 0 14px 28px rgba(84, 46, 21, 0.1);
+    box-shadow: 0 10px 20px rgba(84, 46, 21, 0.08);
 }
 
 .calendar-nav-button:hover {
     color: var(--primary-dark);
-    transform: translateY(-1px);
+    transform: var(--interactive-lift);
 }
 
 .calendar-grid {
@@ -1759,8 +1767,8 @@ textarea.form-control {
 .calendar-day-card:hover {
     color: var(--text);
     border-color: rgba(222, 107, 61, 0.24);
-    box-shadow: 0 18px 32px rgba(84, 46, 21, 0.1);
-    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    transform: var(--interactive-lift);
 }
 
 .calendar-day-card.is-muted {
@@ -1775,7 +1783,7 @@ textarea.form-control {
 .calendar-day-card.is-selected {
     border-color: rgba(222, 107, 61, 0.3);
     background: linear-gradient(180deg, rgba(255, 246, 236, 0.98), rgba(255, 252, 248, 0.92));
-    box-shadow: 0 18px 34px rgba(84, 46, 21, 0.12);
+    box-shadow: 0 12px 24px rgba(84, 46, 21, 0.10);
 }
 
 .calendar-day-card.has-overdue {
@@ -1809,22 +1817,22 @@ textarea.form-control {
 
 .calendar-load-fill.level-1 {
     width: 30%;
-    background: linear-gradient(135deg, #9de0d7, #47b6ab);
+    background: linear-gradient(135deg, #b8ddd4, #71b4a7);
 }
 
 .calendar-load-fill.level-2 {
     width: 55%;
-    background: linear-gradient(135deg, #ffd18f, #f1a258);
+    background: linear-gradient(135deg, #f6d4a3, #eca86b);
 }
 
 .calendar-load-fill.level-3 {
     width: 78%;
-    background: linear-gradient(135deg, #ffb36e, #de6b3d);
+    background: linear-gradient(135deg, #efb47d, #de6b3d);
 }
 
 .calendar-load-fill.level-4 {
     width: 100%;
-    background: linear-gradient(135deg, #f28f72, #cf5334);
+    background: linear-gradient(135deg, #e9a18d, #cf5334);
 }
 
 .calendar-day-number {
@@ -1924,7 +1932,7 @@ textarea.form-control {
 .agenda-summary-card {
     padding: 0.9rem 0.95rem;
     border: 1px solid rgba(104, 67, 38, 0.1);
-    border-radius: 18px;
+    border-radius: 14px;
     background: rgba(255, 252, 247, 0.8);
 }
 
@@ -2135,7 +2143,7 @@ textarea.form-control {
 
 .week-strip-day.is-selected {
     border-color: rgba(222, 107, 61, 0.3);
-    box-shadow: 0 18px 34px rgba(84, 46, 21, 0.12);
+    box-shadow: 0 12px 24px rgba(84, 46, 21, 0.10);
 }
 
 .week-strip-weekday {
@@ -2237,8 +2245,8 @@ textarea.form-control {
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    gap: 0.9rem;
+    margin-bottom: var(--section-gap);
 }
 
 .page-intro p {
@@ -2255,7 +2263,7 @@ textarea.form-control {
     border: 1px solid rgba(104, 67, 38, 0.1);
     border-radius: 999px;
     background: rgba(255, 252, 247, 0.9);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 10px 24px rgba(71, 43, 22, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 8px 18px rgba(71, 43, 22, 0.06);
 }
 
 .action-btn {
@@ -2275,10 +2283,10 @@ textarea.form-control {
 
 .action-btn-edit:hover,
 .action-btn-edit:focus {
-    background: linear-gradient(135deg, #1aa39f, var(--accent-strong));
+    background: linear-gradient(135deg, #6eb3a6, var(--accent-strong));
     color: #fff !important;
-    transform: translateY(-1px);
-    box-shadow: 0 10px 18px rgba(15, 110, 108, 0.22) !important;
+    transform: var(--interactive-lift);
+    box-shadow: 0 8px 16px rgba(15, 110, 108, 0.14) !important;
 }
 
 .action-btn-delete {
@@ -2288,10 +2296,10 @@ textarea.form-control {
 
 .action-btn-delete:hover,
 .action-btn-delete:focus {
-    background: linear-gradient(135deg, #f27f67, #cf5334);
+    background: linear-gradient(135deg, #ee947f, #cf5334);
     color: #fff !important;
-    transform: translateY(-1px);
-    box-shadow: 0 10px 18px rgba(186, 67, 41, 0.2) !important;
+    transform: var(--interactive-lift);
+    box-shadow: 0 8px 16px rgba(186, 67, 41, 0.14) !important;
 }
 
 .action-btn-success {
@@ -2301,10 +2309,10 @@ textarea.form-control {
 
 .action-btn-success:hover,
 .action-btn-success:focus {
-    background: linear-gradient(135deg, #39b48d, #148a88);
+    background: linear-gradient(135deg, #6eb3a6, #4f9a8a);
     color: #fff !important;
-    transform: translateY(-1px);
-    box-shadow: 0 10px 18px rgba(20, 138, 136, 0.2) !important;
+    transform: var(--interactive-lift);
+    box-shadow: 0 8px 16px rgba(20, 138, 136, 0.14) !important;
 }
 
 .action-btn-cancel {
@@ -2315,10 +2323,10 @@ textarea.form-control {
 
 .action-btn-cancel:hover,
 .action-btn-cancel:focus {
-    background: linear-gradient(135deg, #c8b7a7, #a8917d);
+    background: linear-gradient(135deg, #ccbcae, #aa9583);
     color: #fff !important;
-    transform: translateY(-1px);
-    box-shadow: 0 10px 18px rgba(95, 80, 68, 0.16) !important;
+    transform: var(--interactive-lift);
+    box-shadow: 0 8px 16px rgba(95, 80, 68, 0.12) !important;
 }
 
 .stat-value-small {
@@ -2349,6 +2357,19 @@ textarea.form-control {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
     }
 }
 
@@ -2400,6 +2421,41 @@ textarea.form-control {
 }
 
 @media (max-width: 767.98px) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    body::before,
+    body::after,
+    .hero-panel::before,
+    .data-card::before {
+        display: none;
+    }
+
+    .topbar-wrap,
+    .hero-panel,
+    .feature-panel,
+    .auth-panel,
+    .card,
+    .mobile-tabbar,
+    .install-sheet-card {
+        backdrop-filter: none;
+    }
+
+    .topbar,
+    .hero-panel,
+    .feature-panel,
+    .auth-panel,
+    .card,
+    .mobile-tabbar,
+    .install-sheet-card {
+        box-shadow: 0 10px 24px rgba(82, 46, 23, 0.1);
+    }
+
+    .stagger-in {
+        animation: none;
+    }
+
     .content-wrap {
         padding-top: 1rem;
     }
@@ -2723,14 +2779,14 @@ textarea.form-control {
 .weekday-chip:focus {
     border-color: rgba(20, 138, 136, 0.26);
     color: var(--accent-strong);
-    transform: translateY(-1px);
+    transform: var(--interactive-lift);
 }
 
 .weekday-chip.is-selected {
     border-color: rgba(20, 138, 136, 0.34);
-    background: linear-gradient(135deg, rgba(26, 163, 159, 0.16), rgba(20, 138, 136, 0.12));
+    background: linear-gradient(135deg, rgba(79, 154, 138, 0.14), rgba(79, 154, 138, 0.08));
     color: var(--accent-strong);
-    box-shadow: 0 8px 18px rgba(15, 110, 108, 0.1);
+    box-shadow: 0 6px 14px rgba(15, 110, 108, 0.08);
 }
 
 .weekday-multiselect-summary {
@@ -2751,10 +2807,10 @@ textarea.form-control {
     gap: 0.35rem;
     padding: 0.45rem;
     border: 1px solid rgba(104, 67, 38, 0.12);
-    border-radius: 22px;
+    border-radius: 18px;
     background: rgba(255, 248, 240, 0.92);
-    backdrop-filter: blur(18px);
-    box-shadow: 0 18px 42px rgba(72, 42, 18, 0.18);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 12px 28px rgba(72, 42, 18, 0.12);
 }
 
 .mobile-tabbar-link {
@@ -2765,7 +2821,7 @@ textarea.form-control {
     gap: 0.28rem;
     min-height: 3.45rem;
     padding: 0.45rem 0.25rem;
-    border-radius: 16px;
+    border-radius: 14px;
     color: var(--muted);
     text-decoration: none;
     font-size: 0.64rem;
@@ -2784,9 +2840,9 @@ textarea.form-control {
 .mobile-tabbar-link:focus,
 .mobile-tabbar-link.active {
     color: #fff;
-    background: linear-gradient(135deg, #f7a35f, #ef7d46 58%, #bf5a2f);
-    box-shadow: 0 12px 24px rgba(191, 90, 47, 0.24);
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, #f2a167, #de6b3d 72%);
+    box-shadow: 0 8px 18px rgba(191, 90, 47, 0.16);
+    transform: var(--interactive-lift);
 }
 
 .install-sheet {
@@ -2815,11 +2871,11 @@ textarea.form-control {
     width: min(100%, 28rem);
     padding: 1.15rem 1.15rem 1rem;
     border: 1px solid rgba(104, 67, 38, 0.14);
-    border-radius: 24px 24px 18px 18px;
+    border-radius: 20px 20px 16px 16px;
     background:
-        radial-gradient(circle at top right, rgba(255, 215, 173, 0.8), transparent 36%),
+        radial-gradient(circle at top right, rgba(255, 215, 173, 0.45), transparent 30%),
         linear-gradient(180deg, rgba(255, 249, 242, 0.98), rgba(255, 242, 228, 0.98));
-    box-shadow: 0 -16px 36px rgba(90, 47, 20, 0.16);
+    box-shadow: 0 -10px 24px rgba(90, 47, 20, 0.12);
 }
 
 .install-sheet-badge {
