@@ -5,6 +5,13 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_user, hash_password, verify_password
 from ..database import get_db
 from ..models import User
+from ..password_reset import (
+    generate_password_reset_token,
+    load_password_reset_payload,
+    password_reset_enabled,
+    send_password_reset_email,
+    validate_password_reset_token,
+)
 from .common import templates, validate_csrf
 
 router = APIRouter()
@@ -50,7 +57,7 @@ def register(
         return templates.TemplateResponse(
             request,
             'register.html',
-            {'error': 'Пользователь с таким логином или email уже существует.'}
+            {'error': 'Пользователь с таким логином или email уже существует.'},
         )
 
     user = User(
@@ -91,7 +98,7 @@ def login(
         return templates.TemplateResponse(
             request,
             'login.html',
-            {'error': 'Неверный логин или пароль.'}
+            {'error': 'Неверный логин или пароль.'},
         )
     request.session['user_id'] = user.id
     request.session['username'] = user.username
@@ -104,43 +111,123 @@ def forgot_password_page(request: Request):
     return templates.TemplateResponse(
         request,
         'forgot_password.html',
-        {'error': None, 'success': None}
+        {'error': None, 'success': None, 'email': ''},
     )
 
 
 @router.post('/forgot-password', response_class=HTMLResponse)
 def forgot_password(
     request: Request,
-    username: str = Form(...),
     email: str = Form(...),
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    email = normalize_email(email)
+
+    if not password_reset_enabled():
+        return templates.TemplateResponse(
+            request,
+            'forgot_password.html',
+            {
+                'error': 'Восстановление пароля по email пока не настроено. Заполните SMTP-параметры в окружении приложения.',
+                'success': None,
+                'email': email,
+            },
+        )
+
+    user = db.query(User).filter(User.email == email).first()
+    if user:
+        reset_token = generate_password_reset_token(user)
+        reset_url = str(request.url_for('reset_password_page').include_query_params(token=reset_token))
+        try:
+            send_password_reset_email(user.email, reset_url)
+        except Exception:
+            return templates.TemplateResponse(
+                request,
+                'forgot_password.html',
+                {
+                    'error': 'Не удалось отправить письмо для восстановления пароля. Проверьте SMTP-настройки и попробуйте снова.',
+                    'success': None,
+                    'email': email,
+                },
+            )
+
+    return templates.TemplateResponse(
+        request,
+        'forgot_password.html',
+        {
+            'error': None,
+            'success': 'Если аккаунт с таким email существует, мы отправили письмо со ссылкой для сброса пароля.',
+            'email': email,
+        },
+    )
+
+
+@router.get('/reset-password', response_class=HTMLResponse, name='reset_password_page')
+def reset_password_page(request: Request, token: str = '', db: Session = Depends(get_db)):
+    payload = load_password_reset_payload(token)
+    user = db.query(User).filter(User.id == payload.get('user_id')).first() if payload else None
+    token_valid = validate_password_reset_token(token, user)
+
+    return templates.TemplateResponse(
+        request,
+        'reset_password.html',
+        {
+            'error': None if token_valid else 'Ссылка для сброса пароля недействительна или устарела.',
+            'success': None,
+            'token': token,
+            'token_valid': token_valid,
+        },
+    )
+
+
+@router.post('/reset-password', response_class=HTMLResponse)
+def reset_password(
+    request: Request,
+    token: str = Form(...),
     new_password: str = Form(...),
     confirm_password: str = Form(...),
     _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
-    username = normalize_username(username)
-    email = normalize_email(email)
+    payload = load_password_reset_payload(token)
+    user = db.query(User).filter(User.id == payload.get('user_id')).first() if payload else None
+    token_valid = validate_password_reset_token(token, user)
+
+    if not token_valid:
+        return templates.TemplateResponse(
+            request,
+            'reset_password.html',
+            {
+                'error': 'Ссылка для сброса пароля недействительна или устарела.',
+                'success': None,
+                'token': token,
+                'token_valid': False,
+            },
+        )
 
     if new_password != confirm_password:
         return templates.TemplateResponse(
             request,
-            'forgot_password.html',
-            {'error': 'Пароли не совпадают.', 'success': None}
+            'reset_password.html',
+            {
+                'error': 'Пароли не совпадают.',
+                'success': None,
+                'token': token,
+                'token_valid': True,
+            },
         )
 
     if len(new_password) < 6:
         return templates.TemplateResponse(
             request,
-            'forgot_password.html',
-            {'error': 'Пароль должен быть не короче 6 символов.', 'success': None}
-        )
-
-    user = db.query(User).filter(User.username == username, User.email == email).first()
-    if not user:
-        return templates.TemplateResponse(
-            request,
-            'forgot_password.html',
-            {'error': 'Пользователь с таким логином и email не найден.', 'success': None}
+            'reset_password.html',
+            {
+                'error': 'Пароль должен быть не короче 6 символов.',
+                'success': None,
+                'token': token,
+                'token_valid': True,
+            },
         )
 
     user.password_hash = hash_password(new_password)
@@ -148,8 +235,13 @@ def forgot_password(
 
     return templates.TemplateResponse(
         request,
-        'forgot_password.html',
-        {'error': None, 'success': 'Пароль обновлен. Теперь можно войти с новым паролем.'}
+        'reset_password.html',
+        {
+            'error': None,
+            'success': 'Пароль обновлен. Теперь можно войти с новым паролем.',
+            'token': '',
+            'token_valid': False,
+        },
     )
 
 

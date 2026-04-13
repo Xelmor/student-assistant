@@ -45,6 +45,15 @@ class Settings:
     port: int
     reload: bool
     allow_local_private_data: bool
+    smtp_host: str
+    smtp_port: int
+    smtp_username: str
+    smtp_password: str
+    smtp_from_email: str
+    smtp_from_name: str
+    smtp_starttls: bool
+    smtp_ssl: bool
+    password_reset_token_ttl_seconds: int
     base_dir: Path
 
 
@@ -73,6 +82,15 @@ def get_settings() -> Settings:
         port=int(getenv('PORT', '8000')),
         reload=env_flag('RELOAD'),
         allow_local_private_data=env_flag('ALLOW_LOCAL_PRIVATE_DATA'),
+        smtp_host=(getenv('SMTP_HOST') or '').strip(),
+        smtp_port=int(getenv('SMTP_PORT', '587')),
+        smtp_username=(getenv('SMTP_USERNAME') or '').strip(),
+        smtp_password=(getenv('SMTP_PASSWORD') or '').strip(),
+        smtp_from_email=(getenv('SMTP_FROM_EMAIL') or '').strip(),
+        smtp_from_name=(getenv('SMTP_FROM_NAME') or 'Student Assistant').strip(),
+        smtp_starttls=env_flag('SMTP_STARTTLS', 'true'),
+        smtp_ssl=env_flag('SMTP_SSL'),
+        password_reset_token_ttl_seconds=int(getenv('PASSWORD_RESET_TOKEN_TTL_SECONDS', '3600')),
         base_dir=Path(__file__).resolve().parent,
     )
 
