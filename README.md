@@ -1,54 +1,59 @@
 # Student Assistant
 
-Student Assistant is a web app for organizing study workflows in one place: subjects, tasks, schedule, notes, calendar, and profile data.
+Student Assistant — это веб-приложение для студентов, которое помогает держать в одном месте учебные предметы, задачи, заметки, расписание и личные данные. Проект объединяет основные инструменты учебного планирования в одном интерфейсе и подходит как для повседневного использования, так и для аккуратного ведения учебного процесса в течение семестра.
 
-The project is built with FastAPI, Jinja2, SQLAlchemy, and Bootstrap. It supports local development with SQLite and production deployment with PostgreSQL.
+## Кратко о проекте
 
-## Features
+Приложение позволяет:
 
-- User registration, login, logout, and password reset
-- Personal dashboard with task summary, streaks, urgent tasks, and today's schedule
-- Subject management with teacher, room, color, and notes
-- Task management with deadlines, priority, difficulty, and completion tracking
-- Weekly schedule management with flexible or preset time slots
-- Notes linked to subjects
-- Calendar view with `.ics` export
-- Profile editing with study group, course, and schedule terminology
-- Data export to JSON and CSV ZIP
-- Data import from JSON backup
+- хранить список предметов с преподавателем, аудиторией и заметками;
+- создавать задачи с дедлайнами, приоритетом и уровнем сложности;
+- вести недельное расписание;
+- привязывать заметки к предметам;
+- видеть общую картину по учебной нагрузке на дашборде;
+- экспортировать и импортировать данные;
+- восстанавливать доступ к аккаунту через email.
 
-## Tech Stack
+## Возможности
 
-- Python
+- регистрация, вход, выход и восстановление пароля;
+- личный дашборд с краткой сводкой по задачам и расписанию на сегодня;
+- управление предметами с цветовой маркировкой и дополнительной информацией;
+- учет задач с отслеживанием выполнения;
+- редактор недельного расписания;
+- заметки, связанные с конкретными предметами;
+- календарный просмотр с экспортом в `.ics`;
+- редактирование профиля, группы и курса;
+- экспорт резервной копии в JSON и CSV ZIP;
+- импорт данных из сохраненной резервной копии.
+
+## Технологии
+
+- Python 3
 - FastAPI
 - Jinja2
 - SQLAlchemy
-- SQLite for local development
-- PostgreSQL for production
+- SQLite для локальной разработки
+- PostgreSQL для production-развертывания
 - Bootstrap 5
+- `itsdangerous` для токенов восстановления пароля
 
-## Demo
+## Запуск проекта
 
-Production URL:
-
-`https://student-assistant-beby.onrender.com/`
-
-## Local Setup
-
-### 1. Clone the repository
+### 1. Клонирование репозитория
 
 ```bash
 git clone https://github.com/Xelmor/student-assistant.git
 cd student-assistant
 ```
 
-### 2. Create a virtual environment
+### 2. Создание виртуального окружения
 
 ```bash
 python -m venv venv
 ```
 
-### 3. Activate the environment
+### 3. Активация виртуального окружения
 
 PowerShell:
 
@@ -68,15 +73,15 @@ Linux/macOS:
 source venv/bin/activate
 ```
 
-### 4. Install dependencies
+### 4. Установка зависимостей
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Create `.env`
+### 5. Создание файла `.env`
 
-Example local configuration:
+Минимальная локальная конфигурация:
 
 ```env
 APP_ENV=development
@@ -87,105 +92,93 @@ HOST=0.0.0.0
 PORT=8001
 RELOAD=false
 ALLOW_LOCAL_PRIVATE_DATA=true
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USERNAME=
+SMTP_PASSWORD=
+SMTP_FROM_EMAIL=
+SMTP_FROM_NAME=Student Assistant
+SMTP_STARTTLS=true
+SMTP_SSL=false
+PASSWORD_RESET_TOKEN_TTL_SECONDS=3600
 ```
 
-### 6. Run the app
+### 6. Запуск приложения
 
 ```bash
 python run.py
 ```
 
-Then open:
+После запуска откройте в браузере:
 
-`http://127.0.0.1:8001`
+```text
+http://127.0.0.1:8001
+```
 
-## Environment Variables
+## Скриншоты
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `APP_ENV` | Yes | `development` or `production` |
-| `SECRET_KEY` | Yes | Session secret, must be at least 32 characters |
-| `COOKIE_SECURE` | Yes | Must be `true` in production |
-| `DATABASE_URL` | Yes | SQLite or PostgreSQL connection string |
-| `HOST` | No | Host for local run, default `0.0.0.0` |
-| `PORT` | No | Port for local run, default `8000` |
-| `RELOAD` | No | Enables auto-reload in development |
-| `ALLOW_LOCAL_PRIVATE_DATA` | No | Enables local-only profile details page |
+Сейчас в репозитории нет готовых изображений интерфейса, но блок уже подготовлен. Достаточно добавить реальные скриншоты в папку `assets/`, и README будет выглядеть как полноценная страница продукта.
 
-## Database
+Рекомендуемые файлы:
 
-For local development the app uses SQLite by default:
+- `assets/dashboard.png` — главный экран или дашборд;
+- `assets/tasks.png` — экран задач или расписания.
+
+Пример вставки в README:
+
+```md
+![Главный экран](assets/dashboard.png)
+![Задачи](assets/tasks.png)
+```
+
+## Структура проекта
+
+```text
+app/
+  main.py              инициализация FastAPI-приложения
+  settings.py          конфигурация через переменные окружения
+  database.py          подключение к базе данных и сессии SQLAlchemy
+  models.py            модели базы данных
+  auth.py              вспомогательная логика авторизации
+  password_reset.py    логика восстановления пароля по email
+  routers/             маршруты приложения
+  templates/           HTML-шаблоны Jinja2
+  static/              CSS, JavaScript и статические файлы
+assets/                изображения и материалы для README
+run.py                 локальная точка запуска
+requirements.txt       список зависимостей
+DEPLOYMENT.md          заметки по развертыванию
+```
+
+## Развертывание
+
+Для локальной разработки по умолчанию используется SQLite:
 
 ```text
 sqlite:///./student_assistant.db
 ```
 
-For production use PostgreSQL:
+Для production-среды рекомендуется PostgreSQL:
 
 ```text
 postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME
 ```
 
-The app also accepts `postgres://...` and `postgresql://...` URLs and normalizes them automatically.
+Проект можно развернуть, например, на Render. Подробности вынесены в [DEPLOYMENT.md](./DEPLOYMENT.md).
 
-## Deploy on Render
+## Перспективы развития
 
-Recommended production setup:
+Дальше проект можно развивать в таких направлениях:
 
-1. Create a PostgreSQL database in Render.
-2. Copy the database `Internal Database URL`.
-3. Create or update a Web Service connected to this repository.
-4. Set environment variables:
+- уведомления и напоминания о дедлайнах;
+- улучшение мобильного интерфейса и аналитики на дашборде;
+- поддержка повторяющихся задач и учебных целей;
+- совместная работа и групповые сценарии;
+- темная тема и более глубокая интеграция с календарями;
+- покрытие ключевых сценариев автоматическими тестами.
 
-```env
-APP_ENV=production
-SECRET_KEY=replace_with_a_long_random_secret
-COOKIE_SECURE=true
-DATABASE_URL=<Render Internal Database URL>
-RELOAD=false
-ALLOW_LOCAL_PRIVATE_DATA=false
-```
+## Демо
 
-5. Use these service commands:
+Продакшн-версия:
 
-Build command:
-
-```bash
-pip install -r requirements.txt
-```
-
-Start command:
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port $PORT
-```
-
-Detailed deployment notes are available in [DEPLOYMENT.md](./DEPLOYMENT.md).
-
-## Project Structure
-
-```text
-app/
-  main.py              FastAPI app setup
-  settings.py          environment configuration
-  database.py          SQLAlchemy engine and session
-  models.py            database models
-  auth.py              password hashing and session user lookup
-  routers/             application routes
-  templates/           Jinja2 templates
-  static/              CSS and static assets
-run.py                 local entry point
-requirements.txt       Python dependencies
-DEPLOYMENT.md          production deployment notes
-```
-
-## Notes
-
-- The app uses server-side persistence through the configured database.
-- Production should use PostgreSQL instead of SQLite on ephemeral hosting.
-- CSRF protection is enabled for form actions.
-- Sessions are stored via signed cookies.
-
-## License
-
-This project currently does not include a license file.
+`https://student-assistant-beby.onrender.com/`

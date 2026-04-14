@@ -40,6 +40,7 @@
                         <li class="nav-item"><a class="nav-link {% if request.url.path.startswith('/schedule') %}active{% endif %}" href="/schedule">Расписание</a></li>
                         <li class="nav-item"><a class="nav-link {% if request.url.path.startswith('/calendar') %}active{% endif %}" href="/calendar">Календарь</a></li>
                         <li class="nav-item"><a class="nav-link {% if request.url.path.startswith('/notes') %}active{% endif %}" href="/notes">Заметки</a></li>
+                        <li class="nav-item"><a class="nav-link {% if request.url.path.startswith('/ai') %}active{% endif %}" href="/ai/assistant">AI Assistant</a></li>
                         {% endif %}
                     </ul>
                     <div class="topbar-actions d-flex align-items-center gap-2">
@@ -84,6 +85,10 @@
         <a class="mobile-tabbar-link {% if request.url.path.startswith('/notes') %}active{% endif %}" href="/notes">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm8 1.5V9h4.5M8 13h8M8 17h6"/></svg>
             <span>Заметки</span>
+        </a>
+        <a class="mobile-tabbar-link {% if request.url.path.startswith('/ai') %}active{% endif %}" href="/ai/assistant">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a2.5 2.5 0 0 1 2.5 2.5v1.22a7.02 7.02 0 0 1 2.13 1.23l1.06-.61a2.5 2.5 0 1 1 2.5 4.33l-1.06.61c.15.71.15 1.44 0 2.15l1.06.61a2.5 2.5 0 1 1-2.5 4.33l-1.06-.61A7.02 7.02 0 0 1 14.5 19.78V21a2.5 2.5 0 0 1-5 0v-1.22a7.02 7.02 0 0 1-2.13-1.23l-1.06.61a2.5 2.5 0 1 1-2.5-4.33l1.06-.61a5.9 5.9 0 0 1 0-2.15l-1.06-.61a2.5 2.5 0 1 1 2.5-4.33l1.06.61A7.02 7.02 0 0 1 9.5 6.22V5A2.5 2.5 0 0 1 12 2.5Zm0 6a4.5 4.5 0 1 0 4.5 4.5A4.5 4.5 0 0 0 12 8.5Zm0 2.25A2.25 2.25 0 1 1 9.75 13 2.25 2.25 0 0 1 12 10.75Z"/></svg>
+            <span>AI</span>
         </a>
         <a class="mobile-tabbar-link {% if request.url.path == '/profile' or request.url.path == '/local-profile' %}active{% endif %}" href="/profile">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"/></svg>

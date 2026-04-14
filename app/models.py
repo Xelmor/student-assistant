@@ -1,5 +1,5 @@
 from datetime import datetime, time
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Text, Date, Time
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Text, Time, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -20,6 +20,7 @@ class User(Base):
     tasks = relationship('Task', back_populates='user', cascade='all, delete-orphan')
     schedule_items = relationship('ScheduleItem', back_populates='user', cascade='all, delete-orphan')
     notes = relationship('Note', back_populates='user', cascade='all, delete-orphan')
+    ai_assistant_entries = relationship('AIAssistantEntry', back_populates='user', cascade='all, delete-orphan')
 
 
 class Subject(Base):
@@ -87,3 +88,19 @@ class Note(Base):
 
     user = relationship('User', back_populates='notes')
     subject = relationship('Subject', back_populates='note_items')
+
+
+class AIAssistantEntry(Base):
+    __tablename__ = 'ai_assistant_entries'
+    __table_args__ = (
+        UniqueConstraint('user_id', 'feature_type', name='uq_ai_assistant_user_feature'),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    feature_type = Column(String(50), nullable=False)
+    input_summary = Column(Text, nullable=False)
+    result_text = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = relationship('User', back_populates='ai_assistant_entries')

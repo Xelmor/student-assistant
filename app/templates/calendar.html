@@ -94,6 +94,14 @@
                             <div class="calendar-load-meter">
                                 <span class="calendar-load-fill level-{{ cell.intensity }}"></span>
                             </div>
+                            <div class="calendar-day-mobile-summary">
+                                {% if cell.has_schedule %}
+                                <span class="calendar-mobile-chip is-schedule">{{ cell.schedule_count }} пар{% if cell.first_schedule_start %} · {{ cell.first_schedule_start }}{% endif %}</span>
+                                {% endif %}
+                                {% if cell.has_task %}
+                                <span class="calendar-mobile-chip is-task">{{ cell.task_count }} задач</span>
+                                {% endif %}
+                            </div>
                             <div class="calendar-day-preview">
                                 {% if cell.has_schedule %}
                                 <div class="calendar-day-window">

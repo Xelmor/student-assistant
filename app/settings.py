@@ -54,6 +54,10 @@ class Settings:
     smtp_starttls: bool
     smtp_ssl: bool
     password_reset_token_ttl_seconds: int
+    openai_api_key: str
+    openai_model: str
+    openai_timeout_seconds: int
+    ai_input_max_length: int
     base_dir: Path
 
 
@@ -91,6 +95,10 @@ def get_settings() -> Settings:
         smtp_starttls=env_flag('SMTP_STARTTLS', 'true'),
         smtp_ssl=env_flag('SMTP_SSL'),
         password_reset_token_ttl_seconds=int(getenv('PASSWORD_RESET_TOKEN_TTL_SECONDS', '3600')),
+        openai_api_key=(getenv('OPENAI_API_KEY') or '').strip(),
+        openai_model=(getenv('OPENAI_MODEL') or 'gpt-5-mini').strip() or 'gpt-5-mini',
+        openai_timeout_seconds=int(getenv('OPENAI_TIMEOUT_SECONDS', '30')),
+        ai_input_max_length=max(500, int(getenv('AI_INPUT_MAX_LENGTH', '2500'))),
         base_dir=Path(__file__).resolve().parent,
     )
 
