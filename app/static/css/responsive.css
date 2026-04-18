@@ -1,0 +1,457 @@
+﻿@media (max-width: 991.98px) {
+    .topbar {
+        border-radius: 26px;
+    }
+
+    .topbar .navbar-collapse {
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-hero {
+        align-items: flex-start;
+    }
+
+    .dashboard-side {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .dashboard-calendar-wrap {
+        width: 228px;
+    }
+
+    .dashboard-widget-stack {
+        width: 240px;
+    }
+
+    .quick-task-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-day-card {
+        min-height: 7.2rem;
+    }
+
+    .week-strip,
+    .week-board {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    body::before,
+    body::after,
+    .hero-panel::before,
+    .data-card::before {
+        display: none;
+    }
+
+    .topbar-wrap,
+    .hero-panel,
+    .feature-panel,
+    .auth-panel,
+    .card,
+    .mobile-tabbar,
+    .install-sheet-card {
+        backdrop-filter: none;
+    }
+
+    .topbar,
+    .hero-panel,
+    .feature-panel,
+    .auth-panel,
+    .card,
+    .mobile-tabbar,
+    .install-sheet-card {
+        box-shadow: 0 10px 24px rgba(82, 46, 23, 0.1);
+    }
+
+    .stagger-in {
+        animation: none;
+    }
+
+    .content-wrap {
+        padding-top: 1rem;
+    }
+
+    .hero-panel {
+        padding: 1.4rem;
+    }
+
+    .card .card-body {
+        padding: 1.2rem;
+    }
+
+    .table-responsive {
+        border-radius: 18px;
+    }
+
+    .dashboard-side {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dashboard-calendar-wrap,
+    .dashboard-calendar-widget,
+    .dashboard-clock,
+    .dashboard-next-widget,
+    .dashboard-widget-stack {
+        width: 100%;
+    }
+
+    .stat-card-button,
+    .quick-task-card-submit {
+        width: 100%;
+    }
+
+    .quick-task-inline-form {
+        margin-top: 0.75rem;
+    }
+
+    .quick-task-card-submit {
+        min-width: 0;
+    }
+
+    .profile-hero {
+        padding: 1.35rem;
+        gap: 1rem;
+    }
+
+    .profile-hero-badge {
+        width: 100%;
+        align-items: flex-start;
+        padding: 0.95rem 1rem;
+        gap: 0.85rem;
+    }
+
+    .profile-hero-badge > div:last-child {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .profile-hero-copy {
+        font-size: 0.96rem;
+        line-height: 1.55;
+    }
+
+    .profile-meta-list {
+        margin-top: 1.1rem;
+        gap: 0.7rem;
+    }
+
+    .profile-meta-item {
+        padding: 0.8rem 0.9rem;
+    }
+
+    .profile-action-stack .btn,
+    .data-action-row .btn,
+    form[action="/profile"] .btn {
+        width: 100%;
+    }
+
+    form[action="/profile"] .col-12.d-flex {
+        display: grid !important;
+        gap: 0.75rem !important;
+    }
+
+    .data-card .card-body,
+    .profile-summary-card .card-body {
+        display: grid;
+        gap: 0.95rem;
+    }
+
+    .data-card-copy,
+    .data-card-note {
+        font-size: 0.94rem;
+        line-height: 1.55;
+    }
+
+    .data-action-row {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .profile-button {
+        width: 2.7rem;
+        height: 2.7rem;
+    }
+
+    .calendar-hero {
+        padding: 1.35rem;
+        gap: 1rem;
+    }
+
+    .calendar-hero-copy {
+        font-size: 0.96rem;
+        line-height: 1.55;
+    }
+
+    .calendar-hero-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-hero-actions .btn {
+        width: 100%;
+    }
+
+    .calendar-toolbar {
+        display: grid;
+        grid-template-columns: 2.8rem minmax(0, 1fr) 2.8rem;
+        gap: 0.6rem;
+        align-items: center;
+    }
+
+    .calendar-toolbar > div {
+        text-align: center;
+    }
+
+    .calendar-toolbar-title {
+        font-size: 1.05rem;
+    }
+
+    .calendar-grid {
+        gap: 0.38rem;
+    }
+
+    .calendar-day-card {
+        min-height: 4.9rem;
+        aspect-ratio: auto;
+        justify-content: flex-start;
+        padding: 0.48rem 0.42rem 0.52rem;
+        border-radius: 18px;
+        gap: 0.38rem;
+        overflow: hidden;
+    }
+
+    .calendar-grid-head {
+        margin-bottom: 0.45rem;
+    }
+
+    .calendar-grid-head span {
+        font-size: 0.68rem;
+        letter-spacing: 0.04em;
+    }
+
+    .calendar-day-head {
+        align-items: flex-start;
+        gap: 0.3rem;
+        min-height: 1.4rem;
+    }
+
+    .calendar-day-number {
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    .calendar-day-count {
+        min-width: 1.35rem;
+        height: 1.35rem;
+        padding: 0 0.3rem;
+        font-size: 0.64rem;
+    }
+
+    .calendar-load-meter,
+    .calendar-day-preview {
+        display: none;
+    }
+
+    .calendar-day-card.is-muted {
+        opacity: 0.42;
+    }
+
+    .calendar-day-mobile-summary {
+        display: grid;
+        gap: 0.24rem;
+        margin-top: auto;
+    }
+
+    .calendar-mobile-chip {
+        display: block;
+        overflow: hidden;
+        padding: 0.24rem 0.34rem;
+        border-radius: 999px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.56rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    .calendar-mobile-chip.is-schedule {
+        background: rgba(20, 138, 136, 0.12);
+        color: #116a69;
+    }
+
+    .calendar-mobile-chip.is-task {
+        background: rgba(222, 107, 61, 0.12);
+        color: #a44f2e;
+    }
+
+
+    .agenda-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .week-strip {
+        display: flex;
+        gap: 0.6rem;
+        margin-inline: -0.15rem;
+        padding: 0.1rem 0.15rem 0.35rem;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .week-strip::-webkit-scrollbar {
+        display: none;
+    }
+
+    .week-strip-day {
+        flex: 0 0 6.8rem;
+        scroll-snap-align: start;
+        padding: 0.8rem 0.72rem;
+        border-radius: 18px;
+    }
+
+    .week-strip-date {
+        font-size: 1.2rem;
+    }
+
+    .week-strip-badges {
+        font-size: 0.74rem;
+    }
+
+    .week-focus {
+        padding: 0.9rem;
+        border-radius: 22px;
+    }
+
+    .week-focus-head {
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .week-focus-title {
+        font-size: 1.12rem;
+    }
+
+    .week-focus-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+    }
+
+    .week-focus-stat {
+        padding: 0.75rem 0.8rem;
+        border-radius: 16px;
+    }
+
+    .week-focus-item {
+        grid-template-columns: 1fr;
+        gap: 0.65rem;
+        padding: 0.8rem;
+        border-radius: 18px;
+    }
+
+    .week-focus-time {
+        justify-content: flex-start;
+        min-height: 0;
+        padding: 0.65rem 0.75rem;
+        font-size: 0.88rem;
+    }
+
+    .week-focus-item-title {
+        font-size: 0.95rem;
+    }
+
+    .agenda-item {
+        grid-template-columns: 1fr;
+        gap: 0.45rem;
+        padding: 0.85rem 0.9rem;
+    }
+
+    .agenda-item-time {
+        font-size: 0.9rem;
+    }
+
+    .agenda-item-title {
+        font-size: 0.96rem;
+    }
+
+    .agenda-summary-grid {
+        gap: 0.6rem;
+    }
+
+    .agenda-summary-card {
+        padding: 0.8rem 0.85rem;
+        border-radius: 16px;
+    }
+
+    .agenda-summary-card strong {
+        font-size: 0.9rem;
+        line-height: 1.35;
+    }
+
+    .upcoming-item {
+        grid-template-columns: 2.85rem minmax(0, 1fr);
+        padding: 0.75rem 0.8rem;
+    }
+
+    .upcoming-item-date {
+        width: 2.85rem;
+        height: 2.85rem;
+        border-radius: 14px;
+    }
+
+    .calendar-mini-event {
+        font-size: 0.73rem;
+    }
+
+    .calendar-mode-switch {
+        display: grid;
+        width: 100%;
+    }
+
+    .calendar-mode-button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 420px) {
+    .calendar-grid {
+        gap: 0.3rem;
+    }
+
+    .calendar-day-card {
+        min-height: 4.55rem;
+        padding: 0.44rem 0.34rem 0.48rem;
+        border-radius: 16px;
+    }
+
+    .calendar-day-number {
+        font-size: 0.94rem;
+    }
+
+    .calendar-day-count {
+        min-width: 1.25rem;
+        height: 1.25rem;
+        font-size: 0.6rem;
+    }
+
+    .calendar-mobile-chip {
+        padding: 0.22rem 0.3rem;
+        font-size: 0.52rem;
+    }
+}

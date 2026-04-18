@@ -4,9 +4,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
 from starlette.middleware.sessions import SessionMiddleware
-from .database import Base, engine
-from .routers import router
-from .settings import settings
+from .core.config import settings
+from .core.database import Base, engine
+from .web.routes import router
 
 Base.metadata.create_all(bind=engine)
 

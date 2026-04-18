@@ -1,0 +1,210 @@
+﻿        radial-gradient(circle at top left, rgba(222, 107, 61, 0.10), transparent 20%),
+        linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(255, 238, 223, 0.9));
+}
+
+.profile-hero {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1.25rem;
+    margin-bottom: var(--section-gap);
+    padding: 1.6rem 1.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background:
+        radial-gradient(circle at top right, rgba(79, 154, 138, 0.10), transparent 18%),
+        radial-gradient(circle at left center, rgba(255, 160, 90, 0.12), transparent 22%),
+        linear-gradient(135deg, rgba(255, 252, 247, 0.96), rgba(255, 239, 224, 0.92));
+    box-shadow: var(--shadow);
+}
+
+.profile-hero-main {
+    max-width: 40rem;
+}
+
+.profile-hero-title {
+    margin: 0.85rem 0 0.55rem;
+}
+
+.profile-hero-copy {
+    margin: 0;
+    color: var(--muted);
+    font-size: 1rem;
+}
+
+.profile-hero-badge {
+    display: inline-flex;
+    gap: 1rem;
+    align-items: center;
+    max-width: 100%;
+    min-width: 0;
+    padding: 1rem 1.15rem;
+    border: 1px solid rgba(104, 67, 38, 0.12);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.56);
+    box-shadow: 0 10px 20px rgba(84, 46, 21, 0.08);
+}
+
+.profile-avatar {
+    display: grid;
+    width: 5.6rem;
+    height: 5.6rem;
+    margin-bottom: 1rem;
+    place-items: center;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #ffbf86, #d96c3f 72%);
+    color: #fff;
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    box-shadow: 0 12px 22px rgba(143, 59, 31, 0.12);
+}
+
+.profile-summary-name {
+    margin-bottom: 0.35rem;
+}
+
+.profile-avatar-large {
+    width: 4.6rem;
+    height: 4.6rem;
+    margin-bottom: 0;
+    border-radius: 20px;
+    font-size: 1.7rem;
+}
+
+.profile-card-title {
+    margin-bottom: 1rem;
+    color: var(--text);
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.profile-hero-name {
+    color: var(--text);
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.profile-hero-email {
+    color: var(--muted);
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.profile-summary-email {
+    color: var(--muted);
+}
+
+.profile-meta-list {
+    display: grid;
+    gap: 0.85rem;
+    margin-top: 1.5rem;
+}
+
+.profile-meta-item {
+    padding: 0.9rem 1rem;
+    border: 1px solid rgba(104, 67, 38, 0.1);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.profile-meta-item span {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.profile-meta-item strong {
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.profile-action-stack {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.data-hub {
+    margin-bottom: 1rem;
+}
+
+.data-card {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at top right, rgba(79, 154, 138, 0.10), transparent 20%),
+        radial-gradient(circle at bottom left, rgba(222, 107, 61, 0.10), transparent 20%),
+        linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(255, 241, 229, 0.9));
+}
+
+.data-card::before {
+    position: absolute;
+    inset: auto -3rem -4rem auto;
+    width: 7rem;
+    height: 7rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 190, 129, 0.12), transparent 68%);
+    content: "";
+}
+
+.data-card-icon {
+    display: inline-grid;
+    width: 3.2rem;
+    height: 3.2rem;
+    margin-bottom: 1rem;
+    place-items: center;
+    border-radius: 18px;
+    color: #fff;
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+.data-card-icon-export {
+    background: linear-gradient(135deg, #6eb3a6, var(--accent-strong));
+    box-shadow: 0 8px 16px rgba(15, 110, 108, 0.14);
+}
+
+.data-card-icon-import {
+    background: linear-gradient(135deg, #f2a167, #b84a22);
+    box-shadow: 0 8px 16px rgba(184, 74, 34, 0.14);
+}
+
+.data-card-copy {
+    margin-bottom: 1.15rem;
+    color: var(--muted);
+}
+
+.data-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.data-action-row .btn {
+    flex: 1 1 12rem;
+}
+
+.data-card-note {
+    margin-top: 1rem;
+    padding: 0.95rem 1rem;
+    border: 1px solid rgba(104, 67, 38, 0.1);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.52);
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.calendar-hero {
+    display: flex;
+    flex-wrap: wrap;

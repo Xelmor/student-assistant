@@ -1,0 +1,224 @@
+﻿.weekday-multiselect {
+    padding: 0.85rem;
+    border: 1px solid rgba(104, 67, 38, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.weekday-chip-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+}
+
+.weekday-chip {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid rgba(104, 67, 38, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 250, 245, 0.92);
+    color: var(--text);
+    font-size: 0.92rem;
+    font-weight: 700;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.weekday-chip:hover,
+.weekday-chip:focus {
+    border-color: rgba(20, 138, 136, 0.26);
+    color: var(--accent-strong);
+    transform: var(--interactive-lift);
+}
+
+.weekday-chip.is-selected {
+    border-color: rgba(20, 138, 136, 0.34);
+    background: linear-gradient(135deg, rgba(79, 154, 138, 0.14), rgba(79, 154, 138, 0.08));
+    color: var(--accent-strong);
+    box-shadow: 0 6px 14px rgba(15, 110, 108, 0.08);
+}
+
+.weekday-multiselect-summary {
+    margin-top: 0.65rem;
+    color: var(--muted);
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.mobile-tabbar {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: calc(env(safe-area-inset-bottom) + 0.35rem);
+    z-index: 1040;
+    display: none;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.35rem;
+    padding: 0.45rem;
+    border: 1px solid rgba(104, 67, 38, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 248, 240, 0.92);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 12px 28px rgba(72, 42, 18, 0.12);
+}
+
+.mobile-tabbar-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.28rem;
+    min-height: 3.45rem;
+    padding: 0.45rem 0.25rem;
+    border-radius: 14px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.64rem;
+    font-weight: 800;
+    line-height: 1.1;
+    transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mobile-tabbar-link svg {
+    width: 1.18rem;
+    height: 1.18rem;
+    fill: currentColor;
+}
+
+.mobile-tabbar-link:hover,
+.mobile-tabbar-link:focus,
+.mobile-tabbar-link.active {
+    color: #fff;
+    background: linear-gradient(135deg, #f2a167, #de6b3d 72%);
+    box-shadow: 0 8px 18px rgba(191, 90, 47, 0.16);
+    transform: var(--interactive-lift);
+}
+
+.install-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1055;
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.install-sheet.is-visible {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.install-sheet-card {
+    position: relative;
+    width: min(100%, 28rem);
+    padding: 1.15rem 1.15rem 1rem;
+    border: 1px solid rgba(104, 67, 38, 0.14);
+    border-radius: 20px 20px 16px 16px;
+    background:
+        radial-gradient(circle at top right, rgba(255, 215, 173, 0.45), transparent 30%),
+        linear-gradient(180deg, rgba(255, 249, 242, 0.98), rgba(255, 242, 228, 0.98));
+    box-shadow: 0 -10px 24px rgba(90, 47, 20, 0.12);
+}
+
+.install-sheet-badge {
+    display: inline-flex;
+    margin-bottom: 0.65rem;
+    padding: 0.32rem 0.72rem;
+    border-radius: 999px;
+    background: rgba(247, 127, 69, 0.14);
+    color: #a34f26;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.install-sheet-title {
+    margin-bottom: 0.45rem;
+    font-size: 1.12rem;
+}
+
+.install-sheet-text,
+.install-sheet-hint {
+    margin-bottom: 0.85rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.install-sheet-actions {
+    display: flex;
+    gap: 0.65rem;
+}
+
+.install-sheet-actions .btn {
+    flex: 1 1 0;
+}
+
+.install-sheet-close {
+    position: absolute;
+    top: 0.85rem;
+    right: 0.85rem;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(95, 59, 33, 0.08);
+    color: var(--muted);
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+@media (max-width: 767.98px) {
+    .subjects-desktop-list,
+    .notes-desktop-list,
+    .tasks-desktop-list {
+        display: none;
+    }
+
+    .subjects-mobile-list,
+    .notes-mobile-list,
+    .tasks-mobile-list {
+        display: grid;
+    }
+
+    .content-wrap {
+        padding-bottom: 8.2rem;
+    }
+
+    .task-mobile-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .task-mobile-actions,
+    .task-mobile-edit-actions,
+    .subject-mobile-actions,
+    .subject-mobile-edit-actions,
+    .note-mobile-actions,
+    .note-mobile-edit-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .mobile-tabbar {
+        display: grid;
+    }
+
+    .topbar-actions .btn-outline-light.btn-sm,
+    .topbar-actions .btn-primary.btn-sm,
+    .topbar-actions form .btn-outline-light.btn-sm {
+        min-height: 2.6rem;
+        padding-inline: 0.95rem;
+    }
+
+    .install-sheet {
+        padding: 0.75rem 0.75rem calc(max(0.75rem, env(safe-area-inset-bottom)));
+    }
+
+    .install-sheet-card {
+        width: 100%;
+    }
+}

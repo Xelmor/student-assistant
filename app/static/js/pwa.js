@@ -41,14 +41,14 @@
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredPrompt = event;
-    installText.textContent = 'Установи Student Assistant на экран домой и открывай его как отдельное приложение.';
+    installText.textContent = 'Добавь сайт на экран «Домой» и открывай его как отдельное приложение.';
     installHint.hidden = true;
     installAction.hidden = false;
     openSheet();
   });
 
   if (isSafari) {
-    installText.textContent = 'На iPhone сайт можно поставить на экран домой и открыть почти как обычное приложение.';
+    installText.textContent = 'На iPhone сайт можно добавить на экран «Домой» и открывать почти как обычное приложение.';
     installHint.hidden = false;
     installAction.textContent = 'Понятно';
     openSheet();
