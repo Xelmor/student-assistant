@@ -54,6 +54,8 @@ class Settings:
     smtp_starttls: bool
     smtp_ssl: bool
     password_reset_token_ttl_seconds: int
+    telegram_bot_api_token: str
+    telegram_link_code_ttl_minutes: int
     base_dir: Path
 
 
@@ -91,6 +93,8 @@ def get_settings() -> Settings:
         smtp_starttls=env_flag('SMTP_STARTTLS', 'true'),
         smtp_ssl=env_flag('SMTP_SSL'),
         password_reset_token_ttl_seconds=int(getenv('PASSWORD_RESET_TOKEN_TTL_SECONDS', '3600')),
+        telegram_bot_api_token=(getenv('TELEGRAM_BOT_API_TOKEN') or '').strip(),
+        telegram_link_code_ttl_minutes=int(getenv('TELEGRAM_LINK_CODE_TTL_MINUTES', '15')),
         base_dir=Path(__file__).resolve().parent.parent,
     )
 

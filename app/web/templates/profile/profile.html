@@ -99,6 +99,44 @@
             </div>
         </div>
 
+        <section class="mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="profile-card-title mb-2">Telegram-бот</div>
+                    <p class="data-card-copy">
+                        Привяжи Telegram через команду <strong>/login</strong> в боте и введи одноразовый код из личного кабинета.
+                        Код действует {{ telegram_link_code_ttl_minutes }} минут и нужен только для привязки.
+                    </p>
+
+                    <div class="profile-meta-list mb-3">
+                        <div class="profile-meta-item">
+                            <span>Статус</span>
+                            <strong>
+                                {% if user.telegram_chat_id %}
+                                Привязан{% if user.telegram_username %} (@{{ user.telegram_username }}){% endif %}
+                                {% else %}
+                                Не привязан
+                                {% endif %}
+                            </strong>
+                        </div>
+                        <div class="profile-meta-item">
+                            <span>Код привязки</span>
+                            <strong style="font-size: 1.3rem; letter-spacing: 0.18em;">{{ user.telegram_link_code or '------' }}</strong>
+                        </div>
+                        <div class="profile-meta-item">
+                            <span>Действует до</span>
+                            <strong>{{ user.telegram_link_code_expires_at.strftime('%d.%m.%Y %H:%M') if user.telegram_link_code_expires_at else '-' }}</strong>
+                        </div>
+                    </div>
+
+                    <form method="post" action="/profile/telegram-link/regenerate" class="d-flex flex-wrap gap-2">
+                        {{ csrf_input(request) }}
+                        <button type="submit" class="btn btn-primary">Сгенерировать новый код</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
         <section class="data-hub mt-4">
             <div class="row g-4">
                 <div class="col-lg-6">

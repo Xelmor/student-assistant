@@ -3,9 +3,9 @@
 {% block content %}
 <section class="dashboard-hero">
     <div class="dashboard-hero-main">
-        <span class="eyebrow">Личный кабинет</span>
+        <span class="eyebrow">Сегодня</span>
         <h1 class="dashboard-hero-title">Привет, {{ user.username }}</h1>
-        <p>Здесь собраны самые важные вещи на сегодня: ближайшие задачи, состояние учебы и расписание по текущему дню.</p>
+        <p>Один экран для всего главного на сегодня: пары, задачи, напоминания и заметки без лишнего шума.</p>
         <div class="dashboard-quote">
             <span class="dashboard-quote-mark">"</span>
             <span>{{ motivation_quote }}</span>
@@ -13,28 +13,28 @@
     </div>
     <div class="dashboard-side">
         <div class="dashboard-calendar-wrap">
-        <div class="dashboard-calendar-widget">
-            <div class="dashboard-calendar-head">
-                <span>{{ calendar_month_name }}</span>
-                <strong>{{ now.year }}</strong>
+            <div class="dashboard-calendar-widget">
+                <div class="dashboard-calendar-head">
+                    <span>{{ calendar_month_name }}</span>
+                    <strong>{{ now.year }}</strong>
+                </div>
+                <div class="dashboard-calendar-grid dashboard-calendar-weekdays">
+                    <span>Пн</span>
+                    <span>Вт</span>
+                    <span>Ср</span>
+                    <span>Чт</span>
+                    <span>Пт</span>
+                    <span>Сб</span>
+                    <span>Вс</span>
+                </div>
+                <div class="dashboard-calendar-grid">
+                    {% for day in calendar_days %}
+                        <span class="calendar-day {% if not day.in_month %}calendar-day-muted{% endif %} {% if day.is_today %}calendar-day-today{% endif %}">
+                            {{ day.day }}
+                        </span>
+                    {% endfor %}
+                </div>
             </div>
-            <div class="dashboard-calendar-grid dashboard-calendar-weekdays">
-                <span>Пн</span>
-                <span>Вт</span>
-                <span>Ср</span>
-                <span>Чт</span>
-                <span>Пт</span>
-                <span>Сб</span>
-                <span>Вс</span>
-            </div>
-            <div class="dashboard-calendar-grid">
-                {% for day in calendar_days %}
-                    <span class="calendar-day {% if not day.in_month %}calendar-day-muted{% endif %} {% if day.is_today %}calendar-day-today{% endif %}">
-                        {{ day.day }}
-                    </span>
-                {% endfor %}
-            </div>
-        </div>
         </div>
         <div class="dashboard-widget-stack">
             <div class="dashboard-badge" id="dashboard-live-date" data-server-date="{{ now.strftime('%Y-%m-%d') }}">Сегодня: {{ now.strftime('%d.%m.%Y') }}</div>
@@ -51,11 +51,9 @@
                 </div>
                 {% if active_schedule_item %}
                     <div class="dashboard-next-main">{{ active_schedule_item.subject.name }}</div>
-                    <div class="dashboard-next-time">
-                        {{ active_schedule_item.start_time.strftime('%H:%M') }} - {{ active_schedule_item.end_time.strftime('%H:%M') }}
-                    </div>
+                    <div class="dashboard-next-time">{{ active_schedule_item.start_time.strftime('%H:%M') }} - {{ active_schedule_item.end_time.strftime('%H:%M') }}</div>
                     <div class="dashboard-next-meta">
-                        {{ active_schedule_item.lesson_type or 'Занятие' }}{% if active_schedule_item.room %} &middot; {{ active_schedule_item.room }}{% endif %}
+                        {{ active_schedule_item.lesson_type or 'Занятие' }}{% if active_schedule_item.room %} · {{ active_schedule_item.room }}{% endif %}
                     </div>
                     <div class="dashboard-next-chip-row">
                         <span class="dashboard-next-chip">Сейчас идет {{ schedule_terms.singular }}</span>
@@ -65,11 +63,9 @@
                     </div>
                 {% elif next_schedule_item %}
                     <div class="dashboard-next-main">{{ next_schedule_item.subject.name }}</div>
-                    <div class="dashboard-next-time">
-                        {{ next_schedule_item.start_time.strftime('%H:%M') }} - {{ next_schedule_item.end_time.strftime('%H:%M') }}
-                    </div>
+                    <div class="dashboard-next-time">{{ next_schedule_item.start_time.strftime('%H:%M') }} - {{ next_schedule_item.end_time.strftime('%H:%M') }}</div>
                     <div class="dashboard-next-meta">
-                        {{ next_schedule_item.lesson_type or 'Занятие' }}{% if next_schedule_item.room %} &middot; {{ next_schedule_item.room }}{% endif %}
+                        {{ next_schedule_item.lesson_type or 'Занятие' }}{% if next_schedule_item.room %} · {{ next_schedule_item.room }}{% endif %}
                     </div>
                     <div class="dashboard-next-chip-row">
                         <span class="dashboard-next-chip">Дальше по расписанию</span>
@@ -88,7 +84,7 @@
                             {% endif %}
                         </div>
                         <div class="dashboard-next-meta">
-                            Нажмите, чтобы открыть детали и редактировать{% if urgent_tasks[0].subject %} &middot; {{ urgent_tasks[0].subject.name }}{% endif %}
+                            Нажмите, чтобы открыть детали{% if urgent_tasks[0].subject %} · {{ urgent_tasks[0].subject.name }}{% endif %}
                         </div>
                         <div class="dashboard-next-chip-row">
                             <span class="dashboard-next-chip {% if urgent_tasks[0].deadline and urgent_tasks[0].deadline < now %}dashboard-next-chip-overdue{% endif %}">Приоритет: {{ urgent_tasks[0].priority }}</span>
@@ -98,9 +94,7 @@
                 {% else %}
                     <div class="dashboard-next-main">Свободное окно</div>
                     <div class="dashboard-next-time">Можно спокойно распланировать день</div>
-                    <div class="dashboard-next-meta">
-                        На сегодня нет {{ schedule_terms.plural_genitive }} и срочных задач
-                    </div>
+                    <div class="dashboard-next-meta">На сегодня нет срочных задач и ближайших занятий.</div>
                     <div class="dashboard-next-chip-row">
                         <span class="dashboard-next-chip">{{ schedule_terms.plural_genitive|capitalize }} сегодня: 0</span>
                         <span class="dashboard-next-chip">Активных: 0</span>
@@ -111,24 +105,154 @@
     </div>
 </section>
 
+<section class="today-hub">
+    <div class="today-hub-head">
+        <div>
+            <span class="stat-title">Единый экран</span>
+            <h2 class="today-hub-title">Сегодня под контролем</h2>
+        </div>
+        <div class="today-hub-meta">
+            <span class="today-hub-meta-chip">Пары: {{ today_schedule|length }}</span>
+            <span class="today-hub-meta-chip">Задачи: {{ today_focus_tasks|length }}</span>
+            <span class="today-hub-meta-chip">Заметки: {{ today_notes|length }}</span>
+        </div>
+    </div>
+
+    <div class="today-hub-grid">
+        <article class="today-panel today-panel-schedule">
+            <div class="today-panel-head">
+                <div>
+                    <span class="today-panel-kicker">Расписание</span>
+                    <h3>{{ weekdays[now.weekday()] }}</h3>
+                </div>
+                <a href="/schedule" class="today-panel-link">Открыть</a>
+            </div>
+            {% if today_schedule %}
+                <div class="today-timeline">
+                    {% for item in today_schedule %}
+                        <div class="today-timeline-item {% if active_schedule_item and active_schedule_item.id == item.id %}is-active{% endif %}">
+                            <div class="today-timeline-time">{{ item.start_time.strftime('%H:%M') }} - {{ item.end_time.strftime('%H:%M') }}</div>
+                            <div class="today-timeline-body">
+                                <strong>{{ item.subject.name }}</strong>
+                                <span>{{ item.lesson_type or 'Занятие' }}{% if item.room %} · {{ item.room }}{% endif %}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="today-empty">На сегодня в расписании пусто.</div>
+            {% endif %}
+        </article>
+
+        <article class="today-panel today-panel-tasks">
+            <div class="today-panel-head">
+                <div>
+                    <span class="today-panel-kicker">Ближайшие задачи</span>
+                    <h3>Фокус дня</h3>
+                </div>
+                <a href="/tasks" class="today-panel-link">Все задачи</a>
+            </div>
+            {% if today_focus_tasks %}
+                <div class="today-task-list">
+                    {% for task in today_focus_tasks %}
+                        <a href="/tasks?task={{ task.id }}" class="today-task-item {% if task.deadline and task.deadline < now %}is-overdue{% endif %}">
+                            <div class="today-task-main">
+                                <strong>{{ task.title }}</strong>
+                                <span>
+                                    {% if task.subject %}{{ task.subject.name }} · {% endif %}
+                                    {% if task.deadline %}
+                                        {{ task.deadline.strftime('%d.%m.%Y %H:%M') }}
+                                    {% else %}
+                                        Без дедлайна
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <span class="today-task-priority">{{ task.priority }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="today-empty">Активных задач нет. Можно спокойно добавить новую.</div>
+            {% endif %}
+        </article>
+
+        <article class="today-panel today-panel-reminders">
+            <div class="today-panel-head">
+                <div>
+                    <span class="today-panel-kicker">Напоминания</span>
+                    <h3>Что не упустить</h3>
+                </div>
+            </div>
+            {% if today_reminders %}
+                <div class="today-reminder-list">
+                    {% for reminder in today_reminders %}
+                        <a href="{{ reminder.url }}" class="today-reminder-item is-{{ reminder.tone }}">
+                            <div class="today-reminder-time">{{ reminder.time_label }}</div>
+                            <div class="today-reminder-copy">
+                                <strong>{{ reminder.title }}</strong>
+                                <span>{{ reminder.meta }}</span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="today-empty">На сегодня нет важных напоминаний.</div>
+            {% endif %}
+        </article>
+
+        <article class="today-panel today-panel-notes">
+            <div class="today-panel-head">
+                <div>
+                    <span class="today-panel-kicker">{% if today_notes_are_recent %}Последние записи{% else %}Заметки дня{% endif %}</span>
+                    <h3>{% if today_notes_are_recent %}Недавние заметки{% else %}Быстрый доступ{% endif %}</h3>
+                </div>
+                <a href="/notes" class="today-panel-link">Все заметки</a>
+            </div>
+            {% if today_notes %}
+                <div class="today-note-list">
+                    {% for note in today_notes %}
+                        <a href="/notes" class="today-note-item">
+                            <div class="today-note-top">
+                                <strong>{{ note.title }}</strong>
+                                <span>{{ note.created_at.strftime('%d.%m %H:%M') }}</span>
+                            </div>
+                            <p>
+                                {% if note.content %}
+                                    {{ note.content[:120] }}{% if note.content|length > 120 %}...{% endif %}
+                                {% elif note.link %}
+                                    {{ note.link }}
+                                {% else %}
+                                    Без текста
+                                {% endif %}
+                            </p>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="today-empty">Пока нет заметок. Добавь первую мысль или конспект.</div>
+            {% endif %}
+        </article>
+    </div>
+</section>
+
 <div class="row g-3 mb-4 dashboard-stat-row">
     <div class="col-lg-5">
         <div class="card stat-card stagger-in stat-card-quick-add" id="dashboardQuickTaskCard">
             <div class="card-body stat-card-button-body">
                 <div class="stat-card-button-head">
-                    <span class="stat-title stat-title-large">Задачи</span>
+                    <span class="stat-title stat-title-large">Быстрое действие</span>
                     <span class="stat-card-plus" aria-hidden="true">+</span>
                 </div>
                 <div class="stat-action-button-label">Добавить новую задачу</div>
                 <form method="post" action="/tasks/quick-add" class="quick-task-inline-form" id="dashboardQuickTaskForm">
                     {{ csrf_input(request) }}
-                    <label class="visually-hidden" for="dashboard-quick-task-title">Название</label>
+                    <label class="visually-hidden" for="dashboard-quick-task-title">Название задачи</label>
                     <input
                         type="text"
                         class="form-control quick-task-inline-input"
                         id="dashboard-quick-task-title"
                         name="title"
-                        placeholder="Например, сделать лабу"
+                        placeholder="Например, сделать лабораторную"
                         autocomplete="off"
                         required
                     >
@@ -165,63 +289,13 @@
     <div class="col-lg-5">
         <div class="card stat-card streak-card stagger-in h-100">
             <div class="card-body">
-                <div class="stat-title">Мотивация</div>
+                <div class="stat-title">Ритм</div>
                 <div class="streak-card-head">
                     <div class="streak-card-emoji">{{ streak.emoji }}</div>
                     <div class="streak-card-days">{{ streak.days }}</div>
                 </div>
                 <div class="streak-card-title">{{ streak.headline }}</div>
                 <div class="streak-card-copy">{{ streak.message }}</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-lg-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h4 class="mb-3">Что делать в первую очередь</h4>
-                {% if urgent_tasks %}
-                    <div class="list-group">
-                    {% for task in urgent_tasks %}
-                        <a href="/tasks?task={{ task.id }}" class="list-group-item list-group-item-action {% if task.deadline and task.deadline < now %}dashboard-urgent-item-overdue{% endif %}">
-                            <div class="d-flex justify-content-between">
-                                <strong class="{% if task.deadline and task.deadline < now %}dashboard-urgent-title-overdue{% endif %}">{{ task.title }}</strong>
-                                <span class="badge text-bg-primary">{{ task.priority }}</span>
-                            </div>
-                            <div class="small {% if task.deadline and task.deadline < now %}dashboard-urgent-meta-overdue{% else %}text-muted{% endif %}">
-                                {% if task.subject %}{{ task.subject.name }} &middot; {% endif %}
-                                {% if task.deadline and task.deadline < now %}просрочена {{ task.deadline.strftime('%d.%m.%Y %H:%M') }}{% elif task.deadline %}до {{ task.deadline.strftime('%d.%m.%Y %H:%M') }}{% else %}без дедлайна{% endif %}
-                            </div>
-                        </a>
-                    {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-muted">Пока задач нет. Добавь первую задачу.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h4 class="mb-3">{{ schedule_terms.plural|capitalize }} на сегодня — {{ weekdays[now.weekday()] }}</h4>
-                {% if today_schedule %}
-                    <div class="list-group">
-                    {% for item in today_schedule %}
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <strong>{{ item.subject.name }}</strong>
-                                <span>{{ item.start_time.strftime('%H:%M') }}&ndash;{{ item.end_time.strftime('%H:%M') }}</span>
-                            </div>
-                            <div class="small text-muted">{{ item.lesson_type or 'занятие' }}{% if item.room %} &middot; {{ item.room }}{% endif %}</div>
-                        </div>
-                    {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-muted">На сегодня {{ schedule_terms.plural_genitive }} нет.</p>
-                {% endif %}
             </div>
         </div>
     </div>

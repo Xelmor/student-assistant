@@ -1,152 +1,236 @@
 # Student Assistant
 
-Student Assistant - это учебный веб-проект, в котором можно держать в одном месте предметы, задания, расписание и заметки.
+Student Assistant - учебный проект на FastAPI. В проекте уже есть сайт для работы с предметами, задачами, заметками и недельным расписанием. В этом обновлении добавлен Telegram-бот как отдельный сервис, который использует те же данные пользователя через backend API сайта.
 
-Идея простая: открыть сайт и быстро понять, что у тебя по учебе, что горит по дедлайнам и что нужно сделать сегодня.
+## Краткий анализ текущей архитектуры
 
-## Открыть онлайн
+- Сайт построен на `FastAPI + Jinja2 + SQLAlchemy`.
+- Авторизация на сайте session-based: пользователь логинится через web-форму, а сервер хранит `user_id` в сессии.
+- Основные сущности уже есть в БД и моделях: `User`, `Subject`, `Task`, `ScheduleItem`, `Note`.
+- CRUD по этим сущностям уже реализован в HTML-роутах.
+- До изменений в проекте не было полноценного JSON API для внешнего клиента, поэтому для Telegram-бота добавлен минимальный API-слой без дублирования моделей и учебных данных.
 
-Если не хочется ничего ставить локально, можно просто зайти в онлайн-версию:
+## Архитектура интеграции сайта и Telegram-бота
 
-[student-assistant-beby.onrender.com](https://student-assistant-beby.onrender.com/)
+Используется схема `site backend <-> bot service <-> Telegram`.
 
-## Превью
+- Сайт остаётся источником истины для пользователей, предметов, задач, заметок и расписания.
+- Telegram-бот не хранит отдельную базу учебных сущностей.
+- Бот получает данные только через API сайта.
+- Для доступа к API бот использует внутренний shared token `TELEGRAM_BOT_API_TOKEN`.
+- Привязка Telegram безопасная и не требует отправки пароля от сайта в бота:
+  1. пользователь входит на сайт;
+  2. открывает профиль;
+  3. получает одноразовый 6-значный код;
+  4. в Telegram вводит `/login` и отправляет код;
+  5. backend связывает `telegram_chat_id` с существующим `User`.
 
-<p align="center">
-  <img src="assets/preview.png" alt="Student Assistant Preview" width="900">
-</p>
+Это безопаснее, чем логин по паролю через чат, и хорошо подходит для учебного проекта.
 
-## Что умеет проект
+## Что добавлено в backend
 
-- регистрация и вход в аккаунт
-- главная страница с общей сводкой
-- добавление и редактирование предметов
-- создание задач с дедлайнами и приоритетом
-- ведение расписания
-- заметки с возможностью редактирования
-- личный кабинет
-- экспорт данных в `JSON` и `CSV`
-- импорт данных из `JSON`
+- новые поля у `User` для Telegram-привязки и настроек уведомлений;
+- автоматическое добавление недостающих колонок при старте приложения;
+- API endpoints для Telegram-бота;
+- генерация одноразового кода привязки в профиле;
+- блок Telegram в личном кабинете.
 
-## На чем сделано
+## API endpoints для бота
 
-- Python
-- FastAPI
-- Jinja2
-- SQLAlchemy
-- SQLite
-- Bootstrap 5
+### Привязка Telegram
 
-## Как запустить локально
+- `GET /api/v1/telegram/link/code`
+  Возвращает текущий одноразовый код привязки для авторизованного пользователя сайта.
+- `POST /api/v1/telegram/link/code`
+  Генерирует новый код привязки для авторизованного пользователя сайта.
+- `POST /api/v1/telegram/link/confirm`
+  Используется ботом. Принимает `code`, `chat_id`, `telegram_username` и привязывает Telegram к аккаунту сайта.
 
-### Вариант 1. Быстрый запуск
+### Данные пользователя
 
-На Windows можно просто запустить:
+- `GET /api/v1/telegram/me`
+
+### Учебные сущности
+
+- `GET /api/v1/telegram/subjects`
+- `GET /api/v1/telegram/tasks`
+- `POST /api/v1/telegram/tasks`
+- `GET /api/v1/telegram/deadlines`
+- `GET /api/v1/telegram/notes`
+- `GET /api/v1/telegram/schedule`
+
+### Напоминания
+
+- `GET /api/v1/telegram/reminders`
+- `PUT /api/v1/telegram/reminders`
+
+Во все bot-to-site запросы бот передаёт:
+
+- заголовок `X-Bot-Api-Token: <TELEGRAM_BOT_API_TOKEN>`
+- query-параметр `chat_id=<telegram_chat_id>`
+
+## Структура Telegram-бота
+
+```text
+bot/
+  config.py
+  api_client.py
+  main.py
+  webhook_app.py
+  handlers/
+    common.py
+    login.py
+    reminders.py
+    tasks.py
+  keyboards/
+    common.py
+  services/
+    formatters.py
+```
+
+Слои:
+
+- `config` - чтение настроек из `.env`;
+- `api_client` - запросы к backend API сайта;
+- `handlers` - команды, меню и FSM-сценарии;
+- `keyboards` - reply и inline клавиатуры;
+- `services` - форматирование данных и вспомогательная логика.
+
+## Функции бота
+
+- `/start` - приветствие и главное меню;
+- `/help` - список команд;
+- `/login` - привязка Telegram к аккаунту сайта по одноразовому коду;
+- `Моё расписание` - расписание на сегодня и на неделю;
+- `Мои задачи` - активные задачи;
+- `Ближайшие дедлайны` - дедлайны по возрастанию даты;
+- `Предметы` - список предметов;
+- `Заметки` - последние заметки;
+- `Добавить задачу` - создание задачи через FSM;
+- `Напоминания` - включение и выключение настроек через inline-кнопки.
+
+## Настройка .env
+
+Скопируй шаблон:
 
 ```powershell
-start_web.bat
+Copy-Item .env.example .env
 ```
 
-На Linux или macOS:
+Обязательные переменные:
 
-```bash
-chmod +x start_web.sh
-./start_web.sh
+```env
+SECRET_KEY=replace_with_a_unique_random_string_at_least_32_chars_long
+TELEGRAM_BOT_API_TOKEN=replace_with_internal_shared_token
+TELEGRAM_BOT_TOKEN=сюда_токен_из_BotFather
+TELEGRAM_BOT_API_BASE_URL=http://localhost:8000
 ```
 
-### Вариант 2. Вручную
+## Как создать бота через BotFather
 
-Создать виртуальное окружение:
+1. Открой Telegram и найди `@BotFather`.
+2. Отправь команду `/newbot`.
+3. Укажи имя бота.
+4. Укажи username, который заканчивается на `bot`.
+5. BotFather вернёт токен.
+6. Вставь этот токен в `.env` в переменную `TELEGRAM_BOT_TOKEN`.
 
-```bash
+## Локальный запуск сайта
+
+```powershell
 python -m venv venv
-```
-
-Активировать его:
-
-Windows PowerShell:
-
-```powershell
 venv\Scripts\Activate.ps1
-```
-
-Windows CMD:
-
-```cmd
-venv\Scripts\activate.bat
-```
-
-Linux / macOS:
-
-```bash
-source venv/bin/activate
-```
-
-Установить зависимости:
-
-```bash
 pip install -r requirements.txt
-```
-
-Запустить проект:
-
-```bash
 python run.py
 ```
 
-После запуска сайт будет доступен здесь:
+Сайт по умолчанию будет доступен на `http://127.0.0.1:8000`.
+
+## Локальный запуск Telegram-бота в polling
+
+В отдельном терминале:
+
+```powershell
+venv\Scripts\Activate.ps1
+python -m bot.main
+```
+
+Для локальной разработки это основной режим.
+
+## Запуск webhook-варианта
+
+Нужно задать в `.env`:
+
+```env
+TELEGRAM_USE_WEBHOOK=true
+TELEGRAM_WEBHOOK_BASE_URL=https://your-domain.example.com
+TELEGRAM_WEBHOOK_PATH=/telegram/webhook
+TELEGRAM_WEBHOOK_SECRET=your_webhook_secret
+TELEGRAM_BOT_PORT=8081
+```
+
+Запуск:
+
+```powershell
+python -m bot.webhook_app
+```
+
+Webhook URL получится таким:
 
 ```text
-http://127.0.0.1:8001
+https://your-domain.example.com/telegram/webhook
 ```
 
-## Что есть внутри
+Если сервер стоит за reverse proxy, нужно пробросить этот путь на сервис бота.
 
-- `app/main.py` - точка входа FastAPI
-- `app/models.py` - модели базы данных
-- `app/database.py` - подключение к SQLite
-- `app/auth.py` - логика авторизации
-- `app/routers/web.py` - основные маршруты приложения
-- `app/templates/` - HTML-шаблоны
-- `app/static/` - стили и статика
-- `run.py` - локальный запуск
+## Docker
 
-## Экспорт и импорт
+### Сборка и запуск через docker compose
 
-В личном кабинете есть блок для работы с данными:
-
-- можно скачать свой бэкап в `JSON`
-- можно скачать данные в `CSV`-архиве
-- можно импортировать обратно `JSON`, который был выгружен из приложения
-
-`JSON` лучше подходит для резервной копии, а `CSV` удобно открыть отдельно или показать как часть проекта в портфолио.
-
-## База данных
-
-По умолчанию используется локальная база `SQLite`.
-
-Файл базы:
-
-```text
-student_assistant.db
+```powershell
+docker compose up --build
 ```
 
-Таблицы создаются автоматически при первом запуске.
+Сервисы:
 
-## Полезно знать
+- `web` - сайт FastAPI;
+- `bot` - Telegram-бот в polling-режиме.
 
-- `.env.example` можно использовать как шаблон для своего `.env`
-- локальные данные вроде `.env`, `venv` и `student_assistant.db` обычно не стоит заливать в репозиторий
-- если после изменений что-то не видно в браузере, обычно помогает перезапуск сервера и `Ctrl+F5`
+Если нужен webhook, можно поменять команду сервиса `bot` на:
 
-## Быстрая проверка кода
-
-Если нужно просто убедиться, что основные файлы без синтаксических ошибок:
-
-```bash
-python -m py_compile app\models.py app\database.py app\main.py app\routers\web.py
+```yaml
+command: python -m bot.webhook_app
 ```
 
-## Итого
+## Что именно использует бот из сайта
 
-Это не огромная система, а понятный и полезный учебный помощник, который уже можно показать в портфолио: есть авторизация, работа с данными, личный кабинет и нормальный пользовательский интерфейс.
+Бот не создаёт отдельные таблицы для предметов, задач, заметок и расписания. Он работает с уже существующими моделями:
+
+- `User`
+- `Subject`
+- `Task`
+- `ScheduleItem`
+- `Note`
+
+Дополнительно в `User` хранятся только данные интеграции Telegram:
+
+- `telegram_chat_id`
+- `telegram_username`
+- `telegram_link_code`
+- `telegram_link_code_expires_at`
+- `telegram_linked_at`
+- настройки напоминаний
+
+## Проверка
+
+Минимальная проверка после установки зависимостей:
+
+```powershell
+python -m unittest
+```
+
+## Важные замечания
+
+- Сейчас реализован polling для локального запуска и подготовлен отдельный webhook entrypoint для deploy.
+- Напоминания в этой версии хранятся как настройки пользователя. Планировщик фактической рассылки не добавлялся, потому что в задаче требовались прежде всего API, привязка и UX управления настройками.
+- Если понадобится, следующим шагом можно добавить фоновый scheduler, который будет рассылать уведомления о дедлайнах и ближайших парах.

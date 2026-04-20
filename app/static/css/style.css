@@ -1,8 +1,8 @@
-﻿@import url("/static/css/base.css");
-@import url("/static/css/dashboard.css");
-@import url("/static/css/entities.css");
-@import url("/static/css/profile.css");
-@import url("/static/css/calendar.css");
-@import url("/static/css/responsive.css");
-@import url("/static/css/mobile.css");
-
+@import url("/static/css/base.css?v=20260420-mobilequick");
+@import url("/static/css/dashboard.css?v=20260420-mobilequick");
+@import url("/static/css/entities.css?v=20260420-mobilequick");
+@import url("/static/css/profile.css?v=20260420-mobilequick");
+@import url("/static/css/calendar.css?v=20260420-mobilequick");
+@import url("/static/css/responsive.css?v=20260420-mobilequick");
+@import url("/static/css/mobile.css?v=20260420-mobilequick");
+@import url("/static/css/landing.css?v=20260420-mobilequick");

@@ -455,3 +455,468 @@
         font-size: 0.52rem;
     }
 }
+
+@media (max-width: 991.98px) {
+    .welcome-hero-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .welcome-showcase {
+        min-height: 24rem;
+    }
+
+    .welcome-preview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .welcome-strip {
+        margin-top: 2rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .welcome-hero {
+        padding: 1rem;
+        border-radius: 24px;
+    }
+
+    .welcome-copy {
+        padding: 0.2rem;
+    }
+
+    .welcome-text {
+        font-size: 0.96rem;
+        line-height: 1.6;
+    }
+
+    .welcome-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .welcome-actions .btn,
+    .welcome-banner {
+        width: 100%;
+    }
+
+    .welcome-showcase {
+        min-height: 22rem;
+    }
+
+    .welcome-phone {
+        left: 0.3rem;
+        width: 11.8rem;
+        transform: none;
+    }
+
+    .welcome-illustration {
+        left: 3.8rem;
+    }
+
+    .welcome-student {
+        right: 0.3rem;
+        width: 9.9rem;
+        height: 10rem;
+    }
+
+    .welcome-student-head {
+        left: 3.8rem;
+        width: 2.8rem;
+        height: 2.8rem;
+    }
+
+    .welcome-student-hair {
+        left: 3.7rem;
+        width: 2.9rem;
+    }
+
+    .welcome-student-headphones::before {
+        left: 3.1rem;
+    }
+
+    .welcome-student-headphones::after {
+        left: 6.5rem;
+    }
+
+    .welcome-student-body {
+        top: 2.5rem;
+        left: 2.5rem;
+        width: 5.1rem;
+        height: 6rem;
+    }
+
+    .welcome-student-laptop {
+        width: 5rem;
+        height: 3.2rem;
+    }
+
+    .welcome-desk {
+        width: 12rem;
+    }
+
+    .welcome-strip {
+        margin: 2rem 0 1.4rem;
+    }
+
+    .welcome-strip-pill {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .public-topbar {
+        border-radius: 0 0 24px 24px;
+    }
+
+    .landing-ref-hero {
+        grid-template-columns: 1fr;
+        min-height: 0;
+        padding: 2rem 1.4rem;
+    }
+
+    .landing-ref-copy {
+        padding-left: 0;
+    }
+
+    .landing-ref-art {
+        min-height: 520px;
+    }
+
+    .landing-ref-strip {
+        margin-top: 4rem;
+    }
+
+    .landing-ref-grid {
+        grid-template-columns: 1fr;
+        padding-inline: 0;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .landing-ref-hero {
+        margin-top: 1rem;
+        padding: 1.35rem 1rem;
+        border-radius: 24px;
+    }
+
+    .landing-ref-copy h1 {
+        font-size: 2.45rem;
+    }
+
+    .landing-ref-subtitle {
+        font-size: 1.65rem;
+    }
+
+    .landing-ref-description {
+        font-size: 1rem;
+    }
+
+    .landing-ref-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .landing-ref-actions .btn {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .landing-ref-badge {
+        margin-top: 2rem;
+        width: 100%;
+        padding: 0.9rem 1rem;
+        font-size: 0.92rem;
+    }
+
+    .landing-ref-art {
+        min-height: 380px;
+    }
+
+    .landing-ref-phone {
+        left: 50%;
+        width: 224px;
+        height: 360px;
+        transform: translateX(-50%) rotate(-1deg);
+    }
+
+    .landing-ref-phone-card {
+        margin-bottom: 10px;
+        padding: 10px 12px;
+    }
+
+    .landing-ref-phone-card span {
+        font-size: 12px;
+    }
+
+    .landing-ref-phone-person {
+        right: 12px;
+        width: 132px;
+        height: 132px;
+    }
+
+    .landing-ref-desk-scene {
+        left: 50%;
+        right: auto;
+        bottom: 0;
+        width: 280px;
+        height: 170px;
+        transform: translateX(-50%);
+    }
+
+    .landing-ref-table {
+        width: 210px;
+    }
+
+    .landing-ref-laptop {
+        left: 44px;
+        width: 78px;
+        height: 48px;
+    }
+
+    .landing-ref-person-head {
+        left: 106px;
+        width: 44px;
+        height: 50px;
+    }
+
+    .landing-ref-person-hair {
+        left: 103px;
+        width: 46px;
+        height: 24px;
+    }
+
+    .landing-ref-person-headphones::before {
+        left: 96px;
+    }
+
+    .landing-ref-person-headphones::after {
+        left: 143px;
+    }
+
+    .landing-ref-person-body {
+        left: 92px;
+        width: 70px;
+        height: 78px;
+    }
+
+    .landing-ref-person-arm {
+        left: 110px;
+        width: 50px;
+    }
+
+    .landing-ref-chair {
+        right: 24px;
+        width: 66px;
+        height: 92px;
+    }
+
+    .landing-ref-books {
+        right: 6px;
+        width: 62px;
+    }
+
+    .landing-ref-cup {
+        left: 16px;
+    }
+
+    .landing-ref-ui,
+    .landing-ref-cloud,
+    .landing-ref-spark {
+        display: none;
+    }
+
+    .landing-ref-strip {
+        margin: 2rem auto 1.6rem;
+        text-align: center;
+    }
+
+    .landing-ref-strip p {
+        font-size: 1.15rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .public-topbar {
+        max-width: calc(100% - 1.5rem);
+        padding: 0.85rem 1rem;
+        border-radius: 0 0 22px 22px;
+    }
+
+    .landing-ref-hero {
+        grid-template-columns: 1fr;
+        min-height: 0;
+        gap: 1.2rem;
+        padding: 2rem 1.4rem 1.7rem;
+    }
+
+    .landing-ref-copy {
+        max-width: 100%;
+    }
+
+    .landing-ref-badge {
+        margin-top: 2rem;
+    }
+
+    .landing-ref-art {
+        min-height: 430px;
+    }
+
+    .landing-ref-phone {
+        left: 50%;
+        top: 0;
+        transform: translateX(-50%) rotate(-1deg);
+    }
+
+    .landing-ref-desk-scene {
+        right: 50%;
+        transform: translateX(50%);
+    }
+
+    .landing-ref-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .public-topbar .topbar-actions {
+        width: 100%;
+    }
+
+    .public-topbar .topbar-actions .btn {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .landing-ref-hero {
+        padding: 1.4rem 1rem 1.2rem;
+        border-radius: 24px;
+    }
+
+    .landing-ref-copy h1 {
+        font-size: 3.2rem;
+    }
+
+    .landing-ref-subtitle {
+        font-size: 1.95rem;
+    }
+
+    .landing-ref-description {
+        font-size: 1rem;
+    }
+
+    .landing-ref-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .landing-ref-actions .btn {
+        min-width: 0;
+        width: 100%;
+        padding-inline: 0.8rem;
+    }
+
+    .landing-ref-badge {
+        width: 100%;
+        margin-top: 1.8rem;
+        padding: 0.85rem 0.95rem;
+        font-size: 0.92rem;
+    }
+
+    .landing-ref-art {
+        min-height: 360px;
+    }
+
+    .landing-ref-phone {
+        width: 216px;
+        height: 336px;
+        padding: 18px 12px 14px;
+    }
+
+    .landing-ref-phone-card {
+        margin-bottom: 10px;
+        padding: 11px 12px;
+    }
+
+    .landing-ref-phone-card span {
+        font-size: 11px;
+    }
+
+    .landing-ref-phone-card small {
+        font-size: 10px;
+    }
+
+    .landing-ref-phone-person {
+        width: 110px;
+        height: 122px;
+    }
+
+    .landing-ref-desk-scene {
+        width: 260px;
+        height: 162px;
+        bottom: 0;
+    }
+
+    .landing-ref-table {
+        width: 214px;
+    }
+
+    .landing-ref-laptop {
+        left: 34px;
+        width: 76px;
+        height: 44px;
+    }
+
+    .landing-ref-person-head {
+        left: 108px;
+        width: 40px;
+        height: 44px;
+    }
+
+    .landing-ref-person-hair {
+        left: 106px;
+        width: 42px;
+    }
+
+    .landing-ref-person-headphones::before {
+        left: 99px;
+    }
+
+    .landing-ref-person-headphones::after {
+        left: 136px;
+    }
+
+    .landing-ref-person-body {
+        left: 96px;
+        width: 64px;
+        height: 72px;
+    }
+
+    .landing-ref-person-arm {
+        left: 113px;
+        width: 44px;
+    }
+
+    .landing-ref-chair {
+        right: 16px;
+        width: 58px;
+        height: 86px;
+    }
+
+    .landing-ref-books {
+        width: 58px;
+    }
+
+    .landing-ref-ui,
+    .landing-ref-cloud,
+    .landing-ref-spark,
+    .landing-ref-glow {
+        display: none;
+    }
+
+    .landing-ref-card {
+        padding: 1rem;
+    }
+}

@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
+from ...core.config import settings
 from ...core.database import get_db
+from ...services.telegram_link_service import assign_telegram_link_code, telegram_link_code_is_active
 from ...models import User
 from ..dependencies import SCHEDULE_UNIT_OPTIONS, is_local_private_data_enabled, require_user, templates, validate_csrf
 
@@ -17,6 +19,11 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
     if not user:
         return RedirectResponse('/login', status_code=302)
 
+    if not telegram_link_code_is_active(user):
+        assign_telegram_link_code(user, settings.telegram_link_code_ttl_minutes)
+        db.commit()
+        db.refresh(user)
+
     return templates.TemplateResponse(
         request,
         'profile/profile.html',
@@ -28,6 +35,7 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
             'data_success': data_success,
             'data_error': data_error,
             'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
+            'telegram_link_code_ttl_minutes': settings.telegram_link_code_ttl_minutes,
         }
     )
 
@@ -60,9 +68,10 @@ def update_profile(
                 'success': None,
                 'local_private_data_available': is_local_private_data_enabled(request),
                 'data_success': None,
-                'data_error': None,
-                'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
-            }
+            'data_error': None,
+            'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
+            'telegram_link_code_ttl_minutes': settings.telegram_link_code_ttl_minutes,
+        }
         )
 
     if schedule_unit not in SCHEDULE_UNIT_OPTIONS:
@@ -89,8 +98,24 @@ def update_profile(
             'data_success': None,
             'data_error': None,
             'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
+            'telegram_link_code_ttl_minutes': settings.telegram_link_code_ttl_minutes,
         }
     )
+
+
+@router.post('/profile/telegram-link/regenerate')
+def regenerate_telegram_link(
+    request: Request,
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    assign_telegram_link_code(user, settings.telegram_link_code_ttl_minutes)
+    db.commit()
+    return RedirectResponse('/profile', status_code=302)
 
 
 @router.get('/local-profile', response_class=HTMLResponse)

@@ -1,7 +1,15 @@
-const CACHE_NAME = 'student-assistant-v1';
+const CACHE_NAME = 'student-assistant-v5';
 const APP_SHELL = [
-  '/static/css/style.css',
-  '/static/js/pwa.js',
+  '/static/css/style.css?v=20260420-mobilequick',
+  '/static/css/base.css?v=20260420-mobilequick',
+  '/static/css/dashboard.css?v=20260420-mobilequick',
+  '/static/css/entities.css?v=20260420-mobilequick',
+  '/static/css/profile.css?v=20260420-mobilequick',
+  '/static/css/calendar.css?v=20260420-mobilequick',
+  '/static/css/responsive.css?v=20260420-mobilequick',
+  '/static/css/mobile.css?v=20260420-mobilequick',
+  '/static/css/landing.css?v=20260420-mobilequick',
+  '/static/js/pwa.js?v=20260420-mobilequick',
   '/static/pwa/icon-app.svg',
   '/manifest.webmanifest',
 ];

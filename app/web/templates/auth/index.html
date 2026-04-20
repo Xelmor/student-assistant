@@ -1,67 +1,206 @@
 {% extends 'base.html' %}
-{% block title %}Студенческий помощник{% endblock %}
+{% block title %}Student Assistant{% endblock %}
 {% block content %}
-<section class="hero-panel mb-4">
-    <span class="eyebrow">Платформа для учебы</span>
-    <h1 class="hero-title">Собери учебу в одном красивом рабочем пространстве</h1>
-    <p class="hero-copy">
-        Сервис помогает держать под рукой предметы, пары, дедлайны и заметки. Без хаоса в чатах, бумажках и случайных таблицах.
-    </p>
-    <div class="hero-actions">
-        <a href="/register" class="btn btn-primary btn-lg">Начать сейчас</a>
-        <a href="/login" class="btn btn-outline-secondary btn-lg">У меня уже есть аккаунт</a>
-    </div>
-    <div class="hero-stats">
-        <div class="hero-stat stagger-in">
-            <strong>Предметы</strong>
-            <span>единый список дисциплин, преподавателей и аудиторий</span>
-        </div>
-        <div class="hero-stat stagger-in">
-            <strong>Задачи</strong>
-            <span>дедлайны, приоритеты и быстрый контроль выполнения</span>
-        </div>
-        <div class="hero-stat stagger-in">
-            <strong>Расписание</strong>
-            <span>недельный обзор пар и быстрые изменения на ходу</span>
-        </div>
-    </div>
-</section>
+<section class="landing-page">
+    <section class="landing-premium-hero">
+        <div class="landing-premium-copy">
+            <span class="landing-premium-kicker">Student OS</span>
+            <h1 class="landing-premium-title">Student Assistant</h1>
+            <p class="landing-premium-subtitle">Цифровое пространство для учебы, которое выглядит как дорогой продукт, а не как очередной список задач.</p>
 
-<section class="page-intro">
-    <div>
-        <span class="eyebrow">Что внутри</span>
-        <h2 class="mt-3 mb-2">Минимализм по логике, выразительность по дизайну</h2>
-        <p>Сервис остаётся простым в использовании, но выглядит как современное студенческое рабочее пространство, а не как типовая админка.</p>
-    </div>
-</section>
+            <div class="landing-premium-actions">
+                <a href="/register" class="btn btn-primary btn-lg">Начать</a>
+                <a href="/login" class="btn btn-outline-secondary btn-lg">Войти</a>
+            </div>
 
-<div class="row g-4">
-    <div class="col-md-4">
-        <div class="feature-panel card h-100 stagger-in">
-            <div class="card-body">
-                <div class="feature-icon mb-3">01</div>
-                <h5>Предметы</h5>
-                <p class="mb-0 text-muted">Храни дисциплины, преподавателей, аудитории и важные заметки в одном месте.</p>
+            <div class="landing-premium-proof">
+                <div class="landing-proof-card">
+                    <strong>Telegram + Web</strong>
+                    <span>Все уведомления и контроль дедлайнов в одном контуре.</span>
+                </div>
+                <div class="landing-proof-card">
+                    <strong>Фокус на спокойствии</strong>
+                    <span>Расписание, задачи и заметки без визуального шума.</span>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="feature-panel card h-100 stagger-in">
-            <div class="card-body">
-                <div class="feature-icon mb-3">02</div>
-                <h5>Задачи</h5>
-                <p class="mb-0 text-muted">Следи за дедлайнами, сортируй по важности и редактируй задачи прямо из списка.</p>
+
+        <div class="landing-premium-showcase" aria-hidden="true">
+            <div class="landing-orb landing-orb-a"></div>
+            <div class="landing-orb landing-orb-b"></div>
+            <div class="landing-orb landing-orb-c"></div>
+
+            <div class="landing-console-card">
+                <div class="landing-console-head">
+                    <span class="landing-console-badge">Today</span>
+                    <span class="landing-console-title">Academic Control</span>
+                </div>
+
+                <div class="landing-console-grid">
+                    <section class="landing-panel landing-panel-schedule">
+                        <div class="landing-panel-top">
+                            <span class="landing-panel-label">Расписание</span>
+                            <span class="landing-panel-meta">Понедельник</span>
+                        </div>
+                        <div class="landing-class-card">
+                            <strong>Математика</strong>
+                            <span>09:30 — 11:00</span>
+                        </div>
+                        <div class="landing-class-card is-muted">
+                            <strong>История</strong>
+                            <span>12:10 — 13:40</span>
+                        </div>
+                    </section>
+
+                    <section class="landing-panel landing-panel-tasks">
+                        <div class="landing-panel-top">
+                            <span class="landing-panel-label">Дедлайны</span>
+                            <span class="landing-panel-meta">4 активных</span>
+                        </div>
+                        <div class="landing-deadline-item">
+                            <strong>Курсовая работа</strong>
+                            <small>До 25 мая</small>
+                        </div>
+                        <div class="landing-deadline-item">
+                            <strong>Презентация</strong>
+                            <small>До пятницы</small>
+                        </div>
+                    </section>
+
+                    <section class="landing-panel landing-panel-note">
+                        <div class="landing-panel-top">
+                            <span class="landing-panel-label">Заметки</span>
+                            <span class="landing-panel-meta">Quick capture</span>
+                        </div>
+                        <p>Идеи для проекта, тезисы к семинару и быстрые записи рядом с расписанием.</p>
+                    </section>
+                </div>
+            </div>
+
+            <div class="landing-phone-float">
+                <div class="landing-phone-shell">
+                    <div class="landing-phone-header">
+                        <span class="landing-phone-pill"></span>
+                        <div>
+                            <strong>Student Assistant</strong>
+                            <small>telegram bot</small>
+                        </div>
+                    </div>
+                    <div class="landing-phone-widget">
+                        <strong>Сегодня</strong>
+                        <span>2 пары и 1 дедлайн</span>
+                    </div>
+                    <div class="landing-phone-widget">
+                        <strong>Напомнить позже</strong>
+                        <span>за 2 часа до задачи</span>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="feature-panel card h-100 stagger-in">
-            <div class="card-body">
-                <div class="feature-icon mb-3">03</div>
-                <h5>Расписание</h5>
-                <p class="mb-0 text-muted">Выбирай пары по готовым интервалам, быстро меняй занятия и смотри неделю целиком.</p>
+    </section>
+
+    <section class="landing-premium-band" id="subjects-preview">
+        <article class="landing-band-card">
+            <div class="landing-band-topline">
+                <span class="landing-band-index">01</span>
+                <span class="landing-band-eyebrow">Учебный контур</span>
             </div>
-        </div>
-    </div>
-</div>
+            <div class="landing-band-visual landing-band-visual-subjects" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <h3>Предметы</h3>
+            <p>Структурируй дисциплины, преподавателей, аудитории и личные заметки по каждому курсу.</p>
+            <div class="landing-band-metric">
+                <strong>06</strong>
+                <span>активных курсов в едином академическом контуре</span>
+            </div>
+            <div class="landing-band-rows">
+                <div class="landing-band-row">
+                    <span>Профиль</span>
+                    <strong>Предметы, аудитории, преподаватели</strong>
+                </div>
+                <div class="landing-band-row">
+                    <span>Структура</span>
+                    <strong>Чистая иерархия без перегруза</strong>
+                </div>
+            </div>
+            <div class="landing-band-footer">
+                <span>Математика</span>
+                <span>История</span>
+                <span>Биология</span>
+            </div>
+        </article>
+
+        <article class="landing-band-card is-accent">
+            <div class="landing-band-topline">
+                <span class="landing-band-index">02</span>
+                <span class="landing-band-eyebrow">Контроль сроков</span>
+            </div>
+            <div class="landing-band-visual landing-band-visual-tasks" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <h3>Задачи</h3>
+            <p>Держи дедлайны в фокусе и получай спокойные напоминания там, где ты реально бываешь каждый день.</p>
+            <div class="landing-band-metric">
+                <strong>24/7</strong>
+                <span>тихий контроль сроков без перегруза интерфейса</span>
+            </div>
+            <div class="landing-band-rows">
+                <div class="landing-band-row">
+                    <span>Сценарий</span>
+                    <strong>Дедлайны, статусы и приоритеты</strong>
+                </div>
+                <div class="landing-band-row">
+                    <span>Тон</span>
+                    <strong>Напоминания без паники и визуального шума</strong>
+                </div>
+            </div>
+            <div class="landing-band-footer">
+                <span>Дедлайны</span>
+                <span>Статусы</span>
+                <span>Напоминания</span>
+            </div>
+        </article>
+
+        <article class="landing-band-card">
+            <div class="landing-band-topline">
+                <span class="landing-band-index">03</span>
+                <span class="landing-band-eyebrow">Личный архив</span>
+            </div>
+            <div class="landing-band-visual landing-band-visual-notes" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <h3>Заметки</h3>
+            <p>Сохраняй идеи, конспекты и быстрые мысли в одном визуально аккуратном контуре.</p>
+            <div class="landing-band-metric">
+                <strong>∞</strong>
+                <span>идеи, конспекты и черновики под рукой</span>
+            </div>
+            <div class="landing-band-rows">
+                <div class="landing-band-row">
+                    <span>Формат</span>
+                    <strong>Конспекты, идеи и быстрые черновики</strong>
+                </div>
+                <div class="landing-band-row">
+                    <span>Ощущение</span>
+                    <strong>Собранная личная архивная среда</strong>
+                </div>
+            </div>
+            <div class="landing-band-footer">
+                <span>Конспекты</span>
+                <span>Черновики</span>
+                <span>Идеи</span>
+            </div>
+        </article>
+    </section>
+</section>
 {% endblock %}
