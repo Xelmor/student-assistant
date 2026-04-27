@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
-{% block title %}Профиль{% endblock %}
+{% block title %}РџСЂРѕС„РёР»СЊ{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-xl-10">
         <section class="profile-hero">
             <div class="profile-hero-main">
-                <span class="eyebrow">Личный кабинет</span>
-                <h1 class="profile-hero-title">Профиль</h1>
-                <p class="profile-hero-copy">Обновляй основные данные аккаунта, сохраняй бэкапы и держи всё в одном аккуратном месте.</p>
+                <span class="eyebrow">Р›РёС‡РЅС‹Р№ РєР°Р±РёРЅРµС‚</span>
+                <h1 class="profile-hero-title">РџСЂРѕС„РёР»СЊ</h1>
+                <p class="profile-hero-copy">РћР±РЅРѕРІР»СЏР№ РѕСЃРЅРѕРІРЅС‹Рµ РґР°РЅРЅС‹Рµ Р°РєРєР°СѓРЅС‚Р°, СЃРѕС…СЂР°РЅСЏР№ Р±СЌРєР°РїС‹ Рё РґРµСЂР¶Рё РІСЃС‘ РІ РѕРґРЅРѕРј Р°РєРєСѓСЂР°С‚РЅРѕРј РјРµСЃС‚Рµ.</p>
             </div>
             <div class="profile-hero-badge">
                 <div class="profile-avatar profile-avatar-large">
@@ -24,26 +24,26 @@
             <div class="col-lg-4">
                 <div class="card profile-summary-card h-100">
                     <div class="card-body">
-                        <div class="profile-card-title">Кратко</div>
+                        <div class="profile-card-title">РљСЂР°С‚РєРѕ</div>
                         <div class="profile-meta-list">
                             <div class="profile-meta-item">
-                                <span>Группа</span>
-                                <strong>{{ user.group_name or 'Не указана' }}</strong>
+                                <span>Р“СЂСѓРїРїР°</span>
+                                <strong>{{ user.group_name or 'РќРµ СѓРєР°Р·Р°РЅР°' }}</strong>
                             </div>
                             <div class="profile-meta-item">
-                                <span>Курс</span>
-                                <strong>{{ user.course or 'Не указан' }}</strong>
+                                <span>РљСѓСЂСЃ</span>
+                                <strong>{{ user.course or 'РќРµ СѓРєР°Р·Р°РЅ' }}</strong>
                             </div>
                             <div class="profile-meta-item">
-                                <span>Регистрация</span>
+                                <span>Р РµРіРёСЃС‚СЂР°С†РёСЏ</span>
                                 <strong>{{ user.created_at.strftime('%d.%m.%Y') if user.created_at else '-' }}</strong>
                             </div>
                         </div>
 
                         <div class="profile-action-stack">
-                            <a href="/forgot-password" class="btn btn-primary">Сменить пароль</a>
+                            <a href="/forgot-password" class="btn btn-primary">РЎРјРµРЅРёС‚СЊ РїР°СЂРѕР»СЊ</a>
                             {% if local_private_data_available %}
-                            <a href="/local-profile" class="btn btn-outline-secondary">Локальные данные</a>
+                            <a href="/local-profile" class="btn btn-outline-secondary">Р›РѕРєР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ</a>
                             {% endif %}
                         </div>
                     </div>
@@ -53,7 +53,7 @@
             <div class="col-lg-8">
                 <div class="card h-100">
                     <div class="card-body">
-                        <div class="profile-card-title">Данные аккаунта</div>
+                        <div class="profile-card-title">Р”Р°РЅРЅС‹Рµ Р°РєРєР°СѓРЅС‚Р°</div>
 
                         {% if error %}
                         <div class="alert alert-danger">{{ error }}</div>
@@ -66,7 +66,7 @@
                         <form method="post" action="/profile" class="row g-3">
                             {{ csrf_input(request) }}
                             <div class="col-md-6">
-                                <label class="form-label">Логин</label>
+                                <label class="form-label">Р›РѕРіРёРЅ</label>
                                 <input type="text" name="username" class="form-control" value="{{ user.username }}" required>
                             </div>
                             <div class="col-md-6">
@@ -74,15 +74,15 @@
                                 <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Группа</label>
-                                <input type="text" name="group_name" class="form-control" value="{{ user.group_name or '' }}" placeholder="Например, ИС-21">
+                                <label class="form-label">Р“СЂСѓРїРїР°</label>
+                                <input type="text" name="group_name" class="form-control" value="{{ user.group_name or '' }}" placeholder="РќР°РїСЂРёРјРµСЂ, РРЎ-21">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Курс</label>
-                                <input type="number" name="course" class="form-control" min="1" max="10" value="{{ user.course or '' }}" placeholder="Например, 2">
+                                <label class="form-label">РљСѓСЂСЃ</label>
+                                <input type="number" name="course" class="form-control" min="1" max="10" value="{{ user.course or '' }}" placeholder="РќР°РїСЂРёРјРµСЂ, 2">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Формат расписания</label>
+                                <label class="form-label">Р¤РѕСЂРјР°С‚ СЂР°СЃРїРёСЃР°РЅРёСЏ</label>
                                 <select name="schedule_unit" class="form-select">
                                     {% for unit_key, unit in schedule_unit_options.items() %}
                                     <option value="{{ unit_key }}" {% if (user.schedule_unit or 'class') == unit_key %}selected{% endif %}>{{ unit.label }}</option>
@@ -90,8 +90,8 @@
                                 </select>
                             </div>
                             <div class="col-12 d-flex flex-wrap gap-2 pt-2">
-                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                <a href="/dashboard" class="btn btn-outline-secondary">На главную</a>
+                                <button type="submit" class="btn btn-primary">РЎРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ</button>
+                                <a href="/dashboard" class="btn btn-outline-secondary">РќР° РіР»Р°РІРЅСѓСЋ</a>
                             </div>
                         </form>
                     </div>
@@ -99,60 +99,22 @@
             </div>
         </div>
 
-        <section class="mt-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="profile-card-title mb-2">Telegram-бот</div>
-                    <p class="data-card-copy">
-                        Привяжи Telegram через команду <strong>/login</strong> в боте и введи одноразовый код из личного кабинета.
-                        Код действует {{ telegram_link_code_ttl_minutes }} минут и нужен только для привязки.
-                    </p>
-
-                    <div class="profile-meta-list mb-3">
-                        <div class="profile-meta-item">
-                            <span>Статус</span>
-                            <strong>
-                                {% if user.telegram_chat_id %}
-                                Привязан{% if user.telegram_username %} (@{{ user.telegram_username }}){% endif %}
-                                {% else %}
-                                Не привязан
-                                {% endif %}
-                            </strong>
-                        </div>
-                        <div class="profile-meta-item">
-                            <span>Код привязки</span>
-                            <strong style="font-size: 1.3rem; letter-spacing: 0.18em;">{{ user.telegram_link_code or '------' }}</strong>
-                        </div>
-                        <div class="profile-meta-item">
-                            <span>Действует до</span>
-                            <strong>{{ user.telegram_link_code_expires_at.strftime('%d.%m.%Y %H:%M') if user.telegram_link_code_expires_at else '-' }}</strong>
-                        </div>
-                    </div>
-
-                    <form method="post" action="/profile/telegram-link/regenerate" class="d-flex flex-wrap gap-2">
-                        {{ csrf_input(request) }}
-                        <button type="submit" class="btn btn-primary">Сгенерировать новый код</button>
-                    </form>
-                </div>
-            </div>
-        </section>
-
         <section class="data-hub mt-4">
             <div class="row g-4">
                 <div class="col-lg-6">
                     <div class="card data-card h-100">
                         <div class="card-body">
-                            <div class="data-card-icon data-card-icon-export">↓</div>
-                            <div class="profile-card-title mb-2">Экспорт данных</div>
-                            <p class="data-card-copy">Скачай свои предметы, задачи, расписание и заметки. Для бэкапа лучше подходит JSON, для просмотра и портфолио — CSV-архив.</p>
+                            <div class="data-card-icon data-card-icon-export">в†“</div>
+                            <div class="profile-card-title mb-2">Р­РєСЃРїРѕСЂС‚ РґР°РЅРЅС‹С…</div>
+                            <p class="data-card-copy">РЎРєР°С‡Р°Р№ СЃРІРѕРё РїСЂРµРґРјРµС‚С‹, Р·Р°РґР°С‡Рё, СЂР°СЃРїРёСЃР°РЅРёРµ Рё Р·Р°РјРµС‚РєРё. Р”Р»СЏ Р±СЌРєР°РїР° Р»СѓС‡С€Рµ РїРѕРґС…РѕРґРёС‚ JSON, РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° Рё РїРѕСЂС‚С„РѕР»РёРѕ вЂ” CSV-Р°СЂС…РёРІ.</p>
 
                             <div class="data-action-row">
-                                <a href="/data/export/json" class="btn btn-primary" download>Скачать JSON</a>
-                                <a href="/data/export/csv" class="btn btn-outline-secondary" download>Скачать CSV</a>
+                                <a href="/data/export/json" class="btn btn-primary" download>РЎРєР°С‡Р°С‚СЊ JSON</a>
+                                <a href="/data/export/csv" class="btn btn-outline-secondary" download>РЎРєР°С‡Р°С‚СЊ CSV</a>
                             </div>
 
                             <div class="data-card-note">
-                                В JSON сохраняется структура данных для обратного импорта. CSV выгружается архивом `.zip` с отдельными таблицами.
+                                Р’ JSON СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ СЃС‚СЂСѓРєС‚СѓСЂР° РґР°РЅРЅС‹С… РґР»СЏ РѕР±СЂР°С‚РЅРѕРіРѕ РёРјРїРѕСЂС‚Р°. CSV РІС‹РіСЂСѓР¶Р°РµС‚СЃСЏ Р°СЂС…РёРІРѕРј `.zip` СЃ РѕС‚РґРµР»СЊРЅС‹РјРё С‚Р°Р±Р»РёС†Р°РјРё.
                             </div>
                         </div>
                     </div>
@@ -161,9 +123,9 @@
                 <div class="col-lg-6">
                     <div class="card data-card h-100">
                         <div class="card-body">
-                            <div class="data-card-icon data-card-icon-import">↑</div>
-                            <div class="profile-card-title mb-2">Импорт данных</div>
-                            <p class="data-card-copy">Загрузи свой JSON-бэкап обратно в систему. Можно либо добавить данные к текущим, либо полностью заменить текущее содержимое.</p>
+                            <div class="data-card-icon data-card-icon-import">в†‘</div>
+                            <div class="profile-card-title mb-2">РРјРїРѕСЂС‚ РґР°РЅРЅС‹С…</div>
+                            <p class="data-card-copy">Р—Р°РіСЂСѓР·Рё СЃРІРѕР№ JSON-Р±СЌРєР°Рї РѕР±СЂР°С‚РЅРѕ РІ СЃРёСЃС‚РµРјСѓ. РњРѕР¶РЅРѕ Р»РёР±Рѕ РґРѕР±Р°РІРёС‚СЊ РґР°РЅРЅС‹Рµ Рє С‚РµРєСѓС‰РёРј, Р»РёР±Рѕ РїРѕР»РЅРѕСЃС‚СЊСЋ Р·Р°РјРµРЅРёС‚СЊ С‚РµРєСѓС‰РµРµ СЃРѕРґРµСЂР¶РёРјРѕРµ.</p>
 
                             {% if data_error %}
                             <div class="alert alert-danger">{{ data_error }}</div>
@@ -176,23 +138,23 @@
                             <form method="post" action="/data/import" enctype="multipart/form-data" class="row g-3">
                                 {{ csrf_input(request) }}
                                 <div class="col-12">
-                                    <label class="form-label">JSON-файл</label>
+                                    <label class="form-label">JSON-С„Р°Р№Р»</label>
                                     <input type="file" name="import_file" class="form-control" accept=".json,application/json" required>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Режим импорта</label>
+                                    <label class="form-label">Р РµР¶РёРј РёРјРїРѕСЂС‚Р°</label>
                                     <select name="import_mode" class="form-select">
-                                        <option value="merge">Добавить к текущим данным</option>
-                                        <option value="replace">Полностью заменить мои данные</option>
+                                        <option value="merge">Р”РѕР±Р°РІРёС‚СЊ Рє С‚РµРєСѓС‰РёРј РґР°РЅРЅС‹Рј</option>
+                                        <option value="replace">РџРѕР»РЅРѕСЃС‚СЊСЋ Р·Р°РјРµРЅРёС‚СЊ РјРѕРё РґР°РЅРЅС‹Рµ</option>
                                     </select>
                                 </div>
                                 <div class="col-12">
-                                    <button type="submit" class="btn btn-primary w-100">Импортировать данные</button>
+                                    <button type="submit" class="btn btn-primary w-100">РРјРїРѕСЂС‚РёСЂРѕРІР°С‚СЊ РґР°РЅРЅС‹Рµ</button>
                                 </div>
                             </form>
 
                             <div class="data-card-note">
-                                Сейчас импорт поддерживается из JSON-файла, который был выгружен из этого приложения.
+                                РЎРµР№С‡Р°СЃ РёРјРїРѕСЂС‚ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ РёР· JSON-С„Р°Р№Р»Р°, РєРѕС‚РѕСЂС‹Р№ Р±С‹Р» РІС‹РіСЂСѓР¶РµРЅ РёР· СЌС‚РѕРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ.
                             </div>
                         </div>
                     </div>

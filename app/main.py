@@ -4,7 +4,6 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
 from starlette.middleware.sessions import SessionMiddleware
-from .api import router as api_router
 from .core.config import settings
 from .core.database import Base, engine
 from .web.routes import router
@@ -44,33 +43,9 @@ def ensure_tasks_schema():
         )
 
 
-def ensure_telegram_schema():
-    inspector = inspect(engine)
-    if 'users' not in inspector.get_table_names():
-        return
-
-    columns = {column['name'] for column in inspector.get_columns('users')}
-    required_columns = {
-        'telegram_chat_id': "ALTER TABLE users ADD COLUMN telegram_chat_id BIGINT",
-        'telegram_username': "ALTER TABLE users ADD COLUMN telegram_username VARCHAR(100)",
-        'telegram_link_code': "ALTER TABLE users ADD COLUMN telegram_link_code VARCHAR(20)",
-        'telegram_link_code_expires_at': "ALTER TABLE users ADD COLUMN telegram_link_code_expires_at DATETIME",
-        'telegram_linked_at': "ALTER TABLE users ADD COLUMN telegram_linked_at DATETIME",
-        'telegram_notifications_enabled': "ALTER TABLE users ADD COLUMN telegram_notifications_enabled BOOLEAN NOT NULL DEFAULT 0",
-        'telegram_deadline_reminders_enabled': "ALTER TABLE users ADD COLUMN telegram_deadline_reminders_enabled BOOLEAN NOT NULL DEFAULT 0",
-        'telegram_schedule_reminders_enabled': "ALTER TABLE users ADD COLUMN telegram_schedule_reminders_enabled BOOLEAN NOT NULL DEFAULT 0",
-    }
-
-    with engine.begin() as connection:
-        for column_name, statement in required_columns.items():
-            if column_name not in columns:
-                connection.execute(text(statement))
-
-
 def create_app() -> FastAPI:
     ensure_users_schema()
     ensure_tasks_schema()
-    ensure_telegram_schema()
 
     app = FastAPI(title='Student Assistant')
     app.add_middleware(
@@ -104,7 +79,6 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(router)
-    app.include_router(api_router)
     return app
 
 
