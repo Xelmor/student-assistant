@@ -62,7 +62,7 @@ def update_profile(
             'profile/profile.html',
             {
                 'user': user,
-                'error': 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј Р»РѕРіРёРЅРѕРј РёР»Рё email СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.',
+                'error': 'Пользователь с таким логином или email уже существует.',
                 'success': None,
                 'local_private_data_available': is_local_private_data_enabled(request),
                 'data_success': None,
@@ -90,7 +90,7 @@ def update_profile(
         {
             'user': user,
             'error': None,
-            'success': 'РџСЂРѕС„РёР»СЊ РѕР±РЅРѕРІР»РµРЅ.',
+            'success': 'Профиль обновлен.',
             'local_private_data_available': is_local_private_data_enabled(request),
             'data_success': None,
             'data_error': None,

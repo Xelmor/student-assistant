@@ -2,51 +2,13 @@ from fastapi import FastAPI
 from fastapi import Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import inspect, text
 from starlette.middleware.sessions import SessionMiddleware
 from .core.config import settings
-from .core.database import Base, engine
+from .core.migrations import run_migrations
 from .web.routes import router
-
-Base.metadata.create_all(bind=engine)
-
-
-def ensure_users_schema():
-    inspector = inspect(engine)
-    if 'users' not in inspector.get_table_names():
-        return
-
-    columns = {column['name'] for column in inspector.get_columns('users')}
-    if 'schedule_unit' in columns:
-        return
-
-    with engine.begin() as connection:
-        connection.execute(
-            text("ALTER TABLE users ADD COLUMN schedule_unit VARCHAR(20) NOT NULL DEFAULT 'class'")
-        )
-
-
-def ensure_tasks_schema():
-    inspector = inspect(engine)
-    if 'tasks' not in inspector.get_table_names():
-        return
-
-    columns = {column['name'] for column in inspector.get_columns('tasks')}
-    if 'completed_at' in columns:
-        return
-
-    completed_at_type = 'DATETIME' if engine.dialect.name == 'sqlite' else 'TIMESTAMP'
-
-    with engine.begin() as connection:
-        connection.execute(
-            text(f"ALTER TABLE tasks ADD COLUMN completed_at {completed_at_type}")
-        )
 
 
 def create_app() -> FastAPI:
-    ensure_users_schema()
-    ensure_tasks_schema()
-
     app = FastAPI(title='Student Assistant')
     app.add_middleware(
         SessionMiddleware,
@@ -82,4 +44,5 @@ def create_app() -> FastAPI:
     return app
 
 
+run_migrations()
 app = create_app()

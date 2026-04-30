@@ -2,7 +2,7 @@ import csv
 import io
 import json
 import zipfile
-from datetime import datetime
+from datetime import date, datetime
 from urllib.parse import quote_plus
 
 from sqlalchemy.orm import Session
@@ -27,6 +27,12 @@ def parse_datetime_value(value):
     if not value:
         return None
     return datetime.fromisoformat(value)
+
+
+def parse_date_value(value):
+    if not value:
+        return None
+    return date.fromisoformat(value)
 
 
 def parse_time_value(value):
@@ -70,9 +76,14 @@ def build_user_export_payload(user: User, db: Session):
                     'title': task.title,
                     'description': task.description,
                     'deadline': serialize_datetime(task.deadline),
+                    'scheduled_for_date': task.scheduled_for_date.isoformat() if task.scheduled_for_date else None,
+                    'schedule_item_id': task.schedule_item_id,
                     'priority': task.priority,
                     'difficulty': task.difficulty,
                     'is_completed': task.is_completed,
+                    'recurrence_group_id': task.recurrence_group_id,
+                    'recurrence_type': task.recurrence_type,
+                    'recurrence_interval_days': task.recurrence_interval_days,
                     'created_at': serialize_datetime(task.created_at),
                 }
                 for task in tasks
@@ -113,7 +124,22 @@ def build_csv_export_archive(payload):
             payload['data']['subjects'],
         ),
         'tasks.csv': (
-            ['id', 'subject_id', 'title', 'description', 'deadline', 'priority', 'difficulty', 'is_completed', 'created_at'],
+            [
+                'id',
+                'subject_id',
+                'title',
+                'description',
+                'deadline',
+                'scheduled_for_date',
+                'schedule_item_id',
+                'priority',
+                'difficulty',
+                'is_completed',
+                'recurrence_group_id',
+                'recurrence_type',
+                'recurrence_interval_days',
+                'created_at',
+            ],
             payload['data']['tasks'],
         ),
         'schedule_items.csv': (
@@ -127,11 +153,18 @@ def build_csv_export_archive(payload):
     }
 
     with zipfile.ZipFile(archive_buffer, mode='w', compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr('export_meta.json', json.dumps({
-            'version': payload['version'],
-            'exported_at': payload['exported_at'],
-            'user': payload['user'],
-        }, ensure_ascii=False, indent=2))
+        archive.writestr(
+            'export_meta.json',
+            json.dumps(
+                {
+                    'version': payload['version'],
+                    'exported_at': payload['exported_at'],
+                    'user': payload['user'],
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+        )
 
         for filename, (fieldnames, rows) in csv_specs.items():
             text_buffer = io.StringIO()
@@ -203,6 +236,9 @@ def import_user_export_payload(user: User, payload, import_mode: str, db: Sessio
         if original_subject_id is not None:
             subject_id_map[original_subject_id] = subject.id
 
+    task_id_map = {}
+    imported_task_groups = []
+
     for task_payload in tasks_payload:
         task = Task(
             user_id=user.id,
@@ -210,12 +246,30 @@ def import_user_export_payload(user: User, payload, import_mode: str, db: Sessio
             title=(task_payload.get('title') or '').strip() or 'Без названия',
             description=task_payload.get('description') or None,
             deadline=parse_datetime_value(task_payload.get('deadline')),
+            scheduled_for_date=parse_date_value(task_payload.get('scheduled_for_date')),
+            schedule_item_id=None,
             priority=task_payload.get('priority') or 'medium',
             difficulty=task_payload.get('difficulty') or 'medium',
             is_completed=bool(task_payload.get('is_completed', False)),
+            recurrence_group_id=None,
+            recurrence_type=task_payload.get('recurrence_type') or 'none',
+            recurrence_interval_days=task_payload.get('recurrence_interval_days'),
             created_at=parse_datetime_value(task_payload.get('created_at')) or datetime.utcnow(),
         )
         db.add(task)
+        db.flush()
+
+        original_task_id = task_payload.get('id')
+        if original_task_id is not None:
+            task_id_map[original_task_id] = task.id
+        imported_task_groups.append((task, task_payload.get('recurrence_group_id')))
+
+    for task, original_group_id in imported_task_groups:
+        if task.recurrence_type == 'none':
+            continue
+        task.recurrence_group_id = task_id_map.get(original_group_id, task.id)
+
+    schedule_id_map = {}
 
     for schedule_payload_item in schedule_payload:
         mapped_subject_id = subject_id_map.get(schedule_payload_item.get('subject_id'))
@@ -232,6 +286,16 @@ def import_user_export_payload(user: User, payload, import_mode: str, db: Sessio
             room=schedule_payload_item.get('room') or None,
         )
         db.add(schedule_item)
+        db.flush()
+
+        original_schedule_item_id = schedule_payload_item.get('id')
+        if original_schedule_item_id is not None:
+            schedule_id_map[original_schedule_item_id] = schedule_item.id
+
+    for task, task_payload in zip([group[0] for group in imported_task_groups], tasks_payload):
+        original_schedule_item_id = task_payload.get('schedule_item_id')
+        if original_schedule_item_id is not None:
+            task.schedule_item_id = schedule_id_map.get(original_schedule_item_id)
 
     for note_payload in notes_payload:
         note = Note(

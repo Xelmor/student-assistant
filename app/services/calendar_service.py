@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from ..core.config import settings
 from ..core.time import current_date, current_time
 from ..models import ScheduleItem, Task, User
+from ..services.task_schedule_links import get_task_calendar_event
 from ..web.dependencies import get_schedule_terms
 
 APP_TIMEZONE = settings.timezone
@@ -119,45 +120,31 @@ def build_calendar_event_map(user: User, db: Session, year: int, month: int):
     visible_start = visible_dates[0]
     visible_end = visible_dates[-1]
 
-    tasks = db.query(Task).filter(
-        Task.user_id == user.id,
-        Task.deadline.isnot(None),
-    ).all()
-
+    tasks = db.query(Task).filter(Task.user_id == user.id).all()
     schedule_items = db.query(ScheduleItem).filter(
         ScheduleItem.user_id == user.id,
     ).order_by(ScheduleItem.weekday.asc(), ScheduleItem.start_time.asc()).all()
 
     event_map = {day: [] for day in visible_dates}
+    now = current_time().replace(tzinfo=None)
 
     for task in tasks:
-        deadline_date = task.deadline.date()
-        if visible_start <= deadline_date <= visible_end:
-            event_map.setdefault(deadline_date, []).append(
-                {
-                    'type': 'task',
-                    'title': task.title,
-                    'subject': task.subject.name if task.subject else None,
-                    'start': task.deadline,
-                    'end': task.deadline + timedelta(hours=1),
-                    'time_label': task.deadline.strftime('%H:%M'),
-                    'meta': task.subject.name if task.subject else 'Без предмета',
-                    'badge': format_calendar_badge('task', task.priority),
-                    'priority': task.priority,
-                    'is_completed': task.is_completed,
-                    'is_overdue': (not task.is_completed) and task.deadline < current_time().replace(tzinfo=None),
-                    'description': task.description or '',
-                    'room': None,
-                }
-            )
+        task_event = get_task_calendar_event(task, now)
+        if not task_event:
+            continue
+        event_date = task_event['date']
+        if visible_start <= event_date <= visible_end:
+            if not task_event.get('badge'):
+                task_event['badge'] = format_calendar_badge('task', task.priority)
+            event_map.setdefault(event_date, []).append(task_event)
 
-    current_date = visible_start
-    while current_date <= visible_end:
-        matching_items = [item for item in schedule_items if item.weekday == current_date.weekday()]
+    current_day = visible_start
+    while current_day <= visible_end:
+        matching_items = [item for item in schedule_items if item.weekday == current_day.weekday()]
         for item in matching_items:
-            start_dt = datetime.combine(current_date, item.start_time)
-            end_dt = datetime.combine(current_date, item.end_time)
-            event_map.setdefault(current_date, []).append(
+            start_dt = datetime.combine(current_day, item.start_time)
+            end_dt = datetime.combine(current_day, item.end_time)
+            event_map.setdefault(current_day, []).append(
                 {
                     'type': 'schedule',
                     'title': item.subject.name,
@@ -172,9 +159,10 @@ def build_calendar_event_map(user: User, db: Session, year: int, month: int):
                     'is_overdue': False,
                     'description': item.lesson_type or '',
                     'room': item.room,
+                    'task_id': None,
                 }
             )
-        current_date += timedelta(days=1)
+        current_day += timedelta(days=1)
 
     for day_events in event_map.values():
         day_events.sort(key=lambda event: event['start'])

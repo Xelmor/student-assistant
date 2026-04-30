@@ -10,3 +10,4 @@ pwdlib[argon2]>=0.3.0
 python-dotenv>=1.1.0
 psycopg[binary]>=3.2.9
 tzdata>=2025.2
+pytest>=8.3.5

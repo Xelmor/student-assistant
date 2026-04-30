@@ -149,7 +149,11 @@
                             {% for event in day.events %}
                             <article class="week-chip event-{{ event.type }}">
                                 <strong>{{ event.time_label }}</strong>
+                                {% if event.task_id %}
+                                <a href="/tasks?task={{ event.task_id }}">{{ event.title }}</a>
+                                {% else %}
                                 <span>{{ event.title }}</span>
+                                {% endif %}
                             </article>
                             {% endfor %}
                         </div>
@@ -196,7 +200,13 @@
                     <article class="agenda-item event-{{ event.type }} {% if event.is_overdue %}agenda-item-overdue{% endif %}">
                         <div class="agenda-item-time">{{ event.time_label }}</div>
                         <div class="agenda-item-body">
-                            <div class="agenda-item-title">{{ event.title }}</div>
+                            <div class="agenda-item-title">
+                                {% if event.task_id %}
+                                <a href="/tasks?task={{ event.task_id }}">{{ event.title }}</a>
+                                {% else %}
+                                {{ event.title }}
+                                {% endif %}
+                            </div>
                             <div class="agenda-item-meta">
                                 <span class="agenda-badge">{{ event.badge }}</span>
                                 {% if event.meta %}
@@ -237,7 +247,13 @@
                         <article class="upcoming-item event-{{ event.type }}">
                             <div class="upcoming-item-date">{{ event.date.strftime('%d.%m') }}</div>
                             <div class="upcoming-item-body">
-                                <div class="upcoming-item-title">{{ event.title }}</div>
+                                <div class="upcoming-item-title">
+                                    {% if event.task_id %}
+                                    <a href="/tasks?task={{ event.task_id }}">{{ event.title }}</a>
+                                    {% else %}
+                                    {{ event.title }}
+                                    {% endif %}
+                                </div>
                                 <div class="upcoming-item-meta">{{ weekdays[event.weekday] }}, {{ event.time_label }}</div>
                             </div>
                         </article>

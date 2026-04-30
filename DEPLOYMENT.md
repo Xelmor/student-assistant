@@ -14,7 +14,7 @@ SECRET_KEY=<long-random-secret-at-least-32-chars>
 COOKIE_SECURE=true
 DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME
 HOST=0.0.0.0
-PORT=10000
+PORT=8000
 RELOAD=false
 ALLOW_LOCAL_PRIVATE_DATA=false
 ```
@@ -24,6 +24,7 @@ Notes:
 - `postgres://...` URLs are also supported and converted automatically.
 - Keep SQLite only for local development.
 - Do not use `sqlite:///./student_assistant.db` on ephemeral hosting if you need persistent users.
+- The app should bind to the value from `PORT`. On Render this variable is usually provided by the platform, so do not couple the deployment flow to a hard-coded port like `10000`.
 
 ## Render
 

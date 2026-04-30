@@ -18,3 +18,4 @@ class ScheduleItem(Base):
 
     user = relationship('User', back_populates='schedule_items')
     subject = relationship('Subject', back_populates='schedule_items')
+    tasks = relationship('Task', back_populates='schedule_item')

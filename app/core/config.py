@@ -18,6 +18,8 @@ INSECURE_SECRET_KEYS = {
     'secret',
 }
 
+DEVELOPMENT_SECRET_KEY = 'dev-only-secret-key-change-before-production-2026'
+
 
 def env_flag(name: str, default: str = 'false') -> bool:
     from os import getenv
@@ -65,9 +67,11 @@ def get_settings() -> Settings:
     cookie_secure = env_flag('COOKIE_SECURE')
 
     if len(secret_key) < 32 or secret_key.lower() in INSECURE_SECRET_KEYS:
-        raise RuntimeError(
-            'SECRET_KEY must be set to a unique random string with at least 32 characters.'
-        )
+        if app_env == 'production':
+            raise RuntimeError(
+                'SECRET_KEY must be set to a unique random string with at least 32 characters.'
+            )
+        secret_key = DEVELOPMENT_SECRET_KEY
 
     if app_env == 'production' and not cookie_secure:
         raise RuntimeError('COOKIE_SECURE must be true when APP_ENV=production.')

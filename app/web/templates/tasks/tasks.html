@@ -32,6 +32,10 @@
     </div>
 </section>
 
+{% if form_error %}
+<div class="alert alert-danger mb-4">{{ form_error }}</div>
+{% endif %}
+
 {% if task_groups %}
 <section class="task-context-grid">
     {% for group in task_groups %}
@@ -53,7 +57,10 @@
             {% for task in group.tasks[:3] %}
             <div class="task-context-preview-item">
                 <strong>{{ task.title }}</strong>
-                <span>{{ task.deadline_state.detail }}</span>
+                <span>
+                    {{ task.deadline_state.detail }}
+                    {% if task.recurrence_label %} · {{ task.recurrence_label }}{% endif %}
+                </span>
             </div>
             {% endfor %}
         </div>
@@ -87,8 +94,24 @@
                         </select>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Дата занятия</label>
+                        <input type="date" name="scheduled_for_date" class="form-control">
+                        <div class="form-text">Если задача относится к учебному дню, укажи дату занятия.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Пара из расписания</label>
+                        <select name="schedule_item_id" class="form-select">
+                            <option value="">Без конкретной пары</option>
+                            {% for schedule_item_id, schedule_item_label in schedule_options %}
+                                <option value="{{ schedule_item_id }}">{{ schedule_item_label }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Если выбрана пара, предмет подставится автоматически.</div>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Дедлайн</label>
                         <input type="datetime-local" name="deadline" class="form-control">
+                        <div class="form-text">Для повторяющейся задачи укажи дедлайн первой задачи.</div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -106,6 +129,19 @@
                                 <option value="medium" selected>Средняя</option>
                                 <option value="high">Высокая</option>
                             </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Повтор</label>
+                            <select name="recurrence_type" class="form-select">
+                                {% for recurrence_key, recurrence_label in recurrence_options.items() %}
+                                <option value="{{ recurrence_key }}">{{ recurrence_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Интервал в днях</label>
+                            <input type="number" name="recurrence_interval_days" class="form-control" min="2" max="365" placeholder="Например, 2">
+                            <div class="form-text">Нужно только для режима «Каждые N дней».</div>
                         </div>
                     </div>
                     <button class="btn btn-primary w-100">Добавить</button>
@@ -171,8 +207,17 @@
                                         <div class="task-chip-row">
                                             <span class="badge text-bg-secondary">{{ level_label(task.priority) }}</span>
                                             <span class="badge text-bg-light">{{ difficulty_label(task.difficulty) }}</span>
+                                            {% if task.recurrence_label %}
+                                            <span class="badge text-bg-primary">{{ task.recurrence_label }}</span>
+                                            {% endif %}
+                                            {% if task.schedule_link_label %}
+                                            <span class="badge text-bg-warning">{{ task.schedule_link_label }}</span>
+                                            {% endif %}
                                             <span class="task-risk-chip is-{{ task.deadline_state.tone }}">{{ task.deadline_state.detail }}</span>
                                         </div>
+                                        {% if task.schedule_link_detail %}
+                                        <div class="small text-muted mt-1">{{ task.schedule_link_detail }}</div>
+                                        {% endif %}
                                     </td>
                                     <td>{{ task.subject.name if task.subject else '—' }}</td>
                                     <td class="{% if task.deadline_state.tone == 'overdue' %}task-deadline-overdue{% endif %}">
@@ -222,6 +267,19 @@
                                                     <input type="datetime-local" name="deadline" class="form-control" value="{{ task.deadline.strftime('%Y-%m-%dT%H:%M') if task.deadline else '' }}">
                                                 </div>
                                                 <div class="col-md-6">
+                                                    <label class="form-label">Дата занятия</label>
+                                                    <input type="date" name="scheduled_for_date" class="form-control" value="{{ task.scheduled_for_date.isoformat() if task.scheduled_for_date else '' }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Пара из расписания</label>
+                                                    <select name="schedule_item_id" class="form-select">
+                                                        <option value="">Без конкретной пары</option>
+                                                        {% for schedule_item_id, schedule_item_label in schedule_options %}
+                                                            <option value="{{ schedule_item_id }}" {% if task.schedule_item_id == schedule_item_id %}selected{% endif %}>{{ schedule_item_label }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
                                                     <label class="form-label">Приоритет</label>
                                                     <select name="priority" class="form-select">
                                                         <option value="low" {% if task.priority == 'low' %}selected{% endif %}>Низкий</option>
@@ -236,6 +294,18 @@
                                                         <option value="medium" {% if task.difficulty == 'medium' %}selected{% endif %}>Средняя</option>
                                                         <option value="high" {% if task.difficulty == 'high' %}selected{% endif %}>Высокая</option>
                                                     </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Повтор</label>
+                                                    <select name="recurrence_type" class="form-select">
+                                                        {% for recurrence_key, recurrence_label in recurrence_options.items() %}
+                                                        <option value="{{ recurrence_key }}" {% if task.recurrence_type == recurrence_key %}selected{% endif %}>{{ recurrence_label }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Интервал в днях</label>
+                                                    <input type="number" name="recurrence_interval_days" class="form-control" min="2" max="365" value="{{ task.recurrence_interval_days or '' }}" placeholder="Например, 2">
                                                 </div>
                                                 <div class="col-12 d-flex justify-content-end gap-2">
                                                     <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleTaskEdit({{ task.id }})">Отмена</button>
@@ -279,8 +349,17 @@
                             <div class="task-mobile-chip-row">
                                 <span class="badge text-bg-secondary">{{ level_label(task.priority) }}</span>
                                 <span class="badge text-bg-light">{{ difficulty_label(task.difficulty) }}</span>
+                                {% if task.recurrence_label %}
+                                <span class="badge text-bg-primary">{{ task.recurrence_label }}</span>
+                                {% endif %}
+                                {% if task.schedule_link_label %}
+                                <span class="badge text-bg-warning">{{ task.schedule_link_label }}</span>
+                                {% endif %}
                                 <span class="task-risk-chip is-{{ task.deadline_state.tone }}">{{ task.deadline_state.detail }}</span>
                             </div>
+                            {% if task.schedule_link_detail %}
+                            <div class="small text-muted mt-2">{{ task.schedule_link_detail }}</div>
+                            {% endif %}
 
                             <div class="task-mobile-smartline">
                                 <span class="task-smartline-label">{{ task.deadline_state.label }}</span>
@@ -326,6 +405,19 @@
                                             <label class="form-label">Дедлайн</label>
                                             <input type="datetime-local" name="deadline" class="form-control" value="{{ task.deadline.strftime('%Y-%m-%dT%H:%M') if task.deadline else '' }}">
                                         </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Дата занятия</label>
+                                            <input type="date" name="scheduled_for_date" class="form-control" value="{{ task.scheduled_for_date.isoformat() if task.scheduled_for_date else '' }}">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Пара из расписания</label>
+                                            <select name="schedule_item_id" class="form-select">
+                                                <option value="">Без конкретной пары</option>
+                                                {% for schedule_item_id, schedule_item_label in schedule_options %}
+                                                    <option value="{{ schedule_item_id }}" {% if task.schedule_item_id == schedule_item_id %}selected{% endif %}>{{ schedule_item_label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
                                         <div class="col-6">
                                             <label class="form-label">Приоритет</label>
                                             <select name="priority" class="form-select">
@@ -341,6 +433,18 @@
                                                 <option value="medium" {% if task.difficulty == 'medium' %}selected{% endif %}>Средняя</option>
                                                 <option value="high" {% if task.difficulty == 'high' %}selected{% endif %}>Высокая</option>
                                             </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Повтор</label>
+                                            <select name="recurrence_type" class="form-select">
+                                                {% for recurrence_key, recurrence_label in recurrence_options.items() %}
+                                                <option value="{{ recurrence_key }}" {% if task.recurrence_type == recurrence_key %}selected{% endif %}>{{ recurrence_label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Интервал в днях</label>
+                                            <input type="number" name="recurrence_interval_days" class="form-control" min="2" max="365" value="{{ task.recurrence_interval_days or '' }}" placeholder="Например, 2">
                                         </div>
                                         <div class="col-12 task-mobile-edit-actions">
                                             <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleTaskEdit({{ task.id }})">Отмена</button>
