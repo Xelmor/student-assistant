@@ -71,10 +71,10 @@
 
 <div class="row g-4">
     <div class="col-lg-4">
-        <div class="card shadow-sm" id="task-create">
+        <div class="card shadow-sm task-create-card" id="task-create">
             <div class="card-body">
                 <h3 class="mb-3">Добавить задачу</h3>
-                <form method="post" action="/tasks/add">
+                <form method="post" action="/tasks/add" class="task-create-form">
                     {{ csrf_input(request) }}
                     <div class="mb-3">
                         <label class="form-label">Название</label>
@@ -190,7 +190,7 @@
                             </thead>
                             <tbody>
                                 {% for task in group.tasks %}
-                                <tr id="task-row-{{ task.id }}" class="task-row-risk-{{ task.deadline_state.tone }} {% if task.is_completed %}table-success{% endif %} {% if selected_task_id == task.id %}task-row-selected{% endif %}">
+                                <tr id="task-row-{{ task.id }}" class="task-table-row task-row-risk-{{ task.deadline_state.tone }} {% if task.is_completed %}table-success{% endif %} {% if selected_task_id == task.id %}task-row-selected{% endif %}">
                                     <td>
                                         <div class="task-status-cell">
                                             <span class="task-status-dot is-{{ task.deadline_state.tone }}"></span>
@@ -227,9 +227,9 @@
                                     <td>
                                         <div class="action-group">
                                             <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleTaskEdit({{ task.id }})">Изменить</button>
-                                            <form method="post" action="/tasks/toggle/{{ task.id }}" class="d-inline">
+                                            <form method="post" action="/tasks/toggle/{{ task.id }}" class="d-inline" data-task-toggle data-task-id="{{ task.id }}">
                                                 {{ csrf_input(request) }}
-                                                <button type="submit" class="btn btn-sm action-btn {% if task.is_completed %}action-btn-cancel{% else %}action-btn-success{% endif %}">
+                                                <button type="submit" class="btn btn-sm action-btn task-toggle-btn {% if task.is_completed %}action-btn-cancel{% else %}action-btn-success{% endif %}">
                                                     {% if task.is_completed %}Вернуть{% else %}Готово{% endif %}
                                                 </button>
                                             </form>
@@ -240,7 +240,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr id="task-edit-{{ task.id }}" class="{% if selected_task_id != task.id %}d-none{% endif %}">
+                                <tr id="task-edit-{{ task.id }}" class="task-edit-row {% if selected_task_id != task.id %}d-none{% endif %}">
                                     <td colspan="5">
                                         <form method="post" action="/tasks/edit/{{ task.id }}" class="border rounded p-3 bg-light-subtle">
                                             {{ csrf_input(request) }}
@@ -368,9 +368,9 @@
 
                             <div class="task-mobile-actions">
                                 <button type="button" class="btn action-btn action-btn-edit" onclick="toggleTaskEdit({{ task.id }})">Изменить</button>
-                                <form method="post" action="/tasks/toggle/{{ task.id }}">
+                                <form method="post" action="/tasks/toggle/{{ task.id }}" data-task-toggle data-task-id="{{ task.id }}">
                                     {{ csrf_input(request) }}
-                                    <button type="submit" class="btn action-btn {% if task.is_completed %}action-btn-cancel{% else %}action-btn-success{% endif %}">
+                                    <button type="submit" class="btn action-btn task-toggle-btn {% if task.is_completed %}action-btn-cancel{% else %}action-btn-success{% endif %}">
                                         {% if task.is_completed %}Вернуть{% else %}Готово{% endif %}
                                     </button>
                                 </form>
@@ -515,5 +515,6 @@ function toggleTaskEdit(taskId) {
 
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 })();
+
 </script>
 {% endblock %}

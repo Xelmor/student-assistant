@@ -895,3 +895,412 @@
     --bs-table-bg: transparent;
 }
 
+/* Motion layer */
+.dashboard-hero {
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-hero::after {
+    position: absolute;
+    right: -2.4rem;
+    bottom: -3.2rem;
+    width: 11rem;
+    height: 11rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 196, 151, 0.22), rgba(255, 196, 151, 0));
+    content: "";
+    pointer-events: none;
+}
+
+.dashboard-quote {
+    transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+}
+
+.dashboard-quote:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 22px rgba(96, 60, 36, 0.08);
+}
+
+.calendar-day-today {
+    animation: dashboardTodayBreath 6.8s ease-in-out infinite;
+}
+
+.dashboard-next-widget {
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-next-widget::after {
+    position: absolute;
+    inset: 0 auto auto -22%;
+    width: 42%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
+    content: "";
+    opacity: 0;
+    transform: skewX(-20deg);
+    transition: transform 0.8s ease, opacity 0.8s ease;
+    pointer-events: none;
+}
+
+.dashboard-next-widget:hover::after {
+    opacity: 1;
+    transform: translateX(320%) skewX(-20deg);
+}
+
+.dashboard-next-icon {
+    transition: transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+.dashboard-next-widget:hover .dashboard-next-icon {
+    transform: rotate(-8deg) scale(1.04);
+    box-shadow: 0 12px 20px rgba(15, 110, 108, 0.18);
+}
+
+body.motion-ready .dashboard-hero {
+    animation: dashboardHeroIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+body.motion-ready .today-panel:nth-of-type(1) {
+    animation: dashboardPanelIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
+}
+
+body.motion-ready .today-panel:nth-of-type(2) {
+    animation: dashboardPanelIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.14s both;
+}
+
+body.motion-ready .today-panel:nth-of-type(3) {
+    animation: dashboardPanelIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+}
+
+body.motion-ready .today-panel:nth-of-type(4) {
+    animation: dashboardPanelIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+
+.today-panel {
+    transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.today-panel:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 24px 40px rgba(82, 46, 23, 0.14);
+}
+
+.dashboard-clock {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.motion-ready .dashboard-clock {
+    animation:
+        dashboardClockIn 1.7s cubic-bezier(0.16, 0.84, 0.2, 1) 0.54s both,
+        dashboardClockBreath 4.8s ease-in-out 2.4s infinite;
+}
+
+.dashboard-clock:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 20px 34px rgba(54, 34, 21, 0.18);
+}
+
+@keyframes dashboardHeroIn {
+    from {
+        opacity: 0;
+        transform: translateY(32px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes dashboardPanelIn {
+    from {
+        opacity: 0;
+        transform: translateY(34px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+body.motion-ready .dashboard-hero {
+    animation: none;
+}
+
+html.page-animating .dashboard-hero-main {
+    animation: dashboardHeroCopyIn 1.8s cubic-bezier(0.16, 0.84, 0.2, 1) 0.12s both;
+}
+
+html.page-animating .dashboard-calendar-wrap {
+    animation: dashboardCalendarIn 1.95s cubic-bezier(0.16, 0.84, 0.2, 1) 0.28s both;
+}
+
+html.page-animating .dashboard-badge {
+    animation: dashboardBadgeIn 1.55s cubic-bezier(0.16, 0.84, 0.2, 1) 0.38s both;
+}
+
+body.motion-ready .dashboard-clock {
+    transform-origin: center;
+}
+
+html.page-animating .dashboard-next-widget {
+    animation: dashboardNextIn 1.9s cubic-bezier(0.16, 0.84, 0.2, 1) 0.72s both;
+}
+
+@keyframes dashboardHeroCopyIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+        filter: blur(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes dashboardCalendarIn {
+    from {
+        opacity: 0;
+        transform: translateX(10px) scale(0.992);
+        filter: blur(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes dashboardBadgeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes dashboardClockIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.985);
+        filter: blur(2px);
+    }
+    82% {
+        opacity: 1;
+        transform: scale(1.002);
+        filter: blur(0);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes dashboardNextIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.992);
+        filter: blur(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes dashboardClockBreath {
+    0%, 100% {
+        box-shadow: 0 12px 24px rgba(54, 34, 21, 0.12);
+        filter: saturate(1);
+    }
+    50% {
+        box-shadow: 0 16px 30px rgba(54, 34, 21, 0.16);
+        filter: saturate(1.03);
+    }
+}
+
+@keyframes dashboardTodayBreath {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 8px 16px rgba(222, 107, 61, 0.14);
+        filter: saturate(1);
+    }
+    50% {
+        transform: scale(1.045);
+        box-shadow: 0 10px 20px rgba(222, 107, 61, 0.18);
+        filter: saturate(1.04);
+    }
+}
+
+body.motion-ready .dashboard-hero::after {
+    animation: dashboardHeroGlow 12s ease-in-out infinite alternate;
+}
+
+body.motion-ready .dashboard-badge {
+    background:
+        linear-gradient(120deg, rgba(31, 143, 122, 0.11), rgba(120, 194, 166, 0.18), rgba(31, 143, 122, 0.11));
+    background-size: 220% 220%;
+    animation:
+        dashboardBadgeIn 1.55s cubic-bezier(0.16, 0.84, 0.2, 1) 0.38s both,
+        dashboardBadgeDrift 10s ease-in-out 2s infinite;
+}
+
+body.motion-ready .dashboard-quote-mark {
+    animation: dashboardQuoteBreath 5.8s ease-in-out 1.6s infinite;
+}
+
+.calendar-day {
+    transition: transform 0.22s ease, background 0.22s ease, box-shadow 0.22s ease, color 0.22s ease;
+}
+
+.dashboard-calendar-grid:not(.dashboard-calendar-weekdays) .calendar-day:hover {
+    transform: translateY(-2px);
+}
+
+.dashboard-calendar-grid:not(.dashboard-calendar-weekdays) .calendar-day:not(.calendar-day-today):hover {
+    background: rgba(255, 245, 235, 0.86);
+    box-shadow: 0 8px 16px rgba(84, 46, 21, 0.08);
+}
+
+body.motion-ready .dashboard-next-widget::after {
+    animation: dashboardNextShimmer 9s ease-in-out 3.2s infinite;
+}
+
+body.motion-ready .dashboard-next-icon {
+    animation: dashboardNextIconDrift 4.8s ease-in-out 1.8s infinite;
+}
+
+body.motion-ready .dashboard-next-chip-row .dashboard-next-chip:nth-child(1) {
+    animation: dashboardChipIn 1.2s cubic-bezier(0.16, 0.84, 0.2, 1) 0.92s both;
+}
+
+body.motion-ready .dashboard-next-chip-row .dashboard-next-chip:nth-child(2) {
+    animation: dashboardChipIn 1.2s cubic-bezier(0.16, 0.84, 0.2, 1) 1.08s both;
+}
+
+body.motion-ready .today-panel:nth-of-type(1) .today-timeline-item:nth-child(1),
+body.motion-ready .today-panel:nth-of-type(2) .today-task-item:nth-child(1),
+body.motion-ready .today-panel:nth-of-type(3) .today-reminder-item:nth-child(1),
+body.motion-ready .today-panel:nth-of-type(4) .today-note-item:nth-child(1) {
+    animation: dashboardInnerCardIn 1.05s cubic-bezier(0.16, 0.84, 0.2, 1) 0.98s both;
+}
+
+body.motion-ready .today-panel:nth-of-type(1) .today-timeline-item:nth-child(2),
+body.motion-ready .today-panel:nth-of-type(2) .today-task-item:nth-child(2),
+body.motion-ready .today-panel:nth-of-type(3) .today-reminder-item:nth-child(2),
+body.motion-ready .today-panel:nth-of-type(4) .today-note-item:nth-child(2) {
+    animation: dashboardInnerCardIn 1.05s cubic-bezier(0.16, 0.84, 0.2, 1) 1.12s both;
+}
+
+body.motion-ready .today-panel:nth-of-type(1) .today-timeline-item:nth-child(3),
+body.motion-ready .today-panel:nth-of-type(2) .today-task-item:nth-child(3),
+body.motion-ready .today-panel:nth-of-type(3) .today-reminder-item:nth-child(3),
+body.motion-ready .today-panel:nth-of-type(4) .today-note-item:nth-child(3) {
+    animation: dashboardInnerCardIn 1.05s cubic-bezier(0.16, 0.84, 0.2, 1) 1.26s both;
+}
+
+@keyframes dashboardHeroGlow {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 0.72;
+    }
+    to {
+        transform: translate3d(-10px, -8px, 0) scale(1.08);
+        opacity: 1;
+    }
+}
+
+@keyframes dashboardBadgeDrift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes dashboardQuoteBreath {
+    0%, 100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    50% {
+        transform: translateY(-1px);
+        opacity: 0.86;
+    }
+}
+
+@keyframes dashboardNextShimmer {
+    0%, 76%, 100% {
+        opacity: 0;
+        transform: translateX(0) skewX(-20deg);
+    }
+    82% {
+        opacity: 0.22;
+        transform: translateX(170%) skewX(-20deg);
+    }
+    88% {
+        opacity: 0;
+        transform: translateX(320%) skewX(-20deg);
+    }
+}
+
+@keyframes dashboardNextIconDrift {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    50% {
+        transform: translateX(3px);
+    }
+}
+
+@keyframes dashboardChipIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes dashboardInnerCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+        filter: blur(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+.dashboard-hero,
+.dashboard-hero::after,
+.dashboard-hero-main,
+.dashboard-calendar-wrap,
+.dashboard-badge,
+.dashboard-clock,
+.dashboard-next-widget,
+.dashboard-quote-mark,
+.dashboard-next-icon,
+.dashboard-next-chip,
+.today-panel,
+.today-timeline-item,
+.today-task-item,
+.today-reminder-item,
+.today-note-item,
+.calendar-day-today {
+    animation: none !important;
+}

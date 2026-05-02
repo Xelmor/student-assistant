@@ -21,6 +21,7 @@
     --radius-md: 14px;
     --section-gap: 1.25rem;
     --interactive-lift: translateY(-2px);
+    --reveal-distance: 18px;
 }
 
 html {
@@ -61,6 +62,14 @@ body::after {
     background: rgba(255, 185, 123, 0.18);
 }
 
+body.motion-ready::before {
+    animation: driftBlobA 15s ease-in-out infinite alternate;
+}
+
+body.motion-ready::after {
+    animation: driftBlobB 18s ease-in-out infinite alternate;
+}
+
 h1, h2, h3, h4, h5, h6,
 .navbar-brand,
 .brand-mark,
@@ -97,6 +106,7 @@ a:hover {
     background:
         linear-gradient(135deg, rgba(54, 35, 23, 0.94), rgba(93, 48, 27, 0.92) 68%);
     box-shadow: 0 14px 30px rgba(49, 31, 17, 0.16);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
 }
 
 .navbar-brand {
@@ -126,7 +136,7 @@ a:hover {
     border-radius: 999px;
     color: rgba(255, 247, 240, 0.95) !important;
     font-weight: 700;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, color 0.2s ease, background 0.2s ease;
 }
 
 .topbar .nav-link:hover,
@@ -153,6 +163,7 @@ a:hover {
     border-radius: 12px;
     font-weight: 700;
     box-shadow: none !important;
+    transition: transform 0.22s ease, filter 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease, color 0.22s ease;
 }
 
 .btn-primary {
@@ -164,6 +175,8 @@ a:hover {
 .btn-primary:focus {
     border-color: var(--primary-dark);
     background: linear-gradient(135deg, #e28a59, var(--primary-dark));
+    transform: translateY(-1px);
+    filter: saturate(1.02);
 }
 
 .btn-outline-light,
@@ -209,6 +222,7 @@ a:hover {
     background: rgba(255, 255, 255, 0.16);
     border-color: rgba(255, 255, 255, 0.34);
     color: #fff;
+    transform: translateY(-1px);
 }
 
 .content-wrap {
@@ -262,8 +276,28 @@ a:hover {
     box-shadow: var(--shadow);
 }
 
+.hero-panel,
+.feature-panel,
+.auth-panel,
+.card,
+.topbar,
+.install-sheet-card,
+.mobile-tabbar,
+.mobile-quick-actions-sheet {
+    transition: transform 0.26s ease, box-shadow 0.26s ease, border-color 0.26s ease, background 0.26s ease;
+}
+
 .card {
     overflow: hidden;
+}
+
+.card:hover,
+.card:focus-within,
+.hero-panel:hover,
+.feature-panel:hover,
+.auth-panel:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
 }
 
 .card .card-body {
@@ -362,6 +396,50 @@ a:hover {
 .feature-panel:hover {
     transform: var(--interactive-lift);
     box-shadow: var(--shadow-hover);
+}
+
+[data-reveal] {
+    opacity: 0;
+    transform: translateY(var(--reveal-distance)) scale(0.985);
+    transition:
+        opacity 0.72s ease,
+        transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform;
+}
+
+[data-reveal].is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+@keyframes driftBlobA {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        transform: translate3d(22px, 16px, 0) scale(1.08);
+    }
+}
+
+@keyframes driftBlobB {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        transform: translate3d(-18px, -20px, 0) scale(1.06);
+    }
+}
+
+@keyframes softPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 8px 16px rgba(222, 107, 61, 0.16);
+    }
+    50% {
+        transform: scale(1.06);
+        box-shadow: 0 12px 24px rgba(222, 107, 61, 0.22);
+    }
 }
 
 .feature-icon {
@@ -2245,5 +2323,83 @@ a:hover {
     color: #dfc1ad !important;
     font-size: 1.24rem !important;
     letter-spacing: 0.08em;
+}
+
+body::before,
+body::after,
+.topbar-wrap,
+[data-reveal] {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+}
+
+@media (max-width: 767.98px) {
+    [data-reveal] {
+        transition-duration: 0.46s;
+        transform: translateY(10px) scale(0.992);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    [data-reveal] {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+body.motion-ready .topbar-wrap {
+    animation: shellSlideDown 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+[data-reveal] {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+    transition:
+        opacity 0.82s ease,
+        transform 0.82s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card:hover,
+.card:focus-within,
+.hero-panel:hover,
+.feature-panel:hover,
+.auth-panel:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 24px 42px rgba(82, 46, 23, 0.16);
+}
+
+.btn:hover,
+.btn:focus {
+    box-shadow: 0 14px 24px rgba(82, 46, 23, 0.14) !important;
+}
+
+@keyframes shellSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation reset */
+*, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
 }
 

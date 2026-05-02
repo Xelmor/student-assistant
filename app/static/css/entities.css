@@ -272,6 +272,119 @@
     padding-top: 0.15rem;
 }
 
+.subject-edit-panel {
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-6px);
+    transform-origin: top;
+    transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+.subject-edit-panel.is-open {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.subject-edit-panel.is-closing {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+
+html.page-animating .subject-create-card {
+    animation: subjectFormCardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.page-animating .subject-create-form > .mb-3,
+html.page-animating .subject-create-form > button {
+    opacity: 0.001;
+    animation: subjectFormFieldIn 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.page-animating .subject-create-form > .mb-3:nth-of-type(1) { animation-delay: 0.08s; }
+html.page-animating .subject-create-form > .mb-3:nth-of-type(2) { animation-delay: 0.14s; }
+html.page-animating .subject-create-form > .mb-3:nth-of-type(3) { animation-delay: 0.2s; }
+html.page-animating .subject-create-form > .mb-3:nth-of-type(4) { animation-delay: 0.26s; }
+html.page-animating .subject-create-form > .mb-3:nth-of-type(5) { animation-delay: 0.32s; }
+html.page-animating .subject-create-form > button { animation-delay: 0.4s; }
+
+html.page-animating .subject-card-animate {
+    opacity: 0.001;
+    animation: subjectCardIn 0.68s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.page-animating .subjects-desktop-list .col-md-6:nth-child(1) .subject-card-animate,
+html.page-animating .subjects-mobile-list .subject-card-animate:nth-child(1) { animation-delay: 0.08s; }
+
+html.page-animating .subjects-desktop-list .col-md-6:nth-child(2) .subject-card-animate,
+html.page-animating .subjects-mobile-list .subject-card-animate:nth-child(2) { animation-delay: 0.14s; }
+
+html.page-animating .subjects-desktop-list .col-md-6:nth-child(3) .subject-card-animate,
+html.page-animating .subjects-mobile-list .subject-card-animate:nth-child(3) { animation-delay: 0.2s; }
+
+html.page-animating .subjects-desktop-list .col-md-6:nth-child(4) .subject-card-animate,
+html.page-animating .subjects-mobile-list .subject-card-animate:nth-child(4) { animation-delay: 0.26s; }
+
+html.page-animating .subjects-desktop-list .col-md-6:nth-child(5) .subject-card-animate,
+html.page-animating .subjects-mobile-list .subject-card-animate:nth-child(5) { animation-delay: 0.32s; }
+
+html.page-animating .subjects-desktop-list .col-md-6:nth-child(6) .subject-card-animate,
+html.page-animating .subjects-mobile-list .subject-card-animate:nth-child(6) { animation-delay: 0.38s; }
+
+@keyframes subjectFormCardIn {
+    from {
+        opacity: 0.001;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes subjectFormFieldIn {
+    from {
+        opacity: 0.001;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes subjectCardIn {
+    from {
+        opacity: 0.001;
+        transform: translateY(10px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.subject-card,
+.subject-mobile-card {
+    transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+}
+
+.subject-card:hover,
+.subject-mobile-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 30px rgba(84, 46, 21, 0.1);
+}
+
+.subject-card::before,
+.subject-mobile-color {
+    transition: transform 0.28s ease, box-shadow 0.28s ease, filter 0.28s ease;
+}
+
+.subject-card:hover::before,
+.subject-mobile-card:hover .subject-mobile-color {
+    transform: scaleY(1.04);
+    filter: saturate(1.08);
+}
+
 .subject-mobile-edit-form,
 .note-mobile-edit-form {
     padding: 0.95rem;
@@ -799,4 +912,174 @@ textarea.form-control {
     .task-context-head {
         flex-direction: column;
     }
+}
+
+.task-create-card {
+    animation: taskCreateCardIn 1.1s cubic-bezier(0.16, 0.84, 0.2, 1) 0.08s both;
+}
+
+.task-create-form > .mb-3,
+.task-create-form > .row,
+.task-create-form > button {
+    opacity: 0;
+    animation: taskCreateFieldIn 0.9s cubic-bezier(0.16, 0.84, 0.2, 1) both;
+}
+
+.task-create-form > .mb-3:nth-of-type(1) { animation-delay: 0.18s; }
+.task-create-form > .mb-3:nth-of-type(2) { animation-delay: 0.26s; }
+.task-create-form > .mb-3:nth-of-type(3) { animation-delay: 0.34s; }
+.task-create-form > .mb-3:nth-of-type(4) { animation-delay: 0.42s; }
+.task-create-form > .mb-3:nth-of-type(5) { animation-delay: 0.5s; }
+.task-create-form > .row { animation-delay: 0.58s; }
+.task-create-form > button { animation-delay: 0.68s; }
+
+.task-context-card {
+    opacity: 0;
+    animation: taskCardStaggerIn 0.95s cubic-bezier(0.16, 0.84, 0.2, 1) both;
+}
+
+.task-context-card:nth-child(1) { animation-delay: 0.08s; }
+.task-context-card:nth-child(2) { animation-delay: 0.16s; }
+.task-context-card:nth-child(3) { animation-delay: 0.24s; }
+
+.task-group-section {
+    opacity: 0;
+    animation: taskGroupIn 1s cubic-bezier(0.16, 0.84, 0.2, 1) both;
+}
+
+.task-group-section:nth-of-type(1) { animation-delay: 0.14s; }
+.task-group-section:nth-of-type(2) { animation-delay: 0.24s; }
+.task-group-section:nth-of-type(3) { animation-delay: 0.34s; }
+.task-group-section:nth-of-type(4) { animation-delay: 0.44s; }
+
+.task-table-row,
+.task-mobile-card {
+    opacity: 0;
+    animation: taskRowIn 0.82s cubic-bezier(0.16, 0.84, 0.2, 1) both;
+}
+
+.task-table-row:nth-child(1),
+.task-mobile-card:nth-child(1) { animation-delay: 0.18s; }
+.task-table-row:nth-child(3),
+.task-mobile-card:nth-child(2) { animation-delay: 0.26s; }
+.task-table-row:nth-child(5),
+.task-mobile-card:nth-child(3) { animation-delay: 0.34s; }
+.task-table-row:nth-child(7),
+.task-mobile-card:nth-child(4) { animation-delay: 0.42s; }
+.task-table-row:nth-child(9),
+.task-mobile-card:nth-child(5) { animation-delay: 0.5s; }
+
+.task-table-row,
+.task-mobile-card,
+.task-context-card,
+.task-create-card {
+    transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease, background 0.24s ease;
+}
+
+.task-context-card:hover,
+.task-create-card:hover,
+.task-mobile-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 28px rgba(84, 46, 21, 0.1);
+}
+
+.task-row-risk-overdue > td {
+    background: linear-gradient(180deg, rgba(255, 249, 247, 0.96), rgba(255, 241, 238, 0.94)) !important;
+    border-color: rgba(193, 59, 51, 0.1);
+}
+
+.task-row-risk-overdue > td:first-child {
+    box-shadow: inset 3px 0 0 rgba(193, 59, 51, 0.18);
+}
+
+.task-mobile-card-risk-overdue {
+    background: linear-gradient(180deg, rgba(255, 249, 247, 0.98), rgba(255, 242, 239, 0.94));
+    border-color: rgba(193, 59, 51, 0.1);
+    box-shadow: inset 3px 0 0 rgba(193, 59, 51, 0.16);
+}
+
+.task-risk-chip.is-overdue {
+    background: rgba(193, 59, 51, 0.08);
+    color: #a94b45;
+}
+
+.task-status-dot.is-overdue {
+    background: #d57b70;
+}
+
+@keyframes taskCreateCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes taskCreateFieldIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+        filter: blur(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes taskCardStaggerIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes taskGroupIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes taskRowIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.subject-create-card,
+.subject-create-form > .mb-3,
+.subject-create-form > button,
+.subject-card,
+.subject-mobile-card,
+.subject-edit-panel,
+.task-create-card,
+.task-create-form > .mb-3,
+.task-create-form > .row,
+.task-create-form > button,
+.task-context-card,
+.task-group-section,
+.task-table-row,
+.task-mobile-card {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
 }
