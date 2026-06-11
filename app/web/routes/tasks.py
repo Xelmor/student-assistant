@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from ...core.database import get_db
 from ...core.time import WEEKDAYS, calculate_task_score, current_time
+from ...core.validation import normalize_bounded_text, normalize_choice, safe_hex_color
 from ...models import ScheduleItem, Subject, Task
 from ...services.recurring_tasks import (
     RECURRENCE_NONE,
@@ -20,6 +21,7 @@ from ...services.task_schedule_links import get_task_anchor_datetime, parse_sche
 from ..dependencies import require_user, templates, validate_csrf
 
 router = APIRouter()
+TASK_LEVELS = {'low', 'medium', 'high'}
 
 
 def pluralize_days(value: int) -> str:
@@ -193,7 +195,7 @@ def build_task_groups(tasks: list[Task]) -> list[dict]:
                 'key': group_key,
                 'subject': subject,
                 'title': subject.name if subject else 'Без предмета',
-                'color': getattr(subject, 'color', '#d99a6c') if subject else '#d99a6c',
+                'color': safe_hex_color(getattr(subject, 'color', None), default='#d99a6c') if subject else '#d99a6c',
                 'teacher': getattr(subject, 'teacher', None) if subject else None,
                 'room': getattr(subject, 'room', None) if subject else None,
                 'tasks': [],
@@ -233,6 +235,15 @@ def parse_task_form(
     return deadline_value, scheduled_for_date_value, normalized_recurrence_type, normalized_recurrence_interval
 
 
+def normalize_task_text_fields(title: str, description: str, priority: str, difficulty: str):
+    return {
+        'title': normalize_bounded_text(title, label='Название задачи', max_length=150, required=True),
+        'description': normalize_bounded_text(description, label='Описание задачи', max_length=5000),
+        'priority': normalize_choice(priority, label='Приоритет', allowed=TASK_LEVELS),
+        'difficulty': normalize_choice(difficulty, label='Сложность', allowed=TASK_LEVELS),
+    }
+
+
 def resolve_schedule_item_for_user(
     user_id: int,
     db: Session,
@@ -261,7 +272,7 @@ def tasks_page(request: Request, db: Session = Depends(get_db)):
 
     selected_task_id = request.query_params.get('task')
     form_error = request.query_params.get('form_error')
-    now = current_time().replace(tzinfo=None)
+    now = current_time()
     raw_tasks = (
         db.query(Task)
         .filter(Task.user_id == user.id)
@@ -325,11 +336,8 @@ async def add_task(
     form = await request.form()
     schedule_item_id_raw = form.get('schedule_item_id')
 
-    normalized_title = title.strip()
-    if not normalized_title:
-        return RedirectResponse(build_tasks_redirect(form_error='Название задачи не может быть пустым.'), status_code=302)
-
     try:
+        text_fields = normalize_task_text_fields(title, description, priority, difficulty)
         deadline_value, scheduled_for_date_value, normalized_recurrence_type, normalized_recurrence_interval = parse_task_form(
             deadline,
             scheduled_for_date,
@@ -353,13 +361,13 @@ async def add_task(
     task = Task(
         user_id=user.id,
         subject_id=resolved_subject_id,
-        title=normalized_title,
-        description=description.strip() or None,
+        title=text_fields['title'],
+        description=text_fields['description'],
         deadline=deadline_value,
         scheduled_for_date=scheduled_for_date_value,
         schedule_item_id=schedule_item.id if schedule_item else None,
-        priority=priority,
-        difficulty=difficulty,
+        priority=text_fields['priority'],
+        difficulty=text_fields['difficulty'],
         recurrence_type=normalized_recurrence_type,
         recurrence_interval_days=normalized_recurrence_interval,
     )
@@ -384,8 +392,14 @@ def quick_add_task(
     if not user:
         return JSONResponse({'ok': False, 'error': 'auth'}, status_code=401)
 
-    normalized_title = title.strip()
-    if not normalized_title:
+    try:
+        normalized_title = normalize_bounded_text(
+            title,
+            label='Название задачи',
+            max_length=150,
+            required=True,
+        )
+    except ValueError:
         return JSONResponse({'ok': False, 'error': 'title'}, status_code=422)
 
     task = Task(
@@ -439,14 +453,8 @@ async def edit_task(
     form = await request.form()
     schedule_item_id_raw = form.get('schedule_item_id')
 
-    normalized_title = title.strip()
-    if not normalized_title:
-        return RedirectResponse(
-            build_tasks_redirect(selected_task_id=task_id, form_error='Название задачи не может быть пустым.'),
-            status_code=302,
-        )
-
     try:
+        text_fields = normalize_task_text_fields(title, description, priority, difficulty)
         deadline_value, scheduled_for_date_value, normalized_recurrence_type, normalized_recurrence_interval = parse_task_form(
             deadline,
             scheduled_for_date,
@@ -467,14 +475,14 @@ async def edit_task(
         if not subject:
             return RedirectResponse(build_tasks_redirect(selected_task_id=task_id, form_error='Предмет для задачи не найден.'), status_code=302)
 
-    task.title = normalized_title
-    task.description = description.strip() or None
+    task.title = text_fields['title']
+    task.description = text_fields['description']
     task.subject_id = resolved_subject_id
     task.deadline = deadline_value
     task.scheduled_for_date = scheduled_for_date_value
     task.schedule_item_id = schedule_item.id if schedule_item else None
-    task.priority = priority
-    task.difficulty = difficulty
+    task.priority = text_fields['priority']
+    task.difficulty = text_fields['difficulty']
     task.recurrence_type = normalized_recurrence_type
     task.recurrence_interval_days = normalized_recurrence_interval
     if task.recurrence_type != RECURRENCE_NONE and task.recurrence_group_id is None:
@@ -491,7 +499,7 @@ def toggle_task(task_id: int, request: Request, _: None = Depends(validate_csrf)
 
     task = db.query(Task).filter(Task.id == task_id, Task.user_id == user.id).first()
     if task:
-        now = current_time().replace(tzinfo=None)
+        now = current_time()
         is_marking_completed = not task.is_completed
 
         task.is_completed = is_marking_completed

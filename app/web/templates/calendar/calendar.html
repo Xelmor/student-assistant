@@ -1,272 +1,459 @@
 {% extends 'base.html' %}
-{% block title %}Календарь{% endblock %}
+{% block title %}Календарь · Student Assistant{% endblock %}
+{% block theme_color %}#070b1a{% endblock %}
+{% block body_class %}dashboard-page calendar-page{% endblock %}
+{% from 'components/empty_state.html' import empty_state %}
+
+{% macro icon(name) %}
+{% if name == 'calendar' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4m8-4v4M3 10h18"></path><path d="m9 15 2 2 4-4"></path></svg>
+{% elif name == 'plus' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+{% elif name == 'exam' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 9 9-5 9 5-9 5z"></path><path d="M7 12v5c3 2 7 2 10 0v-5m4-3v6"></path></svg>
+{% elif name == 'download' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"></path><path d="M5 19h14"></path></svg>
+{% elif name == 'tasks' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"></rect><path d="m9 10 1.5 1.5L14 8m-5 7h6"></path></svg>
+{% elif name == 'classes' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v16H4zM14 4h6v16h-6z"></path><path d="M7 8h.01M17 8h.01M7 16h.01M17 16h.01"></path></svg>
+{% elif name == 'change' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h11l-3-3m3 3-3 3M19 17H8l3 3m-3-3 3-3"></path></svg>
+{% elif name == 'chevron-left' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+{% elif name == 'chevron-right' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+{% elif name == 'clock' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+{% elif name == 'edit' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.5-1 10-10-3.5-3.5-10 10z"></path><path d="m13.5 7 3.5 3.5"></path></svg>
+{% elif name == 'trash' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"></path></svg>
+{% endif %}
+{% endmacro %}
+
+{% macro event_title(event) %}
+{% if event.task_id %}
+<a href="/tasks?task={{ event.task_id }}">{{ event.title }}</a>
+{% else %}
+{{ event.title }}
+{% endif %}
+{% endmacro %}
+
 {% block content %}
-<section class="calendar-hero">
-    <div class="calendar-hero-main">
-        <span class="eyebrow">Планирование по датам</span>
-        <h1 class="calendar-hero-title">Календарь учебы</h1>
-        <p class="calendar-hero-copy">Здесь есть два режима: обзор месяца для нагрузки и компактная неделя для точного планирования. Внутри одной страницы собраны дедлайны, расписание и ближайшие события.</p>
-    </div>
-    <div class="calendar-hero-actions">
-        <a href="/calendar/export/ics?year={{ calendar_year }}&month={{ calendar_month }}" class="btn btn-primary" download>Скачать .ics</a>
-        <a href="/schedule" class="btn btn-outline-secondary">Редактировать расписание</a>
-    </div>
-</section>
+{% set week_state = namespace(events=0) %}
+{% for day in week_days %}
+    {% set week_state.events = week_state.events + day.event_count %}
+{% endfor %}
+<div class="calendar-dashboard">
+    <header class="calendar-overview">
+        <div class="calendar-heading">
+            <span class="calendar-heading-icon">{{ icon('calendar') }}</span>
+            <div>
+                <h1>Календарь</h1>
+                <p>Планируйте учебные события, дедлайны, сессии и изменения расписания.</p>
+            </div>
+        </div>
+        <div class="calendar-heading-actions">
+            <a href="#calendar-event-form" class="calendar-action is-primary">{{ icon('plus') }}<span>Новое событие</span></a>
+            <a href="#calendar-event-form" class="calendar-action" data-calendar-event-type="exam">{{ icon('exam') }}<span>Экзамен / сессия</span></a>
+            <a href="/calendar/export/ics?year={{ calendar_year }}&month={{ calendar_month }}" class="calendar-action" download>{{ icon('download') }}<span>Экспорт .ics</span></a>
+        </div>
+    </header>
 
-<div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card stat-card stagger-in h-100">
-            <div class="card-body">
-                <div class="stat-title">Задачи в месяце</div>
-                <div class="stat-value">{{ month_task_count }}</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card stagger-in h-100">
-            <div class="card-body">
-                <div class="stat-title">{{ schedule_terms.plural|capitalize }} в месяце</div>
-                <div class="stat-value">{{ month_schedule_count }}</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card danger stagger-in h-100">
-            <div class="card-body">
-                <div class="stat-title">{{ schedule_terms.plural_genitive|capitalize }} в неделю</div>
-                <div class="stat-value">{{ weekly_schedule_count }}</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card stagger-in h-100">
-            <div class="card-body">
-                <div class="stat-title">Режим просмотра</div>
-                <div class="stat-value stat-value-small">{{ 'Неделя' if view_mode == 'week' else 'Месяц' }}</div>
-            </div>
-        </div>
-    </div>
-</div>
+    {% if calendar_error %}
+    <div class="calendar-alert" role="alert">{{ calendar_error }}</div>
+    {% endif %}
 
-<div class="row g-4 mb-4">
-    <div class="col-xl-8">
-        <div class="card calendar-card h-100">
-            <div class="card-body">
-                <div class="calendar-toolbar">
-                    <a href="/calendar?year={{ previous_year }}&month={{ previous_month }}{% if previous_selected %}&selected={{ previous_selected }}{% endif %}&view={{ view_mode }}" class="calendar-nav-button" aria-label="Предыдущий период">&larr;</a>
+    <section class="calendar-stat-grid" aria-label="Статистика календаря">
+        <article class="calendar-stat-card is-tasks">
+            <span class="calendar-stat-icon">{{ icon('tasks') }}</span>
+            <div><span>Задачи в месяце</span><strong>{{ month_task_count }}</strong><small>актуальных дедлайнов</small></div>
+        </article>
+        <article class="calendar-stat-card is-classes">
+            <span class="calendar-stat-icon">{{ icon('classes') }}</span>
+            <div><span>{{ schedule_terms.plural|capitalize }} в неделе</span><strong>{{ weekly_schedule_count }}</strong><small>в обычном расписании</small></div>
+        </article>
+        <article class="calendar-stat-card is-exams">
+            <span class="calendar-stat-icon">{{ icon('exam') }}</span>
+            <div>
+                <span>Экзамены</span><strong>{{ month_academic_count }}</strong>
+                <small>{% if upcoming_session_events %}Ближайший: {{ upcoming_session_events[0].date.strftime('%d.%m') }}{% else %}в этом месяце{% endif %}</small>
+            </div>
+        </article>
+        <article class="calendar-stat-card is-changes">
+            <span class="calendar-stat-icon">{{ icon('change') }}</span>
+            <div><span>Изменения</span><strong>{{ month_schedule_change_count + month_override_count }}</strong><small>в этом месяце</small></div>
+        </article>
+    </section>
+
+    <div class="calendar-workspace">
+        <aside class="calendar-left-column">
+            <section class="calendar-panel calendar-mini-panel" id="calendar-mini-panel">
+                <div class="calendar-mini-heading">
+                    <strong>{{ calendar_label }}</strong>
                     <div>
-                        <div class="calendar-toolbar-label">{{ period_kind }}</div>
-                        <h2 class="calendar-toolbar-title">{{ period_label }}</h2>
+                        <a href="/calendar?year={{ previous_calendar_year }}&month={{ previous_calendar_month }}&view=week" aria-label="Предыдущий месяц">{{ icon('chevron-left') }}</a>
+                        <a href="/calendar?year={{ next_calendar_year }}&month={{ next_calendar_month }}&view=week" aria-label="Следующий месяц">{{ icon('chevron-right') }}</a>
                     </div>
-                    <a href="/calendar?year={{ next_year }}&month={{ next_month }}{% if next_selected %}&selected={{ next_selected }}{% endif %}&view={{ view_mode }}" class="calendar-nav-button" aria-label="Следующий период">&rarr;</a>
                 </div>
-
-                <div class="calendar-mode-switch">
-                    <a href="/calendar?year={{ calendar_year }}&month={{ calendar_month }}&selected={{ selected_iso }}&view=month" class="calendar-mode-button {% if view_mode == 'month' %}is-active{% endif %}">Месяц</a>
-                    <a href="/calendar?year={{ calendar_year }}&month={{ calendar_month }}&selected={{ selected_iso }}&view=week" class="calendar-mode-button {% if view_mode == 'week' %}is-active{% endif %}">Неделя</a>
+                <div class="calendar-mini-weekdays" aria-hidden="true">
+                    <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
                 </div>
-
-                {% if view_mode == 'month' %}
-                <div class="calendar-grid calendar-grid-head">
-                    <span>Пн</span>
-                    <span>Вт</span>
-                    <span>Ср</span>
-                    <span>Чт</span>
-                    <span>Пт</span>
-                    <span>Сб</span>
-                    <span>Вс</span>
-                </div>
-
-                <div class="calendar-month">
+                <div class="calendar-mini-grid">
                     {% for week in calendar_weeks %}
-                    <div class="calendar-grid calendar-grid-week">
                         {% for cell in week %}
                         <a
-                            href="/calendar?year={{ calendar_year }}&month={{ calendar_month }}&selected={{ cell.iso_date }}&view=month"
-                            class="calendar-day-card intensity-{{ cell.intensity }} {% if not cell.in_month %}is-muted{% endif %} {% if cell.is_today %}is-today{% endif %} {% if selected_date == cell.date %}is-selected{% endif %} {% if cell.has_overdue %}has-overdue{% endif %}"
+                            href="/calendar?year={{ cell.date.year }}&month={{ cell.date.month }}&selected={{ cell.iso_date }}&view=week"
+                            class="calendar-mini-day {% if not cell.in_month %}is-muted{% endif %} {% if cell.is_today %}is-today{% endif %} {% if selected_date == cell.date %}is-selected{% endif %}"
+                            aria-label="{{ cell.iso_date }}, событий: {{ cell.event_count }}"
                         >
-                            <div class="calendar-day-head">
-                                <span class="calendar-day-number">{{ cell.day }}</span>
-                                {% if cell.event_count %}
-                                <span class="calendar-day-count">{{ cell.event_count }}</span>
-                                {% endif %}
-                            </div>
-                            <div class="calendar-load-meter">
-                                <span class="calendar-load-fill level-{{ cell.intensity }}"></span>
-                            </div>
-                            <div class="calendar-day-mobile-summary">
-                                {% if cell.has_schedule %}
-                                <span class="calendar-mobile-chip is-schedule">{{ cell.schedule_count }} пар{% if cell.first_schedule_start %} · {{ cell.first_schedule_start }}{% endif %}</span>
-                                {% endif %}
-                                {% if cell.has_task %}
-                                <span class="calendar-mobile-chip is-task">{{ cell.task_count }} задач</span>
-                                {% endif %}
-                            </div>
-                            <div class="calendar-day-preview">
-                                {% if cell.has_schedule %}
-                                <div class="calendar-day-window">
-                                    <span class="calendar-day-window-start">{{ cell.first_schedule_index }}) {{ cell.first_schedule_start }}</span>
-                                    <span class="calendar-day-window-end">{{ cell.last_schedule_index }}) {{ cell.last_schedule_end }}</span>
-                                </div>
-                                {% endif %}
-                                {% if cell.has_task %}
-                                <div class="calendar-mini-event event-task">
-                                    <span class="calendar-mini-dot"></span>
-                                    <span>Дедлайны: {{ cell.task_count }}</span>
-                                </div>
-                                {% endif %}
-                            </div>
+                            <span>{{ cell.day }}</span>
+                            {% if cell.event_count %}
+                            <i class="{% if cell.has_task %}is-deadline{% elif cell.has_academic %}is-exam{% elif cell.has_schedule_change or cell.has_override %}is-change{% else %}is-class{% endif %}"></i>
+                            {% endif %}
                         </a>
                         {% endfor %}
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="week-strip">
-                    {% for day in week_days %}
-                    <a href="/calendar?year={{ day.date.year }}&month={{ day.date.month }}&selected={{ day.iso_date }}&view=week" class="week-strip-day {% if day.is_selected %}is-selected{% endif %} intensity-{{ day.intensity }}">
-                        <div class="week-strip-weekday">{{ weekdays[day.date.weekday()] }}</div>
-                        <div class="week-strip-date">{{ day.date.strftime('%d.%m') }}</div>
-                        <div class="week-strip-badges">
-                            <span>{{ day.event_count }} событий</span>
-                            {% if day.has_task %}
-                            <span>{{ day.task_count }} задач</span>
-                            {% endif %}
-                        </div>
-                    </a>
                     {% endfor %}
                 </div>
 
-                <div class="week-board">
-                    {% for day in week_days %}
-                    <section class="week-column {% if day.is_selected %}is-selected{% endif %}">
-                        <div class="week-column-head">
-                            <div class="week-column-title">{{ weekdays[day.date.weekday()] }}</div>
-                            <div class="week-column-date">{{ day.date.strftime('%d.%m') }}</div>
+                <div class="calendar-view-switch" role="group" aria-label="Вид календаря">
+                    <a href="#calendar-mini-panel">Месяц</a>
+                    <a href="/calendar?year={{ calendar_year }}&month={{ calendar_month }}&selected={{ selected_iso }}&view=week" class="is-active">Неделя</a>
+                    <a href="#selected-day-panel">Повестка</a>
+                </div>
+
+                <div class="calendar-filter-section">
+                    <div class="calendar-subheading"><strong>Фильтры</strong><button type="button" id="calendarResetFilters">Сбросить</button></div>
+                    <div class="calendar-filter-list">
+                        <label><input type="checkbox" checked data-calendar-filter="classes"><span class="calendar-check is-class">✓</span><span>Пары</span><i class="is-class"></i></label>
+                        <label><input type="checkbox" checked data-calendar-filter="deadline"><span class="calendar-check is-deadline">✓</span><span>Дедлайны</span><i class="is-deadline"></i></label>
+                        <label><input type="checkbox" checked data-calendar-filter="exam"><span class="calendar-check is-exam">✓</span><span>Экзамены / сессия</span><i class="is-exam"></i></label>
+                        <label><input type="checkbox" checked data-calendar-filter="change"><span class="calendar-check is-change">✓</span><span>Изменения расписания</span><i class="is-change"></i></label>
+                    </div>
+                </div>
+
+                <div class="calendar-legend">
+                    <strong>Легенда</strong>
+                    <span><i class="is-lecture"></i>Лекция / Семинар</span>
+                    <span><i class="is-practice"></i>Практика</span>
+                    <span><i class="is-deadline"></i>Дедлайн</span>
+                    <span><i class="is-exam"></i>Экзамен / Сессия</span>
+                    <span><i class="is-change"></i>Изменение</span>
+                </div>
+            </section>
+        </aside>
+
+        <main class="calendar-center-column">
+            <section class="calendar-panel calendar-timeline-panel">
+                <div class="calendar-timeline-toolbar">
+                    <div class="calendar-period-navigation">
+                        <a href="/calendar?year={{ previous_year }}&month={{ previous_month }}{% if previous_selected %}&selected={{ previous_selected }}{% endif %}&view=week" aria-label="Предыдущая неделя">{{ icon('chevron-left') }}</a>
+                        <h2>{{ week_period_label }}</h2>
+                        <a href="/calendar?year={{ next_year }}&month={{ next_month }}{% if next_selected %}&selected={{ next_selected }}{% endif %}&view=week" aria-label="Следующая неделя">{{ icon('chevron-right') }}</a>
+                    </div>
+                    <div class="calendar-timeline-actions">
+                        <a href="/calendar?year={{ today_year }}&month={{ today_month }}&selected={{ today_iso }}&view=week">Сегодня</a>
+                        <a href="#calendar-mini-panel" aria-label="Открыть мини-календарь">{{ icon('calendar') }}</a>
+                    </div>
+                </div>
+
+                <div class="calendar-timeline-scroll">
+                    <div class="calendar-timeline" style="--timeline-hours: {{ timeline_hours|length }};">
+                        <div class="calendar-timeline-corner"></div>
+                        {% for day in week_days %}
+                        <a href="/calendar?year={{ day.date.year }}&month={{ day.date.month }}&selected={{ day.iso_date }}&view=week" class="calendar-day-header {% if day.is_selected %}is-selected{% endif %} {% if day.is_today %}is-today{% endif %}">
+                            <span>{{ weekdays[day.date.weekday()][:2] }}</span>
+                            <strong>{{ day.date.day }}</strong>
+                            {% if day.all_day_events %}<i title="{{ day.all_day_events[0].title }}"></i>{% endif %}
+                        </a>
+                        {% endfor %}
+
+                        <div class="calendar-time-axis">
+                            {% for hour in timeline_hours %}
+                            <span style="--hour-index: {{ loop.index0 }};">{{ hour }}</span>
+                            {% endfor %}
                         </div>
+
+                        {% for day in week_days %}
+                        <div class="calendar-day-track {% if day.is_selected %}is-selected{% endif %}">
+                            {% for hour in timeline_hours %}
+                            <span class="calendar-hour-line" style="--hour-index: {{ loop.index0 }};"></span>
+                            {% endfor %}
+                            {% for event in day.timeline_events %}
+                            <article
+                                class="calendar-timeline-event is-{{ event.visual_type }}"
+                                style="--event-top: {{ event.timeline_top }}%; --event-height: {{ event.timeline_height }}%;"
+                                data-calendar-event
+                                data-event-group="{% if event.visual_type in ['lecture', 'practice'] %}classes{% else %}{{ event.visual_type }}{% endif %}"
+                                title="{{ event.time_label }} · {{ event.title }}"
+                            >
+                                <span>{{ event.time_label }}</span>
+                                <strong>{{ event_title(event) }}</strong>
+                                <small>{{ event.meta }}{% if event.room %}<br>{{ event.room }}{% endif %}</small>
+                            </article>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if week_state.events == 0 %}
+                    <div class="calendar-timeline-empty">
+                        {{ empty_state(
+                            'calendar',
+                            'На этот период событий нет',
+                            'Добавь дедлайн, экзамен или изменение расписания, чтобы календарь был полезнее.',
+                            '+ Новое событие',
+                            '#calendar-event-form',
+                            focus_target='#calendar-event-form input[name="title"]',
+                            variant='timeline'
+                        ) }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="calendar-mobile-week">
+                    {% if week_state.events == 0 %}
+                    {{ empty_state(
+                        'calendar',
+                        'На этот период событий нет',
+                        'Добавь дедлайн, экзамен или изменение расписания, чтобы календарь был полезнее.',
+                        '+ Новое событие',
+                        '#calendar-event-form',
+                        focus_target='#calendar-event-form input[name="title"]',
+                        variant='compact'
+                    ) }}
+                    {% else %}
+                    {% for day in week_days %}
+                    <section class="calendar-mobile-day {% if day.is_selected %}is-selected{% endif %}">
+                        <a href="/calendar?year={{ day.date.year }}&month={{ day.date.month }}&selected={{ day.iso_date }}&view=week">
+                            <span>{{ weekdays[day.date.weekday()] }}, {{ day.date.strftime('%d.%m') }}</span>
+                            <strong>{{ day.event_count }} событий</strong>
+                        </a>
                         {% if day.events %}
-                        <div class="week-column-events">
+                        <div>
                             {% for event in day.events %}
-                            <article class="week-chip event-{{ event.type }}">
-                                <strong>{{ event.time_label }}</strong>
-                                {% if event.task_id %}
-                                <a href="/tasks?task={{ event.task_id }}">{{ event.title }}</a>
-                                {% else %}
-                                <span>{{ event.title }}</span>
-                                {% endif %}
+                            <article class="calendar-mobile-event event-{{ event.type }}" data-calendar-event data-event-group="{% if event.type == 'schedule' %}classes{% elif event.type == 'task' %}deadline{% elif event.type == 'academic' %}exam{% else %}change{% endif %}">
+                                <time>{{ event.time_label }}</time>
+                                <div class="calendar-mobile-event-copy">
+                                    <strong>{{ event_title(event) }}</strong>
+                                    <small>
+                                        {{ event.meta or event.subject or event.badge }}
+                                        {% if event.room %}<span>· {{ event.room }}</span>{% endif %}
+                                    </small>
+                                    {% if event.badge %}<span class="calendar-mobile-event-badge">{{ event.badge }}</span>{% endif %}
+                                </div>
                             </article>
                             {% endfor %}
                         </div>
                         {% else %}
-                        <div class="week-column-empty">Свободно</div>
+                        <p>Свободный день</p>
                         {% endif %}
                     </section>
                     {% endfor %}
+                    {% endif %}
+                </div>
+            </section>
+
+            <div class="calendar-bottom-grid">
+                <section class="calendar-panel calendar-list-panel">
+                    <div class="calendar-card-heading">
+                        <div><span class="calendar-card-icon is-deadline">{{ icon('calendar') }}</span><h3>Ближайшие дедлайны</h3></div>
+                        <a href="/tasks">Все дедлайны</a>
+                    </div>
+                    <div class="calendar-compact-list">
+                        {% for event in upcoming_deadlines %}
+                        <article class="calendar-compact-item">
+                            <i class="is-deadline"></i><time>{{ event.date.strftime('%d.%m') }}</time>
+                            <div><strong>{{ event_title(event) }}</strong><small>{{ event.subject or event.meta }}</small></div>
+                            <span>{{ event.time_label }}</span>
+                        </article>
+                        {% else %}
+                        {{ empty_state(
+                            'tasks',
+                            'Нет ближайших дедлайнов',
+                            'Новые задачи со сроком появятся здесь.',
+                            '+ Добавить задачу',
+                            '/tasks#task-create',
+                            focus_target='#taskTitleInput',
+                            variant='inline'
+                        ) }}
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section class="calendar-panel calendar-list-panel">
+                    <div class="calendar-card-heading">
+                        <div><span class="calendar-card-icon is-exam">{{ icon('exam') }}</span><h3>Сессия и особые дни</h3></div>
+                        <a href="#calendar-event-form">Все события</a>
+                    </div>
+                    <div class="calendar-compact-list">
+                        {% for event in upcoming_session_events[:3] %}
+                        <article class="calendar-compact-item">
+                            <i class="is-exam"></i><time>{{ event.date.strftime('%d.%m') }}</time>
+                            <div><strong>{{ event.title }}</strong><small>{{ event.badge }}{% if event.room %} · {{ event.room }}{% endif %}</small></div>
+                            <span>{{ event.time_label }}</span>
+                        </article>
+                        {% endfor %}
+                        {% for event in upcoming_schedule_changes[:2] %}
+                        <article class="calendar-compact-item">
+                            <i class="is-change"></i><time>{{ event.date.strftime('%d.%m') }}</time>
+                            <div><strong>{{ event.title }}</strong><small>{{ event.badge }}</small></div>
+                            <span>{{ event.time_label }}</span>
+                        </article>
+                        {% endfor %}
+                        {% if not upcoming_session_events and not upcoming_schedule_changes %}
+                        {{ empty_state(
+                            'calendar',
+                            'Особых событий пока нет',
+                            'Экзамены, зачёты и изменения расписания появятся здесь.',
+                            '+ Новое событие',
+                            '#calendar-event-form',
+                            focus_target='#calendar-event-form input[name="title"]',
+                            variant='inline'
+                        ) }}
+                        {% endif %}
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <aside class="calendar-right-column">
+            <section class="calendar-panel calendar-selected-panel" id="selected-day-panel">
+                <div class="calendar-card-heading">
+                    <div><span class="calendar-card-icon">{{ icon('calendar') }}</span><h3>Выбранный день</h3></div>
+                </div>
+                <div class="calendar-selected-date">
+                    <span>{{ weekdays[selected_date.weekday()] }}</span>
+                    <strong>{{ selected_date.day }} {{ selected_month_name }} {{ selected_date.year }}</strong>
+                </div>
+                <div class="calendar-day-stats">
+                    <div><span>Нагрузка</span><strong>{{ selected_summary.load_duration_label }}</strong></div>
+                    <div><span>Окно дня</span><strong>{% if selected_summary.first_event_time %}{{ selected_summary.first_event_time }}–{{ selected_summary.last_event_time }}{% else %}Свободно{% endif %}</strong></div>
+                    <div><span>Пары</span><strong>{{ selected_summary.schedule_count }}</strong></div>
+                    <div><span>Задачи</span><strong>{{ selected_summary.task_count }}</strong></div>
+                </div>
+
+                {% if selected_day_override %}
+                <div class="calendar-override-banner">
+                    <div><span>Особый день</span><strong>{{ selected_day_override.title }}</strong></div>
+                    <form method="post" action="/calendar/session/delete/{{ selected_day_override.academic_event_id }}" data-confirm-title="Снять событие «{{ selected_day_override.title|e }}»?">
+                        {{ csrf_input(request) }}
+                        <input type="hidden" name="year" value="{{ calendar_year }}">
+                        <input type="hidden" name="month" value="{{ calendar_month }}">
+                        <input type="hidden" name="selected" value="{{ selected_iso }}">
+                        <input type="hidden" name="view" value="week">
+                        <button type="submit">Снять</button>
+                    </form>
                 </div>
                 {% endif %}
-            </div>
-        </div>
-    </div>
 
-    <div class="col-xl-4">
-        <div class="card agenda-card h-100">
-            <div class="card-body">
-                <span class="eyebrow">Выбранный день</span>
-                <h3 class="agenda-title mt-3 mb-1">{{ selected_date.strftime('%d.%m.%Y') }}</h3>
-                <p class="agenda-subtitle">{{ weekdays[selected_date.weekday()] }}</p>
-
-                <div class="agenda-summary-grid">
-                    <div class="agenda-summary-card">
-                        <span>Нагрузка</span>
-                        <strong>{{ selected_summary.load_label }}</strong>
-                    </div>
-                    <div class="agenda-summary-card">
-                        <span>Окно дня</span>
-                        <strong>{% if selected_summary.first_event_time %}{{ selected_summary.first_event_time }} - {{ selected_summary.last_event_time }}{% else %}Свободно{% endif %}</strong>
-                    </div>
-                    <div class="agenda-summary-card">
-                        <span>Пары</span>
-                        <strong>{{ selected_summary.schedule_count }}</strong>
-                    </div>
-                    <div class="agenda-summary-card">
-                        <span>Задачи</span>
-                        <strong>{{ selected_summary.task_count }}</strong>
-                    </div>
-                </div>
-
-                {% if selected_events %}
-                <div class="agenda-list">
+                <h4>План на день</h4>
+                <div class="calendar-agenda-list">
                     {% for event in selected_events %}
-                    <article class="agenda-item event-{{ event.type }} {% if event.is_overdue %}agenda-item-overdue{% endif %}">
-                        <div class="agenda-item-time">{{ event.time_label }}</div>
-                        <div class="agenda-item-body">
-                            <div class="agenda-item-title">
-                                {% if event.task_id %}
-                                <a href="/tasks?task={{ event.task_id }}">{{ event.title }}</a>
-                                {% else %}
-                                {{ event.title }}
-                                {% endif %}
-                            </div>
-                            <div class="agenda-item-meta">
-                                <span class="agenda-badge">{{ event.badge }}</span>
-                                {% if event.meta %}
-                                <span>{{ event.meta }}</span>
-                                {% endif %}
-                                {% if event.room %}
-                                <span>• {{ event.room }}</span>
-                                {% endif %}
-                            </div>
-                            {% if event.description %}
-                            <p class="agenda-item-copy">{{ event.description }}</p>
+                    <article class="calendar-agenda-item event-{{ event.type }}" data-calendar-event data-event-group="{% if event.type == 'schedule' %}classes{% elif event.type == 'task' %}deadline{% elif event.type == 'academic' %}exam{% else %}change{% endif %}">
+                        <time>{{ event.time_label }}</time>
+                        <div>
+                            <strong>{{ event_title(event) }}</strong>
+                            <small>{{ event.subject or event.meta }}{% if event.room %} · {{ event.room }}{% endif %}</small>
+                            {% if event.academic_event_id and event.type != 'override' %}
+                            <details class="calendar-event-edit">
+                                <summary>{{ icon('edit') }} Изменить</summary>
+                                <form method="post" action="/calendar/session/edit/{{ event.academic_event_id }}" class="calendar-inline-form">
+                                    {{ csrf_input(request) }}
+                                    <input type="hidden" name="year" value="{{ calendar_year }}">
+                                    <input type="hidden" name="month" value="{{ calendar_month }}">
+                                    <input type="hidden" name="selected" value="{{ selected_iso }}">
+                                    <input type="hidden" name="view" value="week">
+                                    <label><span>Тип</span><select name="event_type" class="form-select">{% for option in calendar_event_type_options %}<option value="{{ option.value }}" {% if event.event_type == option.value %}selected{% endif %}>{{ option.label }}</option>{% endfor %}</select></label>
+                                    <label><span>Предмет</span><select name="subject_id" class="form-select"><option value="">Без предмета</option>{% for subject in subjects %}<option value="{{ subject.id }}" {% if event.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>{% endfor %}</select></label>
+                                    <label class="calendar-wide-field"><span>Название</span><input type="text" name="title" value="{{ event.title }}" class="form-control" maxlength="150"></label>
+                                    <label><span>Дата</span><input type="date" name="event_date" value="{{ event.raw_date }}" class="form-control" required></label>
+                                    <label><span>Начало</span><input type="time" name="start_time" value="{{ event.raw_start_time }}" class="form-control"></label>
+                                    <label><span>Конец</span><input type="time" name="end_time" value="{{ event.raw_end_time }}" class="form-control"></label>
+                                    <label><span>Аудитория</span><input type="text" name="room" value="{{ event.room or '' }}" class="form-control" maxlength="50" autocomplete="off"></label>
+                                    <label class="calendar-wide-field"><span>Заметка</span><textarea name="description" class="form-control" rows="2" maxlength="5000">{{ event.description }}</textarea></label>
+                                    <button type="submit" class="calendar-form-submit">Сохранить</button>
+                                </form>
+                                <form method="post" action="/calendar/session/delete/{{ event.academic_event_id }}" class="calendar-delete-form" data-confirm-title="Удалить событие «{{ event_title(event)|e }}»?">
+                                    {{ csrf_input(request) }}
+                                    <input type="hidden" name="year" value="{{ calendar_year }}">
+                                    <input type="hidden" name="month" value="{{ calendar_month }}">
+                                    <input type="hidden" name="selected" value="{{ selected_iso }}">
+                                    <input type="hidden" name="view" value="week">
+                                    <button type="submit">{{ icon('trash') }} Удалить событие</button>
+                                </form>
+                            </details>
                             {% endif %}
                         </div>
                     </article>
+                    {% else %}
+                    {{ empty_state(
+                        'calendar',
+                        'На этот день ничего не запланировано',
+                        'Можно добавить событие или использовать день для подготовки.',
+                        'Добавить событие',
+                        '#calendar-event-form',
+                        focus_target='#calendar-event-form input[name="title"]',
+                        variant='inline'
+                    ) }}
                     {% endfor %}
                 </div>
-                {% else %}
-                <div class="agenda-empty">
-                    <div class="agenda-empty-icon">+</div>
-                    <div class="agenda-empty-title">На этот день пока пусто</div>
-                    <p>Можно использовать окно для отдыха, повторения или спокойно раскидать новые задачи.</p>
-                </div>
+                {% if selected_events %}
+                <a href="#calendar-event-form" class="calendar-show-all">Добавить событие на этот день</a>
                 {% endif %}
+            </section>
 
-                {% if busiest_day %}
-                <div class="calendar-insight-card">
-                    <span class="calendar-insight-label">Самый плотный день месяца</span>
-                    <strong>{{ busiest_day.date.strftime('%d.%m') }}</strong>
-                    <p>{{ busiest_day.event_count }} событий, из них {{ busiest_day.task_count }} задач.</p>
+            <section class="calendar-panel calendar-quick-panel" id="calendar-event-form">
+                <div class="calendar-card-heading">
+                    <div><span class="calendar-card-icon is-purple">{{ icon('plus') }}</span><h3>Быстрое добавление события</h3></div>
                 </div>
-                {% endif %}
-
-                {% if upcoming_events %}
-                <div class="upcoming-panel">
-                    <div class="upcoming-panel-title">Ближайшие события</div>
-                    <div class="upcoming-list">
-                        {% for event in upcoming_events %}
-                        <article class="upcoming-item event-{{ event.type }}">
-                            <div class="upcoming-item-date">{{ event.date.strftime('%d.%m') }}</div>
-                            <div class="upcoming-item-body">
-                                <div class="upcoming-item-title">
-                                    {% if event.task_id %}
-                                    <a href="/tasks?task={{ event.task_id }}">{{ event.title }}</a>
-                                    {% else %}
-                                    {{ event.title }}
-                                    {% endif %}
-                                </div>
-                                <div class="upcoming-item-meta">{{ weekdays[event.weekday] }}, {{ event.time_label }}</div>
-                            </div>
-                        </article>
-                        {% endfor %}
+                <form method="post" action="/calendar/session/add" class="calendar-quick-form">
+                    {{ csrf_input(request) }}
+                    <input type="hidden" name="year" value="{{ calendar_year }}">
+                    <input type="hidden" name="month" value="{{ calendar_month }}">
+                    <input type="hidden" name="selected" value="{{ selected_iso }}">
+                    <input type="hidden" name="view" value="week">
+                    <label><span>Тип события</span><select name="event_type" class="form-select">{% for option in calendar_event_type_options %}<option value="{{ option.value }}">{{ option.label }}</option>{% endfor %}</select></label>
+                    <label><span>Название события</span><input type="text" name="title" class="form-control" placeholder="Название события" maxlength="150"></label>
+                    <div class="calendar-date-time-grid">
+                        <label><span>Дата</span><input type="date" name="event_date" value="{{ selected_iso }}" class="form-control" required></label>
+                        <label><span>Начало</span><input type="time" name="start_time" value="09:00" class="form-control"></label>
+                        <label><span>Конец</span><input type="time" name="end_time" value="10:30" class="form-control"></label>
                     </div>
-                </div>
-                {% endif %}
+                    <details class="calendar-more-fields">
+                        <summary>Предмет и детали</summary>
+                        <div>
+                            <label><span>Предмет</span><select name="subject_id" class="form-select"><option value="">Без предмета</option>{% for subject in subjects %}<option value="{{ subject.id }}">{{ subject.name }}</option>{% endfor %}</select></label>
+                            <label><span>Аудитория</span><input type="text" name="room" class="form-control" maxlength="50" autocomplete="off"></label>
+                            <label><span>Заметка</span><textarea name="description" class="form-control" rows="2" maxlength="5000"></textarea></label>
+                        </div>
+                    </details>
+                    <button type="submit" class="calendar-form-submit">Добавить событие</button>
+                </form>
 
-                <div class="agenda-footer">
-                    <a href="/tasks" class="btn btn-outline-secondary w-100">Открыть задачи</a>
-                </div>
-            </div>
-        </div>
+                <details class="calendar-special-day" id="calendar-override-form">
+                    <summary>{{ icon('change') }} Отметить особый день</summary>
+                    <form method="post" action="/calendar/override/add">
+                        {{ csrf_input(request) }}
+                        <input type="hidden" name="year" value="{{ calendar_year }}">
+                        <input type="hidden" name="month" value="{{ calendar_month }}">
+                        <input type="hidden" name="selected" value="{{ selected_iso }}">
+                        <input type="hidden" name="view" value="week">
+                        <div>
+                            <label><span>Первый день</span><input type="date" name="start_date" value="{{ selected_iso }}" class="form-control" required></label>
+                            <label><span>Последний день</span><input type="date" name="end_date" value="{{ selected_iso }}" class="form-control"></label>
+                        </div>
+                        <label><span>Причина</span><select name="title" class="form-select"><option value="День не по расписанию">День не по расписанию</option><option value="Каникулы">Каникулы</option><option value="Сессия">Сессия</option><option value="Практика">Практика</option><option value="Выходной">Выходной</option></select></label>
+                        <label><span>Заметка</span><textarea name="description" class="form-control" rows="2" maxlength="5000"></textarea></label>
+                        <button type="submit" class="calendar-form-submit is-secondary">Сохранить период</button>
+                    </form>
+                </details>
+            </section>
+        </aside>
     </div>
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="/static/js/calendar.js?v=20260611-motion-v1"></script>
 {% endblock %}

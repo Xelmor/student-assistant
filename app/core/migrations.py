@@ -65,6 +65,39 @@ def _add_tasks_recurrence_fields(connection: Connection) -> None:
         )
 
 
+def _add_academic_calendar_fields(connection: Connection) -> None:
+    if 'users' in inspect(connection).get_table_names() and not _column_exists(connection, 'users', 'last_study_day'):
+        connection.execute(text('ALTER TABLE users ADD COLUMN last_study_day DATE'))
+
+    connection.execute(
+        text(
+            """
+            CREATE TABLE IF NOT EXISTS academic_events (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                subject_id INTEGER,
+                title VARCHAR(150) NOT NULL,
+                event_type VARCHAR(20) NOT NULL DEFAULT 'exam',
+                event_date DATE NOT NULL,
+                start_time TIME,
+                end_time TIME,
+                room VARCHAR(50),
+                description TEXT,
+                created_at DATETIME,
+                FOREIGN KEY(user_id) REFERENCES users (id),
+                FOREIGN KEY(subject_id) REFERENCES subjects (id)
+            )
+            """
+        )
+    )
+
+    if not _index_exists(connection, 'academic_events', 'ix_academic_events_id'):
+        connection.execute(text('CREATE INDEX ix_academic_events_id ON academic_events (id)'))
+
+    if not _index_exists(connection, 'academic_events', 'ix_academic_events_user_date'):
+        connection.execute(text('CREATE INDEX ix_academic_events_user_date ON academic_events (user_id, event_date)'))
+
+
 MIGRATIONS = [
     Migration(
         version='20260430_01_add_users_schedule_unit',
@@ -75,6 +108,11 @@ MIGRATIONS = [
         version='20260430_02_add_tasks_recurrence_fields',
         description='Add task recurrence and scheduling fields.',
         upgrade=_add_tasks_recurrence_fields,
+    ),
+    Migration(
+        version='20260530_01_add_academic_calendar_fields',
+        description='Add academic session events and last study day.',
+        upgrade=_add_academic_calendar_fields,
     ),
 ]
 

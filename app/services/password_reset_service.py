@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import smtplib
 from email.message import EmailMessage
+from hashlib import sha256
+from hmac import compare_digest, new as hmac_new
 
 from itsdangerous import BadSignature, BadTimeSignature, SignatureExpired, URLSafeTimedSerializer
 
@@ -20,9 +22,17 @@ def get_password_reset_serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(settings.secret_key, salt=TOKEN_SALT)
 
 
+def get_password_version(user: User) -> str:
+    return hmac_new(
+        settings.secret_key.encode('utf-8'),
+        user.password_hash.encode('utf-8'),
+        sha256,
+    ).hexdigest()
+
+
 def generate_password_reset_token(user: User) -> str:
     serializer = get_password_reset_serializer()
-    return serializer.dumps({'user_id': user.id, 'password_hash': user.password_hash})
+    return serializer.dumps({'user_id': user.id, 'password_version': get_password_version(user)})
 
 
 def validate_password_reset_token(token: str, user: User | None) -> bool:
@@ -35,7 +45,12 @@ def validate_password_reset_token(token: str, user: User | None) -> bool:
     except (BadSignature, BadTimeSignature, SignatureExpired):
         return False
 
-    return payload.get('user_id') == user.id and payload.get('password_hash') == user.password_hash
+    token_version = payload.get('password_version')
+    return (
+        payload.get('user_id') == user.id
+        and isinstance(token_version, str)
+        and compare_digest(token_version, get_password_version(user))
+    )
 
 
 def load_password_reset_payload(token: str) -> dict | None:

@@ -23,15 +23,21 @@ function startDashboardClock() {
 
     function renderTime() {
         const now = new Date();
+        const settings = window.StudentAssistantPreferences?.getSettings?.() || {};
+        const timeZone = settings.timezone && settings.timezone !== 'system'
+            ? settings.timezone
+            : undefined;
         const time = now.toLocaleTimeString('ru-RU', {
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
+            hour12: settings.timeFormat === '12',
+            timeZone,
         });
         clock.textContent = time;
 
         if (liveDate) {
-            const browserDate = now.toLocaleDateString('ru-RU');
+            const browserDate = now.toLocaleDateString('ru-RU', { timeZone });
             liveDate.textContent = `Сегодня: ${browserDate}`;
 
             const isoBrowserDate = [
@@ -40,7 +46,7 @@ function startDashboardClock() {
                 String(now.getDate()).padStart(2, '0'),
             ].join('-');
 
-            if (liveDate.dataset.serverDate && liveDate.dataset.serverDate !== isoBrowserDate) {
+            if (!timeZone && liveDate.dataset.serverDate && liveDate.dataset.serverDate !== isoBrowserDate) {
                 window.location.reload();
             }
         }
@@ -68,6 +74,7 @@ function startDashboardClock() {
     renderTime();
     startLessonCountdown();
     window.setInterval(renderTime, 1000);
+    document.addEventListener('studentAssistantPreferencesChanged', renderTime);
 }
 
 function initDashboardQuickTask() {
@@ -100,11 +107,20 @@ function initDashboardQuickTask() {
         if (!title) {
             status.textContent = 'Введите название задачи';
             status.dataset.state = 'error';
+            window.showToast?.({
+                type: 'warning',
+                title: 'Введите название задачи',
+                description: 'Название нужно заполнить перед сохранением.',
+                duration: 3600,
+            });
             input.focus();
             return;
         }
 
         isSubmitting = true;
+        form.classList.add('is-submitting');
+        form.setAttribute('aria-busy', 'true');
+        form.querySelector('[type="submit"]')?.classList.add('form-loading-button');
         status.textContent = 'Сохраняю...';
         status.dataset.state = 'loading';
 
@@ -128,6 +144,12 @@ function initDashboardQuickTask() {
             input.value = '';
             status.textContent = 'Задача добавлена';
             status.dataset.state = 'success';
+            window.showToast?.({
+                type: 'success',
+                title: 'Задача добавлена',
+                description: 'Новая задача появилась в списке.',
+                duration: 4200,
+            });
 
             if (pendingCount && typeof payload.pending_count === 'number') {
                 pendingCount.textContent = String(payload.pending_count);
@@ -145,8 +167,17 @@ function initDashboardQuickTask() {
         } catch (error) {
             status.textContent = 'Не удалось добавить задачу';
             status.dataset.state = 'error';
+            window.showToast?.({
+                type: 'error',
+                title: 'Не удалось добавить задачу',
+                description: 'Проверьте соединение и попробуйте ещё раз.',
+                duration: 5200,
+            });
         } finally {
             isSubmitting = false;
+            form.classList.remove('is-submitting');
+            form.removeAttribute('aria-busy');
+            form.querySelector('[type="submit"]')?.classList.remove('form-loading-button');
         }
     }
 

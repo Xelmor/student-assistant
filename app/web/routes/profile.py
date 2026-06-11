@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ...core.database import get_db
 from ...models import User
+from .auth import normalize_account_identity, normalize_profile_metadata, normalize_username_lookup
 from ..dependencies import (
     SCHEDULE_UNIT_OPTIONS,
     is_local_private_data_enabled,
@@ -13,6 +15,25 @@ from ..dependencies import (
 )
 
 router = APIRouter()
+
+def _build_profile_context(
+    request: Request,
+    user: User,
+    *,
+    error=None,
+    success=None,
+    data_success=None,
+    data_error=None,
+):
+    return {
+        'user': user,
+        'error': error,
+        'success': success,
+        'local_private_data_available': is_local_private_data_enabled(request),
+        'data_success': data_success,
+        'data_error': data_error,
+        'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
+    }
 
 
 @router.get('/profile', response_class=HTMLResponse)
@@ -26,15 +47,12 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         'profile/profile.html',
-        {
-            'user': user,
-            'error': None,
-            'success': None,
-            'local_private_data_available': is_local_private_data_enabled(request),
-            'data_success': data_success,
-            'data_error': data_error,
-            'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
-        },
+        _build_profile_context(
+            request,
+            user,
+            data_success=data_success,
+            data_error=data_error,
+        ),
     )
 
 
@@ -53,31 +71,41 @@ def update_profile(
     if not user:
         return RedirectResponse('/login', status_code=302)
 
+    try:
+        normalized_username, normalized_email = normalize_account_identity(username, email)
+        normalized_group_name, normalized_course = normalize_profile_metadata(group_name, course)
+    except ValueError as error:
+        return templates.TemplateResponse(
+            request,
+            'profile/profile.html',
+            _build_profile_context(request, user, error=str(error)),
+        )
+
     existing = db.query(User).filter(
-        ((User.username == username) | (User.email == email)) & (User.id != user.id)
+        (
+            (func.lower(User.username) == normalize_username_lookup(normalized_username))
+            | (User.email == normalized_email)
+        )
+        & (User.id != user.id)
     ).first()
     if existing:
         return templates.TemplateResponse(
             request,
             'profile/profile.html',
-            {
-                'user': user,
-                'error': 'Пользователь с таким логином или email уже существует.',
-                'success': None,
-                'local_private_data_available': is_local_private_data_enabled(request),
-                'data_success': None,
-                'data_error': None,
-                'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
-            },
+            _build_profile_context(
+                request,
+                user,
+                error='Пользователь с таким логином или email уже существует.',
+            ),
         )
 
     if schedule_unit not in SCHEDULE_UNIT_OPTIONS:
         schedule_unit = 'class'
 
-    user.username = username
-    user.email = email
-    user.group_name = group_name or None
-    user.course = course
+    user.username = normalized_username
+    user.email = normalized_email
+    user.group_name = normalized_group_name
+    user.course = normalized_course
     user.schedule_unit = schedule_unit
     db.commit()
     db.refresh(user)
@@ -87,15 +115,7 @@ def update_profile(
     return templates.TemplateResponse(
         request,
         'profile/profile.html',
-        {
-            'user': user,
-            'error': None,
-            'success': 'Профиль обновлен.',
-            'local_private_data_available': is_local_private_data_enabled(request),
-            'data_success': None,
-            'data_error': None,
-            'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
-        },
+        _build_profile_context(request, user, success='Профиль обновлен.'),
     )
 
 

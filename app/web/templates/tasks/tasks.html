@@ -1,455 +1,382 @@
 {% extends 'base.html' %}
-{% block title %}Задачи{% endblock %}
+{% block title %}Задачи · Student Assistant{% endblock %}
+{% block theme_color %}#070b1a{% endblock %}
+{% block body_class %}dashboard-page tasks-page{% endblock %}
+{% from 'components/empty_state.html' import empty_state %}
+
+{% macro icon(name) %}
+{% if name == 'tasks' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11 2 2 4-5"></path><path d="M20 12a8 8 0 1 1-4.7-7.3"></path></svg>
+{% elif name == 'plus' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+{% elif name == 'filter' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.5 7.2V19l-3 1v-7.8z"></path></svg>
+{% elif name == 'search' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+{% elif name == 'edit' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.5-1 10-10-3.5-3.5-10 10z"></path><path d="m13.5 7 3.5 3.5"></path></svg>
+{% elif name == 'check' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg>
+{% elif name == 'undo' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7-4 4 4 4"></path><path d="M5 11h8a6 6 0 0 1 6 6v1"></path></svg>
+{% elif name == 'trash' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"></path></svg>
+{% elif name == 'calendar' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Zm2-2v4m10-4v4M3 9h18"></path></svg>
+{% elif name == 'alert' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18z"></path><path d="M12 9v4m0 3h.01"></path></svg>
+{% elif name == 'briefcase' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v13H4zM9 7V4h6v3m-11 5h16"></path></svg>
+{% elif name == 'clock' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+{% elif name == 'list' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"></path></svg>
+{% elif name == 'grid' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v4H4zM14 15h6v4h-6z"></path></svg>
+{% elif name == 'chevron' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"></path></svg>
+{% endif %}
+{% endmacro %}
+
 {% block content %}
-<div class="page-intro">
-    <div>
-        <span class="eyebrow">Контекст по предметам</span>
-        <h1 class="mt-3 mb-2">Задачи в понятной структуре</h1>
-        <p>Теперь задачи сгруппированы по предметам, чтобы ты видел не просто список дел, а учебный контекст: что относится к какому курсу и где сейчас больше всего нагрузки.</p>
-    </div>
-</div>
+{% set task_stats = namespace(today=0, no_deadline=0) %}
+{% for task in tasks %}
+    {% if not task.is_completed and not task.anchor_datetime %}
+        {% set task_stats.no_deadline = task_stats.no_deadline + 1 %}
+    {% endif %}
+    {% if not task.is_completed and task.anchor_datetime and task.anchor_datetime.date() == now.date() %}
+        {% set task_stats.today = task_stats.today + 1 %}
+    {% endif %}
+{% endfor %}
 
-<section class="smart-deadline-strip">
-    <div class="smart-deadline-card is-overdue">
-        <span class="smart-deadline-label">Критично</span>
-        <strong>{{ smart_counts.overdue }}</strong>
-        <small>просрочено</small>
-    </div>
-    <div class="smart-deadline-card is-danger">
-        <span class="smart-deadline-label">Срочно</span>
-        <strong>{{ smart_counts.danger }}</strong>
-        <small>до конца дня</small>
-    </div>
-    <div class="smart-deadline-card is-warn">
-        <span class="smart-deadline-label">Риск</span>
-        <strong>{{ smart_counts.warn }}</strong>
-        <small>в ближайшие 2 дня</small>
-    </div>
-    <div class="smart-deadline-card">
-        <span class="smart-deadline-label">Всего в работе</span>
-        <strong>{{ smart_counts.pending }}</strong>
-        <small>активных задач</small>
-    </div>
-</section>
+<div class="tasks-dashboard">
+    <header class="tasks-overview">
+        <div class="tasks-title-block">
+            <span class="tasks-title-icon">{{ icon('tasks') }}</span>
+            <div>
+                <span class="tasks-eyebrow">Учебный контроль</span>
+                <h1>Задачи</h1>
+                <p>Планируй, отслеживай и закрывай учебные задачи по предметам.</p>
+            </div>
+        </div>
 
-{% if form_error %}
-<div class="alert alert-danger mb-4">{{ form_error }}</div>
-{% endif %}
+        <div class="tasks-stat-grid" aria-label="Статистика задач">
+            <article class="tasks-stat-card is-critical">
+                <span class="tasks-stat-icon">{{ icon('alert') }}</span>
+                <div><span>Критично</span><strong>{{ smart_counts.overdue }}</strong><small>задач</small></div>
+            </article>
+            <article class="tasks-stat-card is-today">
+                <span class="tasks-stat-icon">{{ icon('calendar') }}</span>
+                <div><span>На сегодня</span><strong>{{ task_stats.today }}</strong><small>задач</small></div>
+            </article>
+            <article class="tasks-stat-card is-no-deadline">
+                <span class="tasks-stat-icon">{{ icon('clock') }}</span>
+                <div><span>Без дедлайна</span><strong>{{ task_stats.no_deadline }}</strong><small>задач</small></div>
+            </article>
+            <article class="tasks-stat-card is-active">
+                <span class="tasks-stat-icon">{{ icon('briefcase') }}</span>
+                <div><span>Всего в работе</span><strong>{{ smart_counts.pending }}</strong><small>задач</small></div>
+            </article>
+        </div>
+    </header>
 
-{% if task_groups %}
-<section class="task-context-grid">
-    {% for group in task_groups %}
-    <article class="task-context-card" style="--task-subject-color: {{ group.color }};">
-        <div class="task-context-head">
-            <div class="task-context-title-wrap">
-                <span class="task-context-mark"></span>
-                <div>
-                    <h3>{{ group.title }}</h3>
-                    <p>
-                        {% if group.teacher %}{{ group.teacher }}{% else %}Без преподавателя{% endif %}
-                        {% if group.room %} · {{ group.room }}{% endif %}
-                    </p>
+    {% if form_error %}
+    <div class="tasks-alert" role="alert">{{ form_error }}</div>
+    {% endif %}
+
+    <div class="tasks-workspace">
+        <aside class="tasks-sidebar">
+            <section class="tasks-panel tasks-create-panel" id="task-create">
+                <div class="tasks-panel-heading">
+                    <span class="tasks-panel-icon">{{ icon('plus') }}</span>
+                    <div><h2>Быстрое добавление</h2><p>Новая задача без лишних шагов</p></div>
                 </div>
-            </div>
-            <span class="task-context-count">{{ group.pending_count }} в работе</span>
-        </div>
-        <div class="task-context-preview">
-            {% for task in group.tasks[:3] %}
-            <div class="task-context-preview-item">
-                <strong>{{ task.title }}</strong>
-                <span>
-                    {{ task.deadline_state.detail }}
-                    {% if task.recurrence_label %} · {{ task.recurrence_label }}{% endif %}
-                </span>
-            </div>
-            {% endfor %}
-        </div>
-    </article>
-    {% endfor %}
-</section>
-{% endif %}
 
-<div class="row g-4">
-    <div class="col-lg-4">
-        <div class="card shadow-sm task-create-card" id="task-create">
-            <div class="card-body">
-                <h3 class="mb-3">Добавить задачу</h3>
-                <form method="post" action="/tasks/add" class="task-create-form">
+                <form method="post" action="/tasks/add" class="tasks-create-form">
                     {{ csrf_input(request) }}
-                    <div class="mb-3">
-                        <label class="form-label">Название</label>
-                        <input type="text" name="title" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Описание</label>
-                        <textarea name="description" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Предмет</label>
+                    <label class="tasks-field">
+                        <span>Название</span>
+                        <input id="taskTitleInput" type="text" name="title" class="form-control" maxlength="150" placeholder="Введите название задачи" required>
+                    </label>
+                    <label class="tasks-field">
+                        <span>Описание</span>
+                        <textarea name="description" class="form-control" rows="3" maxlength="5000" placeholder="Краткое описание задачи"></textarea>
+                    </label>
+                    <label class="tasks-field">
+                        <span>Предмет</span>
                         <select name="subject_id" class="form-select">
                             <option value="">Без предмета</option>
                             {% for subject in subjects %}
-                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                            <option value="{{ subject.id }}">{{ subject.name }}</option>
                             {% endfor %}
                         </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Дата занятия</label>
-                        <input type="date" name="scheduled_for_date" class="form-control">
-                        <div class="form-text">Если задача относится к учебному дню, укажи дату занятия.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Пара из расписания</label>
-                        <select name="schedule_item_id" class="form-select">
-                            <option value="">Без конкретной пары</option>
-                            {% for schedule_item_id, schedule_item_label in schedule_options %}
-                                <option value="{{ schedule_item_id }}">{{ schedule_item_label }}</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">Если выбрана пара, предмет подставится автоматически.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Дедлайн</label>
-                        <input type="datetime-local" name="deadline" class="form-control">
-                        <div class="form-text">Для повторяющейся задачи укажи дедлайн первой задачи.</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Приоритет</label>
+                    </label>
+                    <div class="tasks-field-grid">
+                        <label class="tasks-field">
+                            <span>Дедлайн</span>
+                            <input type="datetime-local" name="deadline" class="form-control">
+                        </label>
+                        <label class="tasks-field">
+                            <span>Приоритет</span>
                             <select name="priority" class="form-select">
                                 <option value="low">Низкий</option>
                                 <option value="medium" selected>Средний</option>
                                 <option value="high">Высокий</option>
                             </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Сложность</label>
-                            <select name="difficulty" class="form-select">
-                                <option value="low">Низкая</option>
-                                <option value="medium" selected>Средняя</option>
-                                <option value="high">Высокая</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Повтор</label>
-                            <select name="recurrence_type" class="form-select">
-                                {% for recurrence_key, recurrence_label in recurrence_options.items() %}
-                                <option value="{{ recurrence_key }}">{{ recurrence_label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Интервал в днях</label>
-                            <input type="number" name="recurrence_interval_days" class="form-control" min="2" max="365" placeholder="Например, 2">
-                            <div class="form-text">Нужно только для режима «Каждые N дней».</div>
-                        </div>
+                        </label>
                     </div>
-                    <button class="btn btn-primary w-100">Добавить</button>
-                </form>
-            </div>
-        </div>
-    </div>
 
-    <div class="col-lg-8">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="tasks-list-head">
-                    <div>
-                        <h3 class="mb-1">Список задач</h3>
-                        <p class="tasks-list-copy">Сначала идут самые срочные задачи, но теперь внутри понятных предметных секций.</p>
+                    <details class="tasks-advanced-fields">
+                        <summary>Дополнительные настройки <span>{{ icon('chevron') }}</span></summary>
+                        <div class="tasks-advanced-content">
+                            <label class="tasks-field">
+                                <span>Дата занятия</span>
+                                <input type="date" name="scheduled_for_date" class="form-control">
+                            </label>
+                            <label class="tasks-field">
+                                <span>Пара из расписания</span>
+                                <select name="schedule_item_id" class="form-select">
+                                    <option value="">Без конкретной пары</option>
+                                    {% for schedule_item_id, schedule_item_label in schedule_options %}
+                                    <option value="{{ schedule_item_id }}">{{ schedule_item_label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                            <div class="tasks-field-grid">
+                                <label class="tasks-field">
+                                    <span>Сложность</span>
+                                    <select name="difficulty" class="form-select">
+                                        <option value="low">Низкая</option>
+                                        <option value="medium" selected>Средняя</option>
+                                        <option value="high">Высокая</option>
+                                    </select>
+                                </label>
+                                <label class="tasks-field">
+                                    <span>Повтор</span>
+                                    <select name="recurrence_type" class="form-select">
+                                        {% for recurrence_key, recurrence_label in recurrence_options.items() %}
+                                        <option value="{{ recurrence_key }}">{{ recurrence_label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                            </div>
+                            <label class="tasks-field">
+                                <span>Интервал повторения в днях</span>
+                                <input type="number" name="recurrence_interval_days" class="form-control" min="2" max="365" placeholder="Например, 2">
+                            </label>
+                        </div>
+                    </details>
+
+                    <button type="submit" class="tasks-primary-button">{{ icon('plus') }}<span>Добавить задачу</span></button>
+                </form>
+            </section>
+
+            <section class="tasks-panel tasks-filter-panel">
+                <div class="tasks-panel-heading">
+                    <span class="tasks-panel-icon is-blue">{{ icon('filter') }}</span>
+                    <div><h2>Фильтры</h2><p>Найди нужное быстрее</p></div>
+                </div>
+                <div class="tasks-filter-pills" role="group" aria-label="Фильтр задач">
+                    <button type="button" class="tasks-filter-pill is-active" data-task-filter="all">Все</button>
+                    <button type="button" class="tasks-filter-pill is-urgent" data-task-filter="urgent"><span></span>Срочные</button>
+                    <button type="button" class="tasks-filter-pill is-undated" data-task-filter="no-deadline"><span></span>Без дедлайна</button>
+                    <button type="button" class="tasks-filter-pill is-done" data-task-filter="done"><span></span>Готово</button>
+                </div>
+                <label class="tasks-search">
+                    {{ icon('search') }}
+                    <input type="search" id="taskSearchInput" placeholder="Поиск по задачам…" autocomplete="off">
+                    <kbd>⌘ K</kbd>
+                </label>
+            </section>
+        </aside>
+
+        <section class="tasks-panel tasks-list-panel">
+            <div class="tasks-list-toolbar">
+                <div>
+                    <span class="tasks-eyebrow">Рабочее пространство</span>
+                    <h2>Список задач</h2>
+                </div>
+                <div class="tasks-list-controls">
+                    <label class="tasks-sort">
+                        <span>Сортировка:</span>
+                        <select id="taskSortSelect" aria-label="Сортировка задач">
+                            <option value="deadline">По дедлайну</option>
+                            <option value="priority">По приоритету</option>
+                            <option value="title">По названию</option>
+                        </select>
+                    </label>
+                    <div class="tasks-view-switch" role="group" aria-label="Вид списка">
+                        <button type="button" class="is-active" data-task-view="list" title="Список" aria-label="Список">{{ icon('list') }}</button>
+                        <button type="button" data-task-view="compact" title="Компактный вид" aria-label="Компактный вид">{{ icon('grid') }}</button>
                     </div>
                 </div>
+            </div>
 
-                {% if task_groups %}
+            {{ empty_state(
+                'search',
+                'Ничего не найдено',
+                'Попробуй изменить фильтр, поиск или сбросить параметры.',
+                'Сбросить фильтры',
+                action_id='tasksResetFilters',
+                variant='compact',
+                element_id='tasksEmptyFilter',
+                hidden=true
+            ) }}
+
+            {% if task_groups %}
+            <div class="tasks-groups" id="tasksGroups">
                 {% for group in task_groups %}
-                <section class="task-group-section" id="task-group-{{ group.key if group.key is not none else 'none' }}">
-                    <div class="task-group-head" style="--task-subject-color: {{ group.color }};">
-                        <div class="task-group-title-wrap">
-                            <span class="task-group-mark"></span>
-                            <div>
-                                <h4>{{ group.title }}</h4>
-                                <p>
-                                    {% if group.teacher %}{{ group.teacher }}{% else %}Личный контекст{% endif %}
-                                    {% if group.room %} · {{ group.room }}{% endif %}
-                                </p>
-                            </div>
-                        </div>
-                        <span class="task-group-count">{{ group.tasks|length }} задач</span>
-                    </div>
+                <section class="tasks-subject-group" data-task-group style="--subject-color: {{ group.color }};">
+                    <button type="button" class="tasks-group-heading" data-task-group-toggle aria-expanded="true">
+                        <span class="tasks-group-stripe"></span>
+                        <span class="tasks-group-main">
+                            <strong>{{ group.title }}</strong>
+                            <small>
+                                {% if group.teacher %}{{ group.teacher }}{% else %}Без преподавателя{% endif %}
+                                {% if group.room %} · {{ group.room }}{% endif %}
+                            </small>
+                        </span>
+                        <span class="tasks-group-count" data-group-count>{{ group.tasks|length }} задач</span>
+                        <span class="tasks-group-chevron">{{ icon('chevron') }}</span>
+                    </button>
 
-                    <div class="tasks-desktop-list table-responsive">
-                        <table class="table align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Статус</th>
-                                    <th>Задача</th>
-                                    <th>Предмет</th>
-                                    <th>Дедлайн</th>
-                                    <th>Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for task in group.tasks %}
-                                <tr id="task-row-{{ task.id }}" class="task-table-row task-row-risk-{{ task.deadline_state.tone }} {% if task.is_completed %}table-success{% endif %} {% if selected_task_id == task.id %}task-row-selected{% endif %}">
-                                    <td>
-                                        <div class="task-status-cell">
-                                            <span class="task-status-dot is-{{ task.deadline_state.tone }}"></span>
-                                            <span class="task-status-text">
-                                                {% if task.is_completed %}Готово{% else %}{{ task.deadline_state.label }}{% endif %}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <strong class="{% if task.deadline_state.tone == 'overdue' %}task-title-overdue{% endif %}">{{ task.title }}</strong><br>
-                                        <span class="small {% if task.deadline_state.tone == 'overdue' %}task-meta-overdue{% else %}text-muted{% endif %}">
-                                            {{ task.description or 'Без описания' }}
-                                        </span><br>
-                                        <div class="task-chip-row">
-                                            <span class="badge text-bg-secondary">{{ level_label(task.priority) }}</span>
-                                            <span class="badge text-bg-light">{{ difficulty_label(task.difficulty) }}</span>
-                                            {% if task.recurrence_label %}
-                                            <span class="badge text-bg-primary">{{ task.recurrence_label }}</span>
-                                            {% endif %}
-                                            {% if task.schedule_link_label %}
-                                            <span class="badge text-bg-warning">{{ task.schedule_link_label }}</span>
-                                            {% endif %}
-                                            <span class="task-risk-chip is-{{ task.deadline_state.tone }}">{{ task.deadline_state.detail }}</span>
-                                        </div>
-                                        {% if task.schedule_link_detail %}
-                                        <div class="small text-muted mt-1">{{ task.schedule_link_detail }}</div>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ task.subject.name if task.subject else '—' }}</td>
-                                    <td class="{% if task.deadline_state.tone == 'overdue' %}task-deadline-overdue{% endif %}">
-                                        <div class="task-deadline-main">{{ task.smart_deadline_text }}</div>
-                                        <div class="task-deadline-sub">{{ task.deadline_state.detail }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="action-group">
-                                            <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleTaskEdit({{ task.id }})">Изменить</button>
-                                            <form method="post" action="/tasks/toggle/{{ task.id }}" class="d-inline" data-task-toggle data-task-id="{{ task.id }}">
-                                                {{ csrf_input(request) }}
-                                                <button type="submit" class="btn btn-sm action-btn task-toggle-btn {% if task.is_completed %}action-btn-cancel{% else %}action-btn-success{% endif %}">
-                                                    {% if task.is_completed %}Вернуть{% else %}Готово{% endif %}
-                                                </button>
-                                            </form>
-                                            <form method="post" action="/tasks/delete/{{ task.id }}" class="d-inline">
-                                                {{ csrf_input(request) }}
-                                                <button type="submit" class="btn btn-sm action-btn action-btn-delete">Удалить</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr id="task-edit-{{ task.id }}" class="task-edit-row {% if selected_task_id != task.id %}d-none{% endif %}">
-                                    <td colspan="5">
-                                        <form method="post" action="/tasks/edit/{{ task.id }}" class="border rounded p-3 bg-light-subtle">
-                                            {{ csrf_input(request) }}
-                                            <div class="row g-3">
-                                                <div class="col-12">
-                                                    <label class="form-label">Название</label>
-                                                    <input type="text" name="title" class="form-control" value="{{ task.title }}" required>
-                                                </div>
-                                                <div class="col-12">
-                                                    <label class="form-label">Описание</label>
-                                                    <textarea name="description" class="form-control" rows="3">{{ task.description or '' }}</textarea>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Предмет</label>
-                                                    <select name="subject_id" class="form-select">
-                                                        <option value="">Без предмета</option>
-                                                        {% for subject in subjects %}
-                                                            <option value="{{ subject.id }}" {% if task.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
-                                                        {% endfor %}
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Дедлайн</label>
-                                                    <input type="datetime-local" name="deadline" class="form-control" value="{{ task.deadline.strftime('%Y-%m-%dT%H:%M') if task.deadline else '' }}">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Дата занятия</label>
-                                                    <input type="date" name="scheduled_for_date" class="form-control" value="{{ task.scheduled_for_date.isoformat() if task.scheduled_for_date else '' }}">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Пара из расписания</label>
-                                                    <select name="schedule_item_id" class="form-select">
-                                                        <option value="">Без конкретной пары</option>
-                                                        {% for schedule_item_id, schedule_item_label in schedule_options %}
-                                                            <option value="{{ schedule_item_id }}" {% if task.schedule_item_id == schedule_item_id %}selected{% endif %}>{{ schedule_item_label }}</option>
-                                                        {% endfor %}
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Приоритет</label>
-                                                    <select name="priority" class="form-select">
-                                                        <option value="low" {% if task.priority == 'low' %}selected{% endif %}>Низкий</option>
-                                                        <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>Средний</option>
-                                                        <option value="high" {% if task.priority == 'high' %}selected{% endif %}>Высокий</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Сложность</label>
-                                                    <select name="difficulty" class="form-select">
-                                                        <option value="low" {% if task.difficulty == 'low' %}selected{% endif %}>Низкая</option>
-                                                        <option value="medium" {% if task.difficulty == 'medium' %}selected{% endif %}>Средняя</option>
-                                                        <option value="high" {% if task.difficulty == 'high' %}selected{% endif %}>Высокая</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Повтор</label>
-                                                    <select name="recurrence_type" class="form-select">
-                                                        {% for recurrence_key, recurrence_label in recurrence_options.items() %}
-                                                        <option value="{{ recurrence_key }}" {% if task.recurrence_type == recurrence_key %}selected{% endif %}>{{ recurrence_label }}</option>
-                                                        {% endfor %}
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Интервал в днях</label>
-                                                    <input type="number" name="recurrence_interval_days" class="form-control" min="2" max="365" value="{{ task.recurrence_interval_days or '' }}" placeholder="Например, 2">
-                                                </div>
-                                                <div class="col-12 d-flex justify-content-end gap-2">
-                                                    <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleTaskEdit({{ task.id }})">Отмена</button>
-                                                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="tasks-mobile-list">
+                    <div class="tasks-group-body">
                         {% for task in group.tasks %}
-                        <article class="task-mobile-card task-mobile-card-risk-{{ task.deadline_state.tone }} {% if task.is_completed %}is-completed{% endif %} {% if selected_task_id == task.id %}is-selected{% endif %}" id="task-mobile-card-{{ task.id }}">
-                            <div class="task-mobile-head">
-                                <div class="task-mobile-status is-{{ task.deadline_state.tone }}">
-                                    {% if task.is_completed %}✓{% else %}!{% endif %}
-                                </div>
-                                <div class="task-mobile-main">
-                                    <div class="task-mobile-title {% if task.deadline_state.tone == 'overdue' %}task-title-overdue{% endif %}">{{ task.title }}</div>
-                                    {% if task.description %}
-                                    <div class="task-mobile-copy {% if task.deadline_state.tone == 'overdue' %}task-meta-overdue{% endif %}">{{ task.description }}</div>
-                                    {% endif %}
+                        {% set task_is_urgent = task.deadline_state.tone in ['overdue', 'danger'] %}
+                        <article
+                            class="tasks-task-row{% if task.is_completed %} is-completed{% endif %}{% if selected_task_id == task.id %} is-selected{% endif %}"
+                            id="task-row-{{ task.id }}"
+                            data-task-item
+                            data-task-title="{{ (task.title ~ ' ' ~ (task.description or '') ~ ' ' ~ group.title)|lower|e }}"
+                            data-task-status="{% if task.is_completed %}done{% elif not task.anchor_datetime %}no-deadline{% elif task_is_urgent %}urgent{% else %}active{% endif %}"
+                            data-task-deadline="{{ task.anchor_datetime.strftime('%Y%m%d%H%M') if task.anchor_datetime else '999999999999' }}"
+                            data-task-priority="{{ 3 if task.priority == 'high' else 2 if task.priority == 'medium' else 1 }}"
+                        >
+                            <form method="post" action="/tasks/toggle/{{ task.id }}" class="tasks-check-form" data-task-toggle data-task-id="{{ task.id }}">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="tasks-check-button" aria-label="{% if task.is_completed %}Вернуть задачу{% else %}Выполнить задачу{% endif %}">
+                                    {% if task.is_completed %}{{ icon('check') }}{% endif %}
+                                </button>
+                            </form>
+
+                            <div class="tasks-task-main">
+                                <strong>{{ task.title }}</strong>
+                                <p>{{ task.description or 'Без описания' }}</p>
+                                <div class="tasks-task-extra">
+                                    {% if task.recurrence_label %}<span>{{ task.recurrence_label }}</span>{% endif %}
+                                    {% if task.schedule_link_label %}<span>{{ task.schedule_link_label }}</span>{% endif %}
+                                    <span>Сложность: {{ difficulty_label(task.difficulty) }}</span>
                                 </div>
                             </div>
 
-                            <div class="task-mobile-meta">
-                                <div class="task-mobile-meta-item">
-                                    <span>Предмет</span>
-                                    <strong>{{ task.subject.name if task.subject else '—' }}</strong>
-                                </div>
-                                <div class="task-mobile-meta-item {% if task.deadline_state.tone == 'overdue' %}task-deadline-overdue{% endif %}">
-                                    <span>Дедлайн</span>
-                                    <strong>{{ task.smart_deadline_text }}</strong>
-                                </div>
+                            <div class="tasks-task-status">
+                                <span class="tasks-status-badge is-{{ task.deadline_state.tone }}">
+                                    {% if task.is_completed %}Готово{% elif not task.anchor_datetime %}Без дедлайна{% else %}{{ task.deadline_state.label }}{% endif %}
+                                </span>
                             </div>
 
-                            <div class="task-mobile-chip-row">
-                                <span class="badge text-bg-secondary">{{ level_label(task.priority) }}</span>
-                                <span class="badge text-bg-light">{{ difficulty_label(task.difficulty) }}</span>
-                                {% if task.recurrence_label %}
-                                <span class="badge text-bg-primary">{{ task.recurrence_label }}</span>
-                                {% endif %}
-                                {% if task.schedule_link_label %}
-                                <span class="badge text-bg-warning">{{ task.schedule_link_label }}</span>
-                                {% endif %}
-                                <span class="task-risk-chip is-{{ task.deadline_state.tone }}">{{ task.deadline_state.detail }}</span>
-                            </div>
-                            {% if task.schedule_link_detail %}
-                            <div class="small text-muted mt-2">{{ task.schedule_link_detail }}</div>
-                            {% endif %}
-
-                            <div class="task-mobile-smartline">
-                                <span class="task-smartline-label">{{ task.deadline_state.label }}</span>
-                                <span class="task-smartline-copy">{{ task.deadline_state.detail }}</span>
+                            <div class="tasks-task-deadline">
+                                <span class="tasks-cell-label">Дедлайн</span>
+                                <strong>{% if task.anchor_datetime %}{{ task.smart_deadline_text }}{% else %}—{% endif %}</strong>
+                                <small>{% if task.anchor_datetime %}{{ task.deadline_state.detail }}{% else %}Срок не указан{% endif %}</small>
                             </div>
 
-                            <div class="task-mobile-actions">
-                                <button type="button" class="btn action-btn action-btn-edit" onclick="toggleTaskEdit({{ task.id }})">Изменить</button>
+                            <div class="tasks-task-priority">
+                                <span class="tasks-cell-label">Приоритет</span>
+                                <span class="tasks-priority-badge is-{{ task.priority }}">{{ level_label(task.priority) }}</span>
+                            </div>
+
+                            <div class="tasks-task-actions">
+                                <button type="button" class="tasks-action-button is-edit" onclick="toggleTaskEdit({{ task.id }})" aria-label="Редактировать" title="Редактировать">
+                                    {{ icon('edit') }}
+                                    <span class="tasks-action-label">Изменить</span>
+                                </button>
                                 <form method="post" action="/tasks/toggle/{{ task.id }}" data-task-toggle data-task-id="{{ task.id }}">
                                     {{ csrf_input(request) }}
-                                    <button type="submit" class="btn action-btn task-toggle-btn {% if task.is_completed %}action-btn-cancel{% else %}action-btn-success{% endif %}">
-                                        {% if task.is_completed %}Вернуть{% else %}Готово{% endif %}
+                                    <button type="submit" class="tasks-action-button is-complete" aria-label="{% if task.is_completed %}Вернуть в работу{% else %}Выполнить{% endif %}" title="{% if task.is_completed %}Вернуть в работу{% else %}Выполнить{% endif %}">
+                                        {% if task.is_completed %}{{ icon('undo') }}{% else %}{{ icon('check') }}{% endif %}
+                                        <span class="tasks-action-label">{% if task.is_completed %}Вернуть{% else %}Готово{% endif %}</span>
                                     </button>
                                 </form>
-                                <form method="post" action="/tasks/delete/{{ task.id }}">
+                                <form method="post" action="/tasks/delete/{{ task.id }}" data-confirm-title="Удалить задачу «{{ task.title|e }}»?">
                                     {{ csrf_input(request) }}
-                                    <button type="submit" class="btn action-btn action-btn-delete">Удалить</button>
+                                    <button type="submit" class="tasks-action-button is-delete" aria-label="Удалить" title="Удалить">
+                                        {{ icon('trash') }}
+                                        <span class="tasks-action-label">Удалить</span>
+                                    </button>
                                 </form>
                             </div>
 
-                            <div id="task-mobile-edit-{{ task.id }}" class="task-mobile-edit {% if selected_task_id != task.id %}d-none{% endif %}">
-                                <form method="post" action="/tasks/edit/{{ task.id }}" class="task-mobile-edit-form">
+                            <div id="task-edit-{{ task.id }}" class="tasks-edit-panel d-none">
+                                <form method="post" action="/tasks/edit/{{ task.id }}" class="tasks-edit-form">
                                     {{ csrf_input(request) }}
-                                    <div class="row g-3">
-                                        <div class="col-12">
-                                            <label class="form-label">Название</label>
-                                            <input type="text" name="title" class="form-control" value="{{ task.title }}" required>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label">Описание</label>
-                                            <textarea name="description" class="form-control" rows="3">{{ task.description or '' }}</textarea>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label">Предмет</label>
+                                    <div class="tasks-edit-grid">
+                                        <label class="tasks-field is-wide">
+                                            <span>Название</span>
+                                            <input type="text" name="title" class="form-control" maxlength="150" value="{{ task.title }}" required>
+                                        </label>
+                                        <label class="tasks-field is-wide">
+                                            <span>Описание</span>
+                                            <textarea name="description" class="form-control" rows="2" maxlength="5000">{{ task.description or '' }}</textarea>
+                                        </label>
+                                        <label class="tasks-field">
+                                            <span>Предмет</span>
                                             <select name="subject_id" class="form-select">
                                                 <option value="">Без предмета</option>
                                                 {% for subject in subjects %}
-                                                    <option value="{{ subject.id }}" {% if task.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                                                <option value="{{ subject.id }}" {% if task.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
                                                 {% endfor %}
                                             </select>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label">Дедлайн</label>
+                                        </label>
+                                        <label class="tasks-field">
+                                            <span>Дедлайн</span>
                                             <input type="datetime-local" name="deadline" class="form-control" value="{{ task.deadline.strftime('%Y-%m-%dT%H:%M') if task.deadline else '' }}">
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label">Дата занятия</label>
+                                        </label>
+                                        <label class="tasks-field">
+                                            <span>Дата занятия</span>
                                             <input type="date" name="scheduled_for_date" class="form-control" value="{{ task.scheduled_for_date.isoformat() if task.scheduled_for_date else '' }}">
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label">Пара из расписания</label>
+                                        </label>
+                                        <label class="tasks-field">
+                                            <span>Пара из расписания</span>
                                             <select name="schedule_item_id" class="form-select">
                                                 <option value="">Без конкретной пары</option>
                                                 {% for schedule_item_id, schedule_item_label in schedule_options %}
-                                                    <option value="{{ schedule_item_id }}" {% if task.schedule_item_id == schedule_item_id %}selected{% endif %}>{{ schedule_item_label }}</option>
+                                                <option value="{{ schedule_item_id }}" {% if task.schedule_item_id == schedule_item_id %}selected{% endif %}>{{ schedule_item_label }}</option>
                                                 {% endfor %}
                                             </select>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label">Приоритет</label>
+                                        </label>
+                                        <label class="tasks-field">
+                                            <span>Приоритет</span>
                                             <select name="priority" class="form-select">
                                                 <option value="low" {% if task.priority == 'low' %}selected{% endif %}>Низкий</option>
                                                 <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>Средний</option>
                                                 <option value="high" {% if task.priority == 'high' %}selected{% endif %}>Высокий</option>
                                             </select>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label">Сложность</label>
+                                        </label>
+                                        <label class="tasks-field">
+                                            <span>Сложность</span>
                                             <select name="difficulty" class="form-select">
                                                 <option value="low" {% if task.difficulty == 'low' %}selected{% endif %}>Низкая</option>
                                                 <option value="medium" {% if task.difficulty == 'medium' %}selected{% endif %}>Средняя</option>
                                                 <option value="high" {% if task.difficulty == 'high' %}selected{% endif %}>Высокая</option>
                                             </select>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label">Повтор</label>
+                                        </label>
+                                        <label class="tasks-field">
+                                            <span>Повтор</span>
                                             <select name="recurrence_type" class="form-select">
                                                 {% for recurrence_key, recurrence_label in recurrence_options.items() %}
                                                 <option value="{{ recurrence_key }}" {% if task.recurrence_type == recurrence_key %}selected{% endif %}>{{ recurrence_label }}</option>
                                                 {% endfor %}
                                             </select>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label">Интервал в днях</label>
+                                        </label>
+                                        <label class="tasks-field">
+                                            <span>Интервал в днях</span>
                                             <input type="number" name="recurrence_interval_days" class="form-control" min="2" max="365" value="{{ task.recurrence_interval_days or '' }}" placeholder="Например, 2">
-                                        </div>
-                                        <div class="col-12 task-mobile-edit-actions">
-                                            <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleTaskEdit({{ task.id }})">Отмена</button>
-                                            <button type="submit" class="btn btn-primary">Сохранить</button>
-                                        </div>
+                                        </label>
+                                    </div>
+                                    <div class="tasks-edit-actions">
+                                        <button type="button" class="tasks-secondary-button" onclick="toggleTaskEdit({{ task.id }})">Отмена</button>
+                                        <button type="submit" class="tasks-primary-button is-compact">Сохранить изменения</button>
                                     </div>
                                 </form>
                             </div>
@@ -458,63 +385,25 @@
                     </div>
                 </section>
                 {% endfor %}
-                {% else %}
-                    <p class="text-muted">Пока задач нет.</p>
-                {% endif %}
             </div>
-        </div>
+            {% else %}
+            {{ empty_state(
+                'tasks',
+                'Пока нет задач',
+                'Добавь первую задачу и начни планировать учёбу без хаоса.',
+                '+ Добавить задачу',
+                '#task-create',
+                focus_target='#taskTitleInput',
+                hint='Задачу можно связать с предметом, занятием и дедлайном.'
+            ) }}
+            {% endif %}
+        </section>
     </div>
 </div>
 
-<script>
-function toggleTaskEdit(taskId) {
-    const desktopRow = document.getElementById(`task-edit-${taskId}`);
-    const mobilePanel = document.getElementById(`task-mobile-edit-${taskId}`);
-    const currentPanel = mobilePanel || desktopRow;
-    if (!currentPanel) {
-        return;
-    }
+<span id="selected-task-id" data-task-id="{{ selected_task_id or '' }}" hidden></span>
+{% endblock %}
 
-    const shouldOpen = currentPanel.classList.contains('d-none');
-
-    document.querySelectorAll('[id^="task-edit-"], [id^="task-mobile-edit-"]').forEach((element) => {
-        element.classList.add('d-none');
-    });
-
-    if (!shouldOpen) {
-        return;
-    }
-
-    if (desktopRow) {
-        desktopRow.classList.remove('d-none');
-    }
-
-    if (mobilePanel) {
-        mobilePanel.classList.remove('d-none');
-    }
-
-    const mobileCard = document.getElementById(`task-mobile-card-${taskId}`);
-    const scrollTarget = window.innerWidth < 768 ? (mobileCard || mobilePanel) : (desktopRow || mobilePanel);
-    if (scrollTarget) {
-        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-}
-
-(function openSelectedTask() {
-    const selectedTaskId = {{ selected_task_id if selected_task_id is not none else 'null' }};
-    if (!selectedTaskId) {
-        return;
-    }
-
-    const desktopRow = document.getElementById(`task-row-${selectedTaskId}`);
-    const mobileCard = document.getElementById(`task-mobile-card-${selectedTaskId}`);
-    const target = window.innerWidth < 768 ? mobileCard : desktopRow;
-    if (!target) {
-        return;
-    }
-
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-})();
-
-</script>
+{% block page_scripts %}
+<script src="/static/js/tasks.js?v=20260611-motion-v1"></script>
 {% endblock %}

@@ -1,40 +1,81 @@
 {% extends 'base.html' %}
-{% block title %}Вход{% endblock %}
+{% from 'auth/_auth_macros.html' import icon, showcase %}
+{% block title %}Вход — Student Assistant{% endblock %}
+{% block theme_color %}#050816{% endblock %}
+{% block body_class %}auth-page auth-login-page{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow-sm auth-panel">
-            <div class="card-body p-4">
-                <span class="eyebrow">С возвращением</span>
-                <h2 class="mb-4 mt-3">Вход в аккаунт</h2>
-                {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
-                <form method="post" action="/login">
-                    {{ csrf_input(request) }}
-                    <div class="mb-3">
-                        <label class="form-label">Логин</label>
-                        <input type="text" name="username" class="form-control" placeholder="username или email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Пароль</label>
-                        <div class="input-group">
-                            <input type="password" id="login-password" name="password" class="form-control" required>
-                            <button
-                                type="button"
-                                class="btn btn-outline-secondary"
-                                data-password-toggle
-                                data-password-target="login-password"
-                            >
-                                Показать
-                            </button>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary w-100">Войти</button>
-                </form>
-                <div class="text-center mt-3">
+<div class="auth-space">
+    <span class="auth-orb is-large"></span>
+    <span class="auth-orb is-small"></span>
+    <span class="auth-star is-one"></span>
+    <span class="auth-star is-two"></span>
+    <span class="auth-star is-three"></span>
+    <span class="auth-orbit is-one"></span>
+    <span class="auth-orbit is-two"></span>
+
+    <div class="auth-layout">
+        {{ showcase(
+            'С возвращением',
+            'Добро пожаловать',
+            'в',
+            'Student Assistant',
+            'Единое пространство для учёбы, планирования и достижения академических целей.'
+        ) }}
+
+        <section class="auth-form-card">
+            <div class="auth-card-glow" aria-hidden="true"></div>
+            <div class="auth-lock-visual" aria-hidden="true">
+                <span>{{ icon('lock') }}</span>
+                <i></i><i></i>
+            </div>
+            <div class="auth-form-heading">
+                <span>Безопасный доступ</span>
+                <h2>Вход в аккаунт</h2>
+                <p>Продолжи работу со своим учебным пространством.</p>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-danger auth-alert">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" action="/login" class="auth-form">
+                {{ csrf_input(request) }}
+                <label class="auth-field">
+                    <span>Логин</span>
+                    <span class="auth-input-shell">
+                        <i>{{ icon('user') }}</i>
+                        <input type="text" name="username" placeholder="username или email" required autocomplete="username" autofocus>
+                    </span>
+                </label>
+
+                <label class="auth-field">
+                    <span>Пароль</span>
+                    <span class="auth-input-shell has-toggle">
+                        <i>{{ icon('lock') }}</i>
+                        <input type="password" id="login-password" name="password" placeholder="Введите пароль" maxlength="128" required autocomplete="current-password">
+                        <button
+                            type="button"
+                            class="auth-password-toggle"
+                            data-password-toggle
+                            data-password-target="login-password"
+                            aria-label="Показать пароль"
+                        >Показать</button>
+                    </span>
+                </label>
+
+                <div class="auth-form-meta">
+                    <span class="auth-secure-note">{{ icon('lock') }} Защищённая сессия</span>
                     <a href="/forgot-password">Забыли пароль?</a>
                 </div>
+
+                <button type="submit" class="auth-submit-button">Войти</button>
+            </form>
+
+            <div class="auth-switch-link">
+                Ещё нет аккаунта? <a href="/register">Зарегистрируйтесь</a>
             </div>
-        </div>
+        </section>
     </div>
 </div>
 {% endblock %}

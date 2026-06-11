@@ -1,210 +1,272 @@
 {% extends 'base.html' %}
 {% block title %}Student Assistant{% endblock %}
-{% block content %}
-<section class="landing-page">
-    <section class="landing-premium-hero" id="landingHero">
-        <div class="landing-premium-copy">
-            <span class="landing-premium-kicker">Student OS</span>
-            <h1 class="landing-premium-title">Student Assistant</h1>
-            <p class="landing-premium-subtitle">Цифровое пространство для учебы, которое выглядит как дорогой продукт, а не как очередной список задач.</p>
+{% block theme_color %}#070b1a{% endblock %}
+{% block body_class %}public-landing-page{% endblock %}
 
-            <div class="landing-premium-actions">
-                <a href="/register" class="btn btn-primary btn-lg">Начать</a>
-                <a href="/login" class="btn btn-outline-secondary btn-lg">Войти</a>
+{% macro icon(name) -%}
+<svg viewBox="0 0 24 24" aria-hidden="true">
+    {% if name == 'bolt' %}
+    <path d="m13 2-8 12h6l-1 8 9-13h-6Z"></path>
+    {% elif name == 'arrow' %}
+    <path d="M5 12h14m-5-5 5 5-5 5"></path>
+    {% elif name == 'book' %}
+    <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22Z"></path><path d="M4 5.5v13A3.5 3.5 0 0 1 7.5 15H20"></path>
+    {% elif name == 'task' %}
+    <rect x="4" y="3" width="16" height="18" rx="3"></rect><path d="m8 9 1.5 1.5L13 7m-5 8 1.5 1.5L13 13m2-4h2m-2 6h2"></path>
+    {% elif name == 'note' %}
+    <path d="M6 3h9l3 3v15H6Z"></path><path d="M14 3v4h4M9 12h6M9 16h4"></path>
+    {% elif name == 'calendar' %}
+    <rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M7 3v4m10-4v4M3 10h18"></path>
+    {% elif name == 'clock' %}
+    <circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>
+    {% elif name == 'chart' %}
+    <path d="M4 19V9m5 10V5m5 14v-7m5 7V3"></path>
+    {% endif %}
+</svg>
+{%- endmacro %}
+
+{% block content %}
+<section class="neon-landing">
+    <section class="neon-hero" id="hero">
+        <div class="neon-hero-copy">
+            <span class="neon-kicker">Student OS</span>
+            <h1>
+                <span>Student</span>
+                <strong>Assistant</strong>
+            </h1>
+            <p>Цифровое пространство для учёбы, которое выглядит как дорогой продукт, а не как очередной список задач.</p>
+
+            <div class="neon-hero-actions">
+                <a href="/register" class="neon-primary-button">
+                    Начать бесплатно
+                    {{ icon('bolt') }}
+                </a>
+                <a href="#features" class="neon-secondary-button">
+                    Узнать больше
+                    {{ icon('arrow') }}
+                </a>
             </div>
 
-            <div class="landing-premium-proof">
-                <div class="landing-proof-card">
-                    <strong>Web workspace</strong>
-                    <span>Все уведомления и контроль дедлайнов в одном контуре.</span>
+            <div class="neon-social-proof" aria-label="Сообщество Student Assistant">
+                <div class="neon-avatar-stack" aria-hidden="true">
+                    <span>А</span>
+                    <span>М</span>
+                    <span>К</span>
+                    <span>Д</span>
+                    <span>С</span>
                 </div>
-                <div class="landing-proof-card">
-                    <strong>Фокус на спокойствии</strong>
-                    <span>Расписание, задачи и заметки без визуального шума.</span>
-                </div>
+                <p>Присоединяйся к <strong>12,500+</strong> студентам</p>
             </div>
         </div>
 
-        <div class="landing-premium-showcase" aria-hidden="true">
-            <div class="landing-orb landing-orb-a"></div>
-            <div class="landing-orb landing-orb-b"></div>
-            <div class="landing-orb landing-orb-c"></div>
-            <div class="landing-light-particle landing-light-particle-a"></div>
-            <div class="landing-light-particle landing-light-particle-b"></div>
-            <div class="landing-light-particle landing-light-particle-c"></div>
-            <div class="landing-light-particle landing-light-particle-d"></div>
+        <section class="neon-product-preview" id="interface" aria-label="Пример интерфейса Student Assistant">
+            <span class="neon-particle is-one"></span>
+            <span class="neon-particle is-two"></span>
+            <span class="neon-particle is-three"></span>
+            <span class="neon-particle is-four"></span>
+            <span class="neon-preview-glow"></span>
 
-            <div class="landing-console-card">
-                <div class="landing-console-head">
-                    <span class="landing-console-badge">Today</span>
-                    <span class="landing-console-title">Academic Control</span>
+            <article class="neon-preview-card neon-today-card">
+                <header>
+                    <div>
+                        <h2>Сегодня</h2>
+                        <p>Суббота, 8 июня</p>
+                    </div>
+                    <span class="neon-card-logo">SA</span>
+                </header>
+
+                <div class="neon-schedule-list">
+                    <div>
+                        <span class="is-purple">{{ icon('book') }}</span>
+                        <p><strong>Математика</strong><small>Лекция · 09:30 – 11:00</small></p>
+                        <i>{{ icon('arrow') }}</i>
+                    </div>
+                    <div>
+                        <span class="is-blue">{{ icon('book') }}</span>
+                        <p><strong>История</strong><small>Семинар · 12:10 – 13:40</small></p>
+                        <i>{{ icon('arrow') }}</i>
+                    </div>
                 </div>
 
-                <div class="landing-console-grid">
-                    <section class="landing-panel landing-panel-schedule">
-                        <div class="landing-panel-top">
-                            <span class="landing-panel-label">Расписание</span>
-                            <span class="landing-panel-meta">Понедельник</span>
-                        </div>
-                        <div class="landing-class-card">
-                            <strong>Математика</strong>
-                            <span>09:30 — 11:00</span>
-                        </div>
-                        <div class="landing-class-card is-muted">
-                            <strong>История</strong>
-                            <span>12:10 — 13:40</span>
-                        </div>
-                    </section>
+                <section class="neon-deadline">
+                    <span>Ближайший дедлайн</span>
+                    <div>
+                        <i>{{ icon('task') }}</i>
+                        <p><strong>Эссе по философии</strong><small>До 10 июня, 23:59</small></p>
+                    </div>
+                </section>
 
-                    <section class="landing-panel landing-panel-tasks">
-                        <div class="landing-panel-top">
-                            <span class="landing-panel-label">Дедлайны</span>
-                            <span class="landing-panel-meta">4 активных</span>
-                        </div>
-                        <div class="landing-deadline-item">
-                            <strong>Курсовая работа</strong>
-                            <small>До 25 мая</small>
-                        </div>
-                        <div class="landing-deadline-item">
-                            <strong>Презентация</strong>
-                            <small>До пятницы</small>
-                        </div>
-                    </section>
+                <section class="neon-daily-progress">
+                    <div><span>Задачи на сегодня</span><b>3 из 7 выполнено</b></div>
+                    <div class="neon-progress-track"><i></i></div>
+                </section>
+            </article>
 
-                    <section class="landing-panel landing-panel-note">
-                        <div class="landing-panel-top">
-                            <span class="landing-panel-label">Заметки</span>
-                            <span class="landing-panel-meta">Quick capture</span>
-                        </div>
-                        <p>Идеи для проекта, тезисы к семинару и быстрые записи рядом с расписанием.</p>
-                    </section>
-                </div>
+            <article class="neon-preview-card neon-welcome-card">
+                <header>
+                    <span class="neon-card-logo">SA</span>
+                    <div>
+                        <h2>Привет, Xelmor! 👋</h2>
+                        <p>Готов к продуктивному дню?</p>
+                    </div>
+                </header>
+
+                <section class="neon-focus-card">
+                    <span>Фокус дня</span>
+                    <strong>Математика</strong>
+                    <small>Лекция через 1ч 15м</small>
+                </section>
+
+                <section class="neon-quick-actions">
+                    <h3>Быстрые действия</h3>
+                    <div>
+                        <span>{{ icon('task') }}<small>Задачи</small></span>
+                        <span>{{ icon('calendar') }}<small>Расписание</small></span>
+                        <span>{{ icon('note') }}<small>Заметки</small></span>
+                        <span>{{ icon('clock') }}<small>Календарь</small></span>
+                    </div>
+                </section>
+
+                <section class="neon-mini-stats">
+                    <div class="neon-mini-stats-head">
+                        <span>Статистика</span>
+                        {{ icon('arrow') }}
+                    </div>
+                    <div class="neon-stat-row">
+                        <p><small>Задач выполнено</small><strong>12</strong><em>+20%</em></p>
+                        <svg viewBox="0 0 120 30" aria-hidden="true"><path d="M2 23 18 15 31 18 48 7 63 20 78 14 94 17 118 5"></path></svg>
+                    </div>
+                    <div class="neon-stat-row">
+                        <p><small>Учебных часов</small><strong>28</strong><em>+16%</em></p>
+                        <svg viewBox="0 0 120 30" aria-hidden="true"><path d="M2 22 18 20 31 8 47 15 62 13 78 23 95 12 118 17"></path></svg>
+                    </div>
+                </section>
+            </article>
+        </section>
+    </section>
+
+    <section class="neon-feature-grid" id="features">
+        <article class="neon-feature-card" id="subjects-preview">
+            <div class="neon-feature-topline">
+                <span>01</span>
+                <strong>Учебный контур</strong>
             </div>
-
-            <div class="landing-phone-float">
-                <div class="landing-phone-shell">
-                    <div class="landing-phone-header">
-                        <span class="landing-phone-pill"></span>
-                        <div>
-                            <strong>Student Assistant</strong>
-                            <small>web dashboard</small>
-                        </div>
-                    </div>
-                    <div class="landing-phone-widget">
-                        <strong>Сегодня</strong>
-                        <span>2 пары и 1 дедлайн</span>
-                    </div>
-                    <div class="landing-phone-widget">
-                        <strong>Напомнить позже</strong>
-                        <span>за 2 часа до задачи</span>
-                    </div>
-                </div>
+            <div class="neon-feature-icon is-subjects" aria-hidden="true">
+                <i></i><i></i><i></i>
+                {{ icon('book') }}
             </div>
+            <h2>Предметы</h2>
+            <p>Структурируй дисциплины, преподавателей, аудитории и личные заметки по каждому курсу.</p>
+            <div class="neon-feature-metrics">
+                <div><strong>06</strong><span>активных курсов<br>в этом семестре</span></div>
+                <div><strong>Чистая<br>иерархия</strong><span>без перегруза</span></div>
+            </div>
+            <footer>
+                <span>Математика</span><span>История</span><span>Биология</span><span>+3</span>
+            </footer>
+        </article>
+
+        <article class="neon-feature-card" id="tasks-preview">
+            <div class="neon-feature-topline">
+                <span>02</span>
+                <strong>Контроль сроков</strong>
+            </div>
+            <div class="neon-feature-icon is-tasks" aria-hidden="true">
+                <i></i><i></i><i></i>
+                {{ icon('task') }}
+            </div>
+            <h2>Задачи</h2>
+            <p>Держи дедлайны в фокусе и получай спокойные напоминания там, где ты реально бываешь каждый день.</p>
+            <div class="neon-feature-metrics">
+                <div><strong>24/7</strong><span>контроль сроков<br>без перегруза</span></div>
+                <div><strong>Умные<br>напоминания</strong><span>без паники</span></div>
+            </div>
+            <footer>
+                <span>Дедлайны</span><span>Статусы</span><span>Приоритеты</span>
+            </footer>
+        </article>
+
+        <article class="neon-feature-card" id="notes-preview">
+            <div class="neon-feature-topline">
+                <span>03</span>
+                <strong>Личный архив</strong>
+            </div>
+            <div class="neon-feature-icon is-notes" aria-hidden="true">
+                <i></i><i></i><i></i>
+                {{ icon('note') }}
+            </div>
+            <h2>Заметки</h2>
+            <p>Сохраняй идеи, конспекты и быстрые мысли в одном визуально аккуратном контуре.</p>
+            <div class="neon-feature-metrics">
+                <div><strong>∞</strong><span>идеи, конспекты<br>и черновики</span></div>
+                <div><strong>Быстрый<br>поиск</strong><span>по всему архиву</span></div>
+            </div>
+            <footer>
+                <span>Конспекты</span><span>Черновики</span><span>Идеи</span><span>+2</span>
+            </footer>
+        </article>
+    </section>
+
+    <section class="neon-study-section" id="study">
+        <div class="neon-section-heading">
+            <span class="neon-kicker">Для реальной учёбы</span>
+            <h2>Один спокойный контур на весь семестр</h2>
+            <p>Student Assistant соединяет расписание, дедлайны и материалы так, чтобы меньше держать в голове и больше времени оставлять на саму учёбу.</p>
+        </div>
+
+        <div class="neon-study-grid">
+            <article>
+                <span class="neon-study-icon is-purple">{{ icon('calendar') }}</span>
+                <div>
+                    <small>01 · Планирование</small>
+                    <h3>Неделя перед глазами</h3>
+                    <p>Пары, экзамены и свободные окна собраны в единой временной картине.</p>
+                </div>
+            </article>
+            <article>
+                <span class="neon-study-icon is-pink">{{ icon('task') }}</span>
+                <div>
+                    <small>02 · Контроль</small>
+                    <h3>Дедлайны без паники</h3>
+                    <p>Важные задачи остаются в фокусе, а выполненные не создают визуальный шум.</p>
+                </div>
+            </article>
+            <article>
+                <span class="neon-study-icon is-blue">{{ icon('note') }}</span>
+                <div>
+                    <small>03 · Материалы</small>
+                    <h3>Знания не теряются</h3>
+                    <p>Конспекты и быстрые мысли всегда находятся рядом с нужным предметом.</p>
+                </div>
+            </article>
         </div>
     </section>
 
-    <section class="landing-premium-band" id="subjects-preview">
-        <article class="landing-band-card">
-            <div class="landing-band-topline">
-                <span class="landing-band-index">01</span>
-                <span class="landing-band-eyebrow">Учебный контур</span>
-            </div>
-            <div class="landing-band-visual landing-band-visual-subjects" aria-hidden="true">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            <h3>Предметы</h3>
-            <p>Структурируй дисциплины, преподавателей, аудитории и личные заметки по каждому курсу.</p>
-            <div class="landing-band-metric">
-                <strong>06</strong>
-                <span>активных курсов в едином академическом контуре</span>
-            </div>
-            <div class="landing-band-rows">
-                <div class="landing-band-row">
-                    <span>Профиль</span>
-                    <strong>Предметы, аудитории, преподаватели</strong>
-                </div>
-                <div class="landing-band-row">
-                    <span>Структура</span>
-                    <strong>Чистая иерархия без перегруза</strong>
-                </div>
-            </div>
-            <div class="landing-band-footer">
-                <span>Математика</span>
-                <span>История</span>
-                <span>Биология</span>
-            </div>
-        </article>
+    <section class="neon-faq-section" id="faq">
+        <div class="neon-section-heading">
+            <span class="neon-kicker">FAQ</span>
+            <h2>Коротко о главном</h2>
+            <p>Ответы на вопросы, которые обычно появляются перед началом работы.</p>
+        </div>
 
-        <article class="landing-band-card is-accent">
-            <div class="landing-band-topline">
-                <span class="landing-band-index">02</span>
-                <span class="landing-band-eyebrow">Контроль сроков</span>
-            </div>
-            <div class="landing-band-visual landing-band-visual-tasks" aria-hidden="true">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            <h3>Задачи</h3>
-            <p>Держи дедлайны в фокусе и получай спокойные напоминания там, где ты реально бываешь каждый день.</p>
-            <div class="landing-band-metric">
-                <strong>24/7</strong>
-                <span>тихий контроль сроков без перегруза интерфейса</span>
-            </div>
-            <div class="landing-band-rows">
-                <div class="landing-band-row">
-                    <span>Сценарий</span>
-                    <strong>Дедлайны, статусы и приоритеты</strong>
-                </div>
-                <div class="landing-band-row">
-                    <span>Тон</span>
-                    <strong>Напоминания без паники и визуального шума</strong>
-                </div>
-            </div>
-            <div class="landing-band-footer">
-                <span>Дедлайны</span>
-                <span>Статусы</span>
-                <span>Напоминания</span>
-            </div>
-        </article>
-
-        <article class="landing-band-card">
-            <div class="landing-band-topline">
-                <span class="landing-band-index">03</span>
-                <span class="landing-band-eyebrow">Личный архив</span>
-            </div>
-            <div class="landing-band-visual landing-band-visual-notes" aria-hidden="true">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            <h3>Заметки</h3>
-            <p>Сохраняй идеи, конспекты и быстрые мысли в одном визуально аккуратном контуре.</p>
-            <div class="landing-band-metric">
-                <strong>∞</strong>
-                <span>идеи, конспекты и черновики под рукой</span>
-            </div>
-            <div class="landing-band-rows">
-                <div class="landing-band-row">
-                    <span>Формат</span>
-                    <strong>Конспекты, идеи и быстрые черновики</strong>
-                </div>
-                <div class="landing-band-row">
-                    <span>Ощущение</span>
-                    <strong>Собранная личная архивная среда</strong>
-                </div>
-            </div>
-            <div class="landing-band-footer">
-                <span>Конспекты</span>
-                <span>Черновики</span>
-                <span>Идеи</span>
-            </div>
-        </article>
+        <div class="neon-faq-list">
+            <details open>
+                <summary>Можно начать пользоваться бесплатно?<span>+</span></summary>
+                <p>Да. Нажми «Начать бесплатно», создай аккаунт и сразу добавляй предметы, пары, задачи и заметки.</p>
+            </details>
+            <details>
+                <summary>Данные расписания и задач связаны между собой?<span>+</span></summary>
+                <p>Да. В кабинете задачи можно планировать рядом с расписанием, а события и дедлайны видеть в календаре.</p>
+            </details>
+            <details>
+                <summary>Можно сохранить резервную копию?<span>+</span></summary>
+                <p>В профиле доступны экспорт JSON и CSV, а также восстановление данных из JSON-бэкапа.</p>
+            </details>
+            <details>
+                <summary>Лендинг открывает закрытые разделы без входа?<span>+</span></summary>
+                <p>Нет. Навигация сверху прокручивает только публичную страницу, а вход в кабинет выполняется отдельной кнопкой.</p>
+            </details>
+        </div>
     </section>
 </section>
 {% endblock %}

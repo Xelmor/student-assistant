@@ -1,56 +1,164 @@
 {% extends 'base.html' %}
-{% block title %}Личные данные (локально){% endblock %}
+{% block title %}Личные данные{% endblock %}
+{% block theme_color %}#070b1a{% endblock %}
+{% block body_class %}dashboard-page profile-page local-private-page{% endblock %}
+
+{% macro icon(name) -%}
+<svg viewBox="0 0 24 24" aria-hidden="true">
+    {% if name == 'user' %}
+    <circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.6-4 3-6 7-6s6.4 2 7 6"></path>
+    {% elif name == 'shield' %}
+    <path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6Z"></path><path d="m9 12 2 2 4-5"></path>
+    {% elif name == 'bell' %}
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path>
+    {% elif name == 'palette' %}
+    <path d="M12 3a9 9 0 1 0 0 18h1.5a2 2 0 0 0 0-4H12a2 2 0 0 1 0-4h3a6 6 0 0 0-3-10Z"></path><circle cx="7.5" cy="10" r=".8"></circle><circle cx="10" cy="6.8" r=".8"></circle><circle cx="14.2" cy="7" r=".8"></circle>
+    {% elif name == 'settings' %}
+    <circle cx="12" cy="12" r="3"></circle><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A8 8 0 0 0 14.8 6L14.5 3h-5L9.2 6a8 8 0 0 0-1.7 1.1l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1A8 8 0 0 0 9.2 18l.3 3h5l.3-3a8 8 0 0 0 1.7-1.1l2.4 1 2-3.4-2-1.5a7 7 0 0 0 .1-1Z"></path>
+    {% elif name == 'help' %}
+    <circle cx="12" cy="12" r="9"></circle><path d="M9.8 9a2.4 2.4 0 1 1 3.4 2.2c-.9.4-1.2.9-1.2 1.8m0 3h.01"></path>
+    {% elif name == 'info' %}
+    <circle cx="12" cy="12" r="9"></circle><path d="M12 11v5m0-8h.01"></path>
+    {% elif name == 'edit' %}
+    <path d="m4 16-.8 4 4-.8L18 8.4 14.6 5Z"></path><path d="m13.8 5.8 3.4 3.4"></path>
+    {% elif name == 'id' %}
+    <rect x="3" y="5" width="18" height="14" rx="3"></rect><circle cx="8" cy="11" r="2"></circle><path d="M5.5 16c.5-1.7 1.3-2.5 2.5-2.5s2 .8 2.5 2.5M13 10h5m-5 4h4"></path>
+    {% elif name == 'at' %}
+    <circle cx="12" cy="12" r="4"></circle><path d="M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3 6.7"></path>
+    {% elif name == 'mail' %}
+    <rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="m4 7 8 6 8-6"></path>
+    {% elif name == 'group' %}
+    <circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="10" r="2"></circle><path d="M3 20c.5-4 2.5-6 6-6s5.5 2 6 6m0-5c3 0 4.7 1.6 5 5"></path>
+    {% elif name == 'course' %}
+    <path d="m3 9 9-5 9 5-9 5Z"></path><path d="M7 12.5V17c3.3 2.1 6.7 2.1 10 0v-4.5M21 9v6"></path>
+    {% elif name == 'calendar' %}
+    <rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M7 3v4m10-4v4M3 10h18"></path>
+    {% elif name == 'lock' %}
+    <rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+    {% elif name == 'arrow' %}
+    <path d="M5 12h14m-5-5 5 5-5 5"></path>
+    {% elif name == 'back' %}
+    <path d="M19 12H5m5-5-5 5 5 5"></path>
+    {% endif %}
+</svg>
+{%- endmacro %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h3 class="mb-3">Личные данные (только локально)</h3>
-                <div class="alert alert-warning">
-                    Эту страницу видно только при локальном запуске и при включенной переменной <code>ALLOW_LOCAL_PRIVATE_DATA=true</code>.
-                </div>
+<div class="local-private-shell">
+    <div class="local-private-glow local-private-glow-one" aria-hidden="true"></div>
+    <div class="local-private-glow local-private-glow-two" aria-hidden="true"></div>
 
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <tbody>
-                            <tr>
-                                <th style="width: 260px;">ID</th>
-                                <td>{{ user.id }}</td>
-                            </tr>
-                            <tr>
-                                <th>Логин</th>
-                                <td>{{ user.username }}</td>
-                            </tr>
-                            <tr>
-                                <th>Email</th>
-                                <td>{{ user.email }}</td>
-                            </tr>
-                            <tr>
-                                <th>Группа</th>
-                                <td>{{ user.group_name or '—' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Курс</th>
-                                <td>{{ user.course or '—' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Дата регистрации</th>
-                                <td>{{ user.created_at.strftime('%d.%m.%Y %H:%M') if user.created_at else '—' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Пароль</th>
-                                <td>Пароль не отображается в целях безопасности.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="d-flex gap-2">
-                    <a href="/forgot-password" class="btn btn-outline-primary">Сменить пароль</a>
-                    <a href="/dashboard" class="btn btn-primary">Назад</a>
-                </div>
+    <aside class="local-private-sidebar">
+        <div class="local-private-sidebar-title">
+            <span class="local-private-sidebar-icon">{{ icon('user') }}</span>
+            <div>
+                <span>Профиль</span>
+                <strong>Настройки аккаунта</strong>
             </div>
         </div>
-    </div>
+
+        <nav class="local-private-nav" aria-label="Разделы профиля">
+            <a href="/local-profile" class="is-active" aria-current="page">
+                <span>{{ icon('user') }}</span>
+                Личные данные
+            </a>
+            <a href="/profile#profile-security">
+                <span>{{ icon('shield') }}</span>
+                Безопасность
+            </a>
+            <a href="/calendar">
+                <span>{{ icon('bell') }}</span>
+                Уведомления
+            </a>
+            <a href="/profile#profile-settings">
+                <span>{{ icon('palette') }}</span>
+                Внешний вид
+            </a>
+            <a href="/profile#profile-settings">
+                <span>{{ icon('settings') }}</span>
+                Аккаунт
+            </a>
+        </nav>
+
+        <a href="/dashboard" class="local-private-help">
+            <span class="local-private-help-icon">{{ icon('help') }}</span>
+            <span>
+                <strong>Нужна помощь?</strong>
+                <small>Посмотри ответы на частые вопросы</small>
+            </span>
+            <i>{{ icon('arrow') }}</i>
+        </a>
+    </aside>
+
+    <section class="local-private-card" aria-labelledby="localPrivateTitle">
+        <header class="local-private-header">
+            <div>
+                <span class="local-private-kicker">Конфиденциальный раздел</span>
+                <h1 id="localPrivateTitle">Личные данные</h1>
+                <p>Управляйте своими персональными данными и настройками аккаунта.</p>
+            </div>
+            <a href="/profile#profile-settings" class="local-private-edit" aria-label="Редактировать личные данные">
+                {{ icon('edit') }}
+                Редактировать
+            </a>
+        </header>
+
+        <div class="local-private-alert" role="note">
+            <span>{{ icon('info') }}</span>
+            <p>
+                Эту страницу видно только при локальном запуске и при включенной переменной
+                <code>ALLOW_LOCAL_PRIVATE_DATA=true</code>.
+            </p>
+        </div>
+
+        <div class="local-private-data-list" aria-label="Личные данные пользователя">
+            <div class="local-private-data-row">
+                <span class="local-private-data-icon">{{ icon('id') }}</span>
+                <span class="local-private-data-label">ID</span>
+                <strong>{{ user.id }}</strong>
+            </div>
+            <div class="local-private-data-row">
+                <span class="local-private-data-icon">{{ icon('at') }}</span>
+                <span class="local-private-data-label">Логин</span>
+                <strong>{{ user.username }}</strong>
+            </div>
+            <div class="local-private-data-row">
+                <span class="local-private-data-icon">{{ icon('mail') }}</span>
+                <span class="local-private-data-label">Email</span>
+                <strong><a href="mailto:{{ user.email }}">{{ user.email }}</a></strong>
+            </div>
+            <div class="local-private-data-row">
+                <span class="local-private-data-icon">{{ icon('group') }}</span>
+                <span class="local-private-data-label">Группа</span>
+                <strong>{{ user.group_name or '—' }}</strong>
+            </div>
+            <div class="local-private-data-row">
+                <span class="local-private-data-icon">{{ icon('course') }}</span>
+                <span class="local-private-data-label">Курс</span>
+                <strong>{{ user.course or '—' }}</strong>
+            </div>
+            <div class="local-private-data-row">
+                <span class="local-private-data-icon">{{ icon('calendar') }}</span>
+                <span class="local-private-data-label">Дата регистрации</span>
+                <strong>{{ user.created_at.strftime('%d.%m.%Y %H:%M') if user.created_at else '—' }}</strong>
+            </div>
+            <div class="local-private-data-row is-password">
+                <span class="local-private-data-icon">{{ icon('lock') }}</span>
+                <span class="local-private-data-label">Пароль</span>
+                <strong>Пароль не отображается в целях безопасности.</strong>
+            </div>
+        </div>
+
+        <footer class="local-private-actions">
+            <a href="/forgot-password" class="local-private-button is-primary">
+                {{ icon('lock') }}
+                Сменить пароль
+            </a>
+            <a href="/dashboard" class="local-private-button is-secondary">
+                {{ icon('back') }}
+                Назад
+            </a>
+        </footer>
+    </section>
 </div>
 {% endblock %}

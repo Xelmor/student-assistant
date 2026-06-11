@@ -6,11 +6,11 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f5efe6",
-  "theme_color": "#f77f45",
+  "background_color": "#070b1a",
+  "theme_color": "#8b5cf6",
   "icons": [
     {
-      "src": "/static/pwa/icon-app.svg",
+      "src": "/static/pwa/icon-app.svg?v=20260610-purple-sa-v1",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

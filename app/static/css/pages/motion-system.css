@@ -1,0 +1,275 @@
+:root {
+    --motion-fast: 160ms;
+    --motion-base: 200ms;
+    --motion-slow: 240ms;
+    --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.content-wrap > * {
+    animation: premium-page-enter var(--motion-slow) var(--motion-ease) both !important;
+}
+
+.motion-item-enter {
+    animation: premium-item-enter 180ms var(--motion-ease) both !important;
+}
+
+.empty-state,
+.empty-state__icon,
+.calendar-day-today,
+.mobile-quick-actions-toggle,
+.landing-premium-hero::before,
+.landing-premium-hero::after,
+.landing-orb,
+.landing-light-particle,
+.landing-phone-float,
+.dashboard-hero::after,
+.dashboard-clock,
+.dashboard-quote-mark,
+.dashboard-next-widget::after,
+.dashboard-next-icon {
+    animation: none !important;
+}
+
+.empty-state.motion-item-enter {
+    animation: premium-item-enter 180ms var(--motion-ease) both !important;
+}
+
+.dashboard-card,
+.tasks-subject-group,
+.subjects-subject-card,
+.schedule-day-section,
+.calendar-stat-card,
+.calendar-panel,
+.notes-item,
+.profile-dashboard-card,
+.neon-feature-card,
+.neon-study-grid article,
+.neon-preview-card {
+    transition:
+        transform var(--motion-base) ease,
+        border-color var(--motion-base) ease,
+        box-shadow var(--motion-base) ease,
+        background-color var(--motion-base) ease !important;
+}
+
+.tasks-task-row,
+.schedule-event-row,
+.calendar-agenda-item,
+.global-search-result,
+.notification-item {
+    transition:
+        opacity var(--motion-fast) ease,
+        border-color var(--motion-fast) ease,
+        background-color var(--motion-fast) ease !important;
+}
+
+.tasks-primary-button,
+.subjects-primary-button,
+.schedule-primary-button,
+.calendar-form-submit,
+.notes-primary-button,
+.notes-new-button,
+.auth-submit-button,
+.neon-primary-button,
+.neon-secondary-button,
+.empty-state__action,
+.confirm-dialog__button {
+    transition:
+        transform var(--motion-fast) ease,
+        border-color var(--motion-fast) ease,
+        background-color var(--motion-fast) ease,
+        box-shadow var(--motion-fast) ease,
+        filter var(--motion-fast) ease !important;
+}
+
+.form-loading-button {
+    display: inline-flex !important;
+    gap: 0.55rem;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0.78;
+}
+
+.form-loading-button::after {
+    width: 0.85rem;
+    height: 0.85rem;
+    flex: 0 0 auto;
+    border: 2px solid rgba(255, 255, 255, 0.28);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    content: "";
+    animation: premium-loading-spin 680ms linear infinite !important;
+}
+
+.confirm-dialog__card {
+    transform: translateY(6px) scale(0.99) !important;
+    transition: transform var(--motion-base) var(--motion-ease) !important;
+}
+
+.confirm-dialog.is-visible .confirm-dialog__card {
+    transform: none !important;
+}
+
+.global-search-dialog {
+    transform: translateY(-6px) scale(0.995) !important;
+    transition: transform var(--motion-base) var(--motion-ease) !important;
+}
+
+.global-search-overlay.is-visible .global-search-dialog {
+    transform: none !important;
+}
+
+.notification-panel {
+    transform: translateY(-4px) scale(0.995) !important;
+    transition: opacity var(--motion-fast) ease, transform var(--motion-base) var(--motion-ease) !important;
+}
+
+.notification-panel.is-visible {
+    transform: none !important;
+}
+
+.app-toast {
+    transform: translateX(12px) !important;
+    transition: transform var(--motion-base) var(--motion-ease), opacity var(--motion-base) ease !important;
+}
+
+.app-toast.is-visible {
+    transform: none !important;
+}
+
+.app-toast.is-leaving {
+    transform: translateX(8px) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .dashboard-card:hover,
+    .subjects-subject-card:hover,
+    .calendar-stat-card:hover,
+    .calendar-panel:hover,
+    .notes-item:hover,
+    .profile-dashboard-card:hover,
+    .neon-feature-card:hover,
+    .neon-study-grid article:hover,
+    .neon-preview-card:hover {
+        border-color: rgba(139, 92, 246, 0.3) !important;
+        box-shadow: 0 20px 44px rgba(0, 0, 0, 0.26), 0 0 20px rgba(139, 92, 246, 0.055) !important;
+        transform: translateY(-2px) !important;
+    }
+
+    .tasks-subject-group:hover,
+    .schedule-day-section:hover {
+        border-color: rgba(139, 92, 246, 0.24) !important;
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16) !important;
+        transform: translateY(-1px) !important;
+    }
+
+    .calendar-timeline-event:hover {
+        filter: brightness(1.06) !important;
+        transform: translateY(-1px) !important;
+    }
+
+    .tasks-primary-button:hover,
+    .subjects-primary-button:hover,
+    .schedule-primary-button:hover,
+    .calendar-form-submit:hover,
+    .notes-primary-button:hover,
+    .notes-new-button:hover,
+    .auth-submit-button:hover,
+    .neon-primary-button:hover {
+        box-shadow: 0 12px 28px rgba(91, 33, 182, 0.28) !important;
+        filter: brightness(1.04) !important;
+        transform: translateY(-1px) !important;
+    }
+}
+
+.tasks-primary-button:active,
+.subjects-primary-button:active,
+.schedule-primary-button:active,
+.calendar-form-submit:active,
+.notes-primary-button:active,
+.notes-new-button:active,
+.auth-submit-button:active,
+.neon-primary-button:active,
+.neon-secondary-button:active,
+.empty-state__action:active,
+.confirm-dialog__button:active {
+    transform: scale(0.985) !important;
+}
+
+@media (hover: none), (pointer: coarse) {
+    .dashboard-card:hover,
+    .tasks-subject-group:hover,
+    .subjects-subject-card:hover,
+    .schedule-day-section:hover,
+    .calendar-stat-card:hover,
+    .calendar-panel:hover,
+    .calendar-timeline-event:hover,
+    .notes-item:hover,
+    .profile-dashboard-card:hover,
+    .neon-feature-card:hover,
+    .neon-study-grid article:hover,
+    .neon-preview-card:hover {
+        transform: none !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .app-toast,
+    .app-toast.is-leaving {
+        transform: translateY(-6px) !important;
+    }
+
+    .app-toast.is-visible {
+        transform: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .content-wrap > *,
+    .motion-item-enter,
+    .form-loading-button::after {
+        animation: none !important;
+    }
+
+    .form-loading-button::after {
+        display: none;
+    }
+}
+
+@keyframes premium-page-enter {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes premium-item-enter {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes premium-loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

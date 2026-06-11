@@ -1,26 +1,102 @@
 {% extends 'base.html' %}
-{% block title %}Регистрация{% endblock %}
+{% from 'auth/_auth_macros.html' import icon, showcase %}
+{% block title %}Регистрация — Student Assistant{% endblock %}
+{% block theme_color %}#050816{% endblock %}
+{% block body_class %}auth-page auth-register-page{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm auth-panel">
-            <div class="card-body p-4">
-                <span class="eyebrow">Новый старт</span>
-                <h2 class="mb-4 mt-3">Создание аккаунта</h2>
-                {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
-                <form method="post" action="/register">
-                    {{ csrf_input(request) }}
-                    <div class="mb-3"><label class="form-label">Логин</label><input type="text" name="username" class="form-control" required></div>
-                    <div class="mb-3"><label class="form-label">Email</label><input type="email" name="email" class="form-control" required></div>
-                    <div class="mb-3"><label class="form-label">Пароль</label><div class="input-group"><input type="password" id="register-password" name="password" class="form-control" required><button type="button" class="btn btn-outline-secondary" data-password-toggle data-password-target="register-password">Показать</button></div></div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3"><label class="form-label">Группа</label><input type="text" name="group_name" class="form-control"></div>
-                        <div class="col-md-6 mb-3"><label class="form-label">Курс</label><input type="number" name="course" class="form-control" min="1" max="6"></div>
-                    </div>
-                    <button class="btn btn-primary w-100">Создать аккаунт</button>
-                </form>
+<div class="auth-space">
+    <span class="auth-orb is-large"></span>
+    <span class="auth-orb is-small"></span>
+    <span class="auth-star is-one"></span>
+    <span class="auth-star is-two"></span>
+    <span class="auth-star is-three"></span>
+    <span class="auth-orbit is-one"></span>
+    <span class="auth-orbit is-two"></span>
+
+    <div class="auth-layout">
+        {{ showcase(
+            'Начни учиться эффективнее',
+            'Собери свой ритм',
+            'в',
+            'Student Assistant',
+            'Создай единое пространство для расписания, задач, заметок и уверенного движения к целям.'
+        ) }}
+
+        <section class="auth-form-card is-register">
+            <div class="auth-card-glow" aria-hidden="true"></div>
+            <div class="auth-lock-visual is-register" aria-hidden="true">
+                <span>{{ icon('user') }}</span>
+                <i></i><i></i>
             </div>
-        </div>
+            <div class="auth-form-heading">
+                <span>Новый старт</span>
+                <h2>Создать аккаунт</h2>
+                <p>Несколько полей — и учебное пространство готово.</p>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-danger auth-alert">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" action="/register" class="auth-form auth-register-form">
+                {{ csrf_input(request) }}
+                <div class="auth-form-grid">
+                    <label class="auth-field">
+                        <span>Имя пользователя</span>
+                        <span class="auth-input-shell">
+                            <i>{{ icon('user') }}</i>
+                            <input type="text" name="username" placeholder="Например, Xelmor" maxlength="50" required autocomplete="username" autofocus>
+                        </span>
+                    </label>
+
+                    <label class="auth-field">
+                        <span>Email</span>
+                        <span class="auth-input-shell">
+                            <i>{{ icon('mail') }}</i>
+                            <input type="email" name="email" placeholder="student@example.com" maxlength="120" required autocomplete="email">
+                        </span>
+                    </label>
+
+                    <label class="auth-field is-wide">
+                        <span>Пароль</span>
+                        <span class="auth-input-shell has-toggle">
+                            <i>{{ icon('lock') }}</i>
+                            <input type="password" id="register-password" name="password" placeholder="От 8 до 128 символов" minlength="8" maxlength="128" required autocomplete="new-password">
+                            <button
+                                type="button"
+                                class="auth-password-toggle"
+                                data-password-toggle
+                                data-password-target="register-password"
+                                aria-label="Показать пароль"
+                            >Показать</button>
+                        </span>
+                    </label>
+
+                    <label class="auth-field">
+                        <span>Группа</span>
+                        <span class="auth-input-shell">
+                            <i>{{ icon('group') }}</i>
+                            <input type="text" name="group_name" placeholder="Например, ИКБО-42-24" maxlength="50">
+                        </span>
+                    </label>
+
+                    <label class="auth-field">
+                        <span>Курс</span>
+                        <span class="auth-input-shell">
+                            <i>{{ icon('course') }}</i>
+                            <input type="number" name="course" min="1" max="12" placeholder="Например, 2">
+                        </span>
+                    </label>
+                </div>
+
+                <button type="submit" class="auth-submit-button">Зарегистрироваться</button>
+            </form>
+
+            <div class="auth-switch-link">
+                Уже есть аккаунт? <a href="/login">Войти</a>
+            </div>
+        </section>
     </div>
 </div>
 {% endblock %}

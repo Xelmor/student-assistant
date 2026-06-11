@@ -1,4 +1,7 @@
-﻿    justify-content: space-between;
+﻿.calendar-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
     gap: 1.25rem;
     margin-bottom: var(--section-gap);
     padding: 1.6rem 1.75rem;
@@ -183,6 +186,12 @@
     box-shadow: inset 0 0 0 1px rgba(217, 92, 66, 0.28);
 }
 
+.calendar-day-card.has-override {
+    border-color: rgba(124, 92, 170, 0.34);
+    background:
+        linear-gradient(180deg, rgba(250, 246, 255, 0.98), rgba(241, 252, 249, 0.92));
+}
+
 .calendar-day-head {
     display: flex;
     justify-content: space-between;
@@ -309,6 +318,18 @@
     background: var(--accent);
 }
 
+.event-academic .calendar-mini-dot {
+    background: #ba4329;
+}
+
+.event-schedule-change .calendar-mini-dot {
+    background: #7b5caf;
+}
+
+.event-override .calendar-mini-dot {
+    background: #7b5caf;
+}
+
 .agenda-title {
     margin-top: 0.9rem;
 }
@@ -369,6 +390,19 @@
     box-shadow: inset 3px 0 0 rgba(20, 138, 136, 0.58);
 }
 
+.agenda-item.event-academic {
+    box-shadow: inset 3px 0 0 rgba(217, 92, 66, 0.62);
+}
+
+.agenda-item.event-schedule-change {
+    box-shadow: inset 3px 0 0 rgba(124, 92, 170, 0.62);
+}
+
+.agenda-item.event-override {
+    box-shadow: inset 3px 0 0 rgba(124, 92, 170, 0.62);
+    background: linear-gradient(180deg, rgba(250, 246, 255, 0.96), rgba(255, 252, 247, 0.9));
+}
+
 .agenda-item-overdue {
     background: linear-gradient(180deg, rgba(255, 240, 236, 0.98), rgba(255, 250, 246, 0.92));
 }
@@ -407,6 +441,96 @@
 .agenda-item-copy {
     margin: 0.65rem 0 0;
     color: var(--muted);
+}
+
+.agenda-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    margin-top: 0.85rem;
+}
+
+.agenda-item-actions form {
+    margin: 0;
+}
+
+.agenda-edit-details {
+    width: 100%;
+}
+
+.agenda-edit-details summary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    list-style: none;
+}
+
+.agenda-edit-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.calendar-inline-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.85rem;
+    padding: 0.9rem;
+    border: 1px solid rgba(104, 67, 38, 0.1);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.66);
+}
+
+.calendar-inline-form label,
+.calendar-form-grid label {
+    display: grid;
+    gap: 0.35rem;
+    color: var(--text);
+    font-weight: 800;
+}
+
+.calendar-inline-form label span,
+.calendar-form-grid label span {
+    color: var(--muted);
+    font-size: 0.76rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.calendar-wide-field {
+    grid-column: 1 / -1;
+}
+
+.calendar-override-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+    margin-bottom: 1rem;
+    padding: 0.95rem 1rem;
+    border: 1px solid rgba(124, 92, 170, 0.18);
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(250, 246, 255, 0.98), rgba(241, 252, 249, 0.9));
+}
+
+.calendar-override-banner strong {
+    display: block;
+    margin-top: 0.2rem;
+}
+
+.calendar-override-kicker {
+    color: #6d4fa0;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.calendar-text-button {
+    border: 0;
+    background: transparent;
+    color: #6d4fa0;
+    font-weight: 800;
 }
 
 .agenda-empty {
@@ -553,6 +677,11 @@
     border-color: rgba(222, 107, 61, 0.32);
     background: linear-gradient(135deg, rgba(255, 239, 229, 0.98), rgba(241, 252, 249, 0.96));
     box-shadow: 0 18px 34px rgba(84, 46, 21, 0.12);
+}
+
+.week-strip-day.has-override {
+    border-color: rgba(124, 92, 170, 0.24);
+    background: linear-gradient(135deg, rgba(250, 246, 255, 0.98), rgba(255, 252, 248, 0.92));
 }
 
 .week-strip-weekday {
@@ -730,7 +859,324 @@
 }
 
 .week-board {
-    display: none;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.7rem;
+}
+
+.week-column {
+    display: grid;
+    gap: 0.75rem;
+    min-height: 12rem;
+    padding: 0.9rem;
+    border: 1px solid rgba(104, 67, 38, 0.1);
+    border-radius: 22px;
+    background: rgba(255, 252, 247, 0.82);
+}
+
+.week-column.is-selected {
+    border-color: rgba(222, 107, 61, 0.28);
+    box-shadow: 0 12px 24px rgba(84, 46, 21, 0.08);
+}
+
+.week-column-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.55rem;
+    align-items: flex-start;
+}
+
+.week-column-title {
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.week-column-date {
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-weight: 800;
+}
+
+.week-column-events {
+    display: grid;
+    align-content: start;
+    gap: 0.55rem;
+}
+
+.week-chip {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.65rem 0.7rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(104, 67, 38, 0.08);
+}
+
+.week-chip strong {
+    color: var(--muted);
+    font-size: 0.75rem;
+}
+
+.week-chip span,
+.week-chip a {
+    color: var(--text);
+    font-size: 0.88rem;
+    font-weight: 800;
+}
+
+.week-chip.event-academic {
+    box-shadow: inset 3px 0 0 rgba(217, 92, 66, 0.58);
+}
+
+.week-chip.event-schedule-change,
+.week-chip.event-override {
+    box-shadow: inset 3px 0 0 rgba(124, 92, 170, 0.58);
+}
+
+.week-chip.event-schedule {
+    box-shadow: inset 3px 0 0 rgba(20, 138, 136, 0.58);
+}
+
+.week-column-empty {
+    display: grid;
+    min-height: 5rem;
+    place-items: center;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.55);
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.calendar-forms-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(20rem, 0.8fr);
+    gap: 1rem;
+}
+
+.calendar-form-card {
+    height: 100%;
+}
+
+.calendar-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.calendar-section-head h2 {
+    margin: 0.35rem 0 0;
+    font-size: 1.35rem;
+}
+
+.calendar-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.1rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(20, 138, 136, 0.1);
+    color: var(--accent-strong);
+    font-size: 0.82rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.calendar-override-card .card-body {
+    display: grid;
+    gap: 1rem;
+}
+
+.calendar-override-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: start;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(104, 67, 38, 0.1);
+}
+
+.calendar-override-header h2 {
+    margin: 0.35rem 0 0;
+    font-size: 1.45rem;
+}
+
+.calendar-override-card .eyebrow {
+    border-color: rgba(124, 92, 170, 0.16);
+    background: rgba(250, 246, 255, 0.84);
+    color: #62458f;
+}
+
+.calendar-override-count {
+    background: rgba(124, 92, 170, 0.1);
+    color: #62458f;
+}
+
+.calendar-override-form {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.calendar-override-dates {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.calendar-override-field {
+    display: grid;
+    gap: 0.4rem;
+    min-width: 0;
+    color: var(--text);
+    font-weight: 800;
+}
+
+.calendar-override-field span {
+    color: #4a382b;
+    font-size: 0.88rem;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.calendar-override-field .form-control,
+.calendar-override-field .form-select {
+    min-height: 3.15rem;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.86);
+}
+
+.calendar-override-field textarea.form-control {
+    min-height: 5.25rem;
+    resize: vertical;
+}
+
+.calendar-override-actions {
+    display: block;
+}
+
+.calendar-override-actions .btn {
+    width: 100%;
+    min-height: 3rem;
+}
+
+.calendar-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.calendar-form-grid-compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.calendar-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    grid-column: 1 / -1;
+}
+
+.calendar-side-list {
+    display: grid;
+    gap: 0.65rem;
+    margin-top: 1.1rem;
+}
+
+.calendar-side-list-title {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.calendar-side-item {
+    display: grid;
+    grid-template-columns: 3.4rem minmax(0, 1fr);
+    gap: 0.25rem 0.7rem;
+    padding: 0.75rem 0.8rem;
+    border: 1px solid rgba(104, 67, 38, 0.08);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.62);
+}
+
+.calendar-side-item span {
+    grid-row: span 2;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 14px;
+    background: rgba(124, 92, 170, 0.1);
+    color: #6d4fa0;
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-weight: 800;
+}
+
+.calendar-side-item strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.calendar-side-item small {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.session-overview-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.session-overview-item {
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr);
+    gap: 0.8rem;
+    align-items: center;
+    padding: 0.9rem;
+    border: 1px solid rgba(104, 67, 38, 0.1);
+    border-radius: 20px;
+    background: rgba(255, 252, 247, 0.82);
+}
+
+.session-overview-date {
+    display: grid;
+    place-items: center;
+    min-height: 4rem;
+    border-radius: 18px;
+    background: rgba(217, 92, 66, 0.1);
+    color: #ba4329;
+}
+
+.session-overview-date strong {
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.session-overview-date span {
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.session-overview-title {
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.session-overview-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.55rem;
+    margin-top: 0.3rem;
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-weight: 700;
 }
 
 .page-intro {

@@ -1,14 +1,15 @@
 import calendar
 import random
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy.orm import Session
+from sqlalchemy import case, func
+from sqlalchemy.orm import Session, joinedload
 
 from ...core.database import get_db
-from ...core.time import WEEKDAYS, calculate_task_score, current_time
-from ...models import Note, ScheduleItem, Subject, Task
+from ...core.time import WEEKDAYS, current_time
+from ...models import Note, ScheduleItem, Task
 from ..dependencies import (
     MOTIVATIONAL_QUOTES,
     get_schedule_terms,
@@ -41,13 +42,12 @@ PRIORITY_LABELS = {
 }
 
 
-def build_streak_state(completed_tasks):
+def build_streak_state(completed_task_dates: list[date], today: date):
     completed_dates = {
-        (task.completed_at or task.created_at).date()
-        for task in completed_tasks
-        if task.completed_at or task.created_at
+        completed_date
+        for completed_date in completed_task_dates
+        if completed_date is not None
     }
-    today = current_time().date()
 
     if not completed_dates:
         return {
@@ -79,7 +79,7 @@ def build_streak_state(completed_tasks):
     }
 
 
-def build_today_reminders(now, active_schedule_item, next_schedule_item, pending_tasks, schedule_terms):
+def build_today_reminders(now, active_schedule_item, next_schedule_item, deadline_tasks, schedule_terms):
     reminders = []
 
     if active_schedule_item:
@@ -98,11 +98,6 @@ def build_today_reminders(now, active_schedule_item, next_schedule_item, pending
             'tone': 'upcoming',
             'url': '/schedule',
         })
-
-    deadline_tasks = sorted(
-        [task for task in pending_tasks if task.deadline],
-        key=lambda task: task.deadline,
-    )
 
     for task in deadline_tasks[:3]:
         is_overdue = task.deadline < now
@@ -131,26 +126,131 @@ def build_today_reminders(now, active_schedule_item, next_schedule_item, pending
     return unique_reminders[:4]
 
 
+def get_dashboard_task_counts(db: Session, user_id: int, now: datetime) -> dict[str, int]:
+    pending_case = case((Task.is_completed.is_(False), 1), else_=0)
+    completed_case = case((Task.is_completed.is_(True), 1), else_=0)
+    overdue_case = case(
+        ((Task.is_completed.is_(False)) & Task.deadline.is_not(None) & (Task.deadline < now), 1),
+        else_=0,
+    )
+
+    pending_count, completed_count, overdue_count = (
+        db.query(
+            func.sum(pending_case),
+            func.sum(completed_case),
+            func.sum(overdue_case),
+        )
+        .filter(Task.user_id == user_id)
+        .one()
+    )
+
+    return {
+        'pending_count': int(pending_count or 0),
+        'completed_count': int(completed_count or 0),
+        'overdue_count': int(overdue_count or 0),
+    }
+
+
+def get_urgent_tasks(db: Session, user_id: int, now: datetime, limit: int = 5) -> list[Task]:
+    deadline_score = case(
+        (Task.deadline.is_(None), 0),
+        (Task.deadline <= now, 10),
+        (Task.deadline <= now + timedelta(days=1), 8),
+        (Task.deadline <= now + timedelta(days=3), 6),
+        (Task.deadline <= now + timedelta(days=7), 4),
+        else_=2,
+    )
+    priority_score = case(
+        (Task.priority == 'high', 6),
+        (Task.priority == 'medium', 4),
+        (Task.priority == 'low', 2),
+        else_=4,
+    )
+    difficulty_score = case(
+        (Task.difficulty == 'high', 3),
+        (Task.difficulty == 'medium', 2),
+        (Task.difficulty == 'low', 1),
+        else_=2,
+    )
+    score = deadline_score + priority_score + difficulty_score
+
+    return (
+        db.query(Task)
+        .options(joinedload(Task.subject))
+        .filter(Task.user_id == user_id, Task.is_completed.is_(False))
+        .order_by(score.desc(), Task.deadline.asc().nullslast(), Task.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
+def get_dashboard_deadline_tasks(db: Session, user_id: int, limit: int = 3) -> list[Task]:
+    return (
+        db.query(Task)
+        .options(joinedload(Task.subject))
+        .filter(Task.user_id == user_id, Task.is_completed.is_(False), Task.deadline.is_not(None))
+        .order_by(Task.deadline.asc())
+        .limit(limit)
+        .all()
+    )
+
+
+def get_completed_task_dates(db: Session, user_id: int) -> list[date]:
+    completed_tasks = (
+        db.query(Task.completed_at, Task.created_at)
+        .filter(Task.user_id == user_id, Task.is_completed.is_(True))
+        .all()
+    )
+    return [(completed_at or created_at).date() for completed_at, created_at in completed_tasks if completed_at or created_at]
+
+
+def get_today_schedule(db: Session, user_id: int, today_weekday: int) -> list[ScheduleItem]:
+    return (
+        db.query(ScheduleItem)
+        .options(joinedload(ScheduleItem.subject))
+        .filter(ScheduleItem.user_id == user_id, ScheduleItem.weekday == today_weekday)
+        .order_by(ScheduleItem.start_time.asc())
+        .all()
+    )
+
+
+def get_dashboard_notes(db: Session, user_id: int, now: datetime) -> tuple[list[Note], bool]:
+    day_start = datetime.combine(now.date(), time.min)
+    day_end = day_start + timedelta(days=1)
+    today_notes = (
+        db.query(Note)
+        .filter(Note.user_id == user_id, Note.created_at >= day_start, Note.created_at < day_end)
+        .order_by(Note.created_at.desc())
+        .limit(3)
+        .all()
+    )
+    if today_notes:
+        return today_notes, False
+
+    recent_notes = (
+        db.query(Note)
+        .filter(Note.user_id == user_id)
+        .order_by(Note.created_at.desc())
+        .limit(3)
+        .all()
+    )
+    return recent_notes, bool(recent_notes)
+
+
 @router.get('/dashboard', response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):
     user = require_user(request, db)
     if not user:
         return RedirectResponse('/login', status_code=302)
 
-    now = current_time().replace(tzinfo=None)
-    tasks = db.query(Task).filter(Task.user_id == user.id).all()
-    notes = db.query(Note).filter(Note.user_id == user.id).order_by(Note.created_at.desc()).all()
-    pending_tasks = [task for task in tasks if not task.is_completed]
-    completed_tasks = [task for task in tasks if task.is_completed]
-    overdue_tasks = [task for task in pending_tasks if task.deadline and task.deadline < now]
-    urgent_tasks = sorted(pending_tasks, key=calculate_task_score, reverse=True)[:5]
-    streak = build_streak_state(completed_tasks)
+    now = current_time()
+    task_counts = get_dashboard_task_counts(db, user.id, now)
+    urgent_tasks = get_urgent_tasks(db, user.id, now)
+    deadline_tasks = get_dashboard_deadline_tasks(db, user.id)
+    streak = build_streak_state(get_completed_task_dates(db, user.id), now.date())
 
     today_weekday = now.weekday()
-    today_schedule = db.query(ScheduleItem).filter(
-        ScheduleItem.user_id == user.id,
-        ScheduleItem.weekday == today_weekday,
-    ).order_by(ScheduleItem.start_time.asc()).all()
+    today_schedule = get_today_schedule(db, user.id, today_weekday)
     now_time = now.time()
     active_schedule_item = None
     next_schedule_item = None
@@ -166,14 +266,13 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             next_schedule_item = item
 
     schedule_terms = get_schedule_terms(user)
-    today_notes = [note for note in notes if note.created_at and note.created_at.date() == now.date()][:3]
-    recent_notes = notes[:3]
+    dashboard_notes, today_notes_are_recent = get_dashboard_notes(db, user.id, now)
     today_focus_tasks = urgent_tasks[:3]
     today_reminders = build_today_reminders(
         now,
         active_schedule_item,
         next_schedule_item,
-        pending_tasks,
+        deadline_tasks,
         schedule_terms,
     )
 
@@ -190,18 +289,16 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     context = {
         'user': user,
         'local_private_data_available': is_local_private_data_enabled(request),
-        'subjects_count': db.query(Subject).filter(Subject.user_id == user.id).count(),
-        'subjects': db.query(Subject).filter(Subject.user_id == user.id).order_by(Subject.name.asc()).all(),
-        'pending_count': len(pending_tasks),
-        'completed_count': len(completed_tasks),
-        'overdue_count': len(overdue_tasks),
+        'pending_count': task_counts['pending_count'],
+        'completed_count': task_counts['completed_count'],
+        'overdue_count': task_counts['overdue_count'],
         'streak': streak,
         'urgent_tasks': urgent_tasks,
         'today_focus_tasks': today_focus_tasks,
         'today_reminders': today_reminders,
         'today_schedule': today_schedule,
-        'today_notes': today_notes or recent_notes,
-        'today_notes_are_recent': not bool(today_notes) and bool(recent_notes),
+        'today_notes': dashboard_notes,
+        'today_notes_are_recent': today_notes_are_recent,
         'active_schedule_item': active_schedule_item,
         'next_schedule_item': next_schedule_item,
         'active_schedule_remaining_seconds': active_schedule_remaining_seconds,

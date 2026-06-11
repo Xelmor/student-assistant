@@ -8,7 +8,7 @@ APP_ZONE = ZoneInfo(settings.timezone)
 
 
 def current_time() -> datetime:
-    return datetime.now(APP_ZONE)
+    return datetime.now(APP_ZONE).replace(tzinfo=None)
 
 
 def current_date():
@@ -33,7 +33,7 @@ DIFFICULTY_ORDER = {'high': 3, 'medium': 2, 'low': 1}
 def calculate_task_score(task) -> int:
     score = 0
     if task.deadline:
-        days_left = (task.deadline - current_time().replace(tzinfo=None)).days
+        days_left = (task.deadline - current_time()).days
         if days_left <= 0:
             score += 10
         elif days_left <= 1:

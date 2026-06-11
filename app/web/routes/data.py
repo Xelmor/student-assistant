@@ -16,6 +16,13 @@ from ...services.data_service import (
 from ..dependencies import profile_message_redirect, require_user, validate_csrf
 
 router = APIRouter()
+MAX_IMPORT_FILE_BYTES = 2 * 1024 * 1024
+ALLOWED_IMPORT_CONTENT_TYPES = {
+    '',
+    'application/json',
+    'text/json',
+    'application/octet-stream',
+}
 
 
 @router.get('/data/export/{export_format}')
@@ -71,13 +78,18 @@ async def import_data(
     if not import_file.filename.lower().endswith('.json'):
         return profile_message_redirect(error='Сейчас импорт поддерживается только из JSON-файла.')
 
-    file_bytes = await import_file.read()
+    if (import_file.content_type or '').lower() not in ALLOWED_IMPORT_CONTENT_TYPES:
+        return profile_message_redirect(error='Файл должен иметь JSON-формат.')
+
+    file_bytes = await import_file.read(MAX_IMPORT_FILE_BYTES + 1)
     if not file_bytes:
         return profile_message_redirect(error='Файл пустой.')
+    if len(file_bytes) > MAX_IMPORT_FILE_BYTES:
+        return profile_message_redirect(error='JSON-файл не должен быть больше 2 МБ.')
 
     try:
         payload = json.loads(file_bytes.decode('utf-8-sig'))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):
         return profile_message_redirect(error='Не удалось прочитать JSON-файл. Проверь формат.')
 
     try:

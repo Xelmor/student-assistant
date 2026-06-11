@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from ..core.config import settings
 from ..core.security import get_current_user
 from ..models import User
+from ..services.navbar_tools import build_navbar_payload
 
 
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / 'templates'))
@@ -53,6 +54,7 @@ def difficulty_label(value: str | None) -> str:
 
 
 templates.env.globals['difficulty_label'] = difficulty_label
+templates.env.globals['build_navbar_payload'] = build_navbar_payload
 
 SCHEDULE_UNIT_OPTIONS = {
     'pair': {

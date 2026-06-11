@@ -1,9 +1,13 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
+pytest-cache-files-*
+tests/.tmp/
 .env
-student_assistant.db
+*.db
 .idea/
 .vscode/

@@ -1,9 +1,8 @@
-from datetime import datetime
-
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Column, Date, DateTime, Integer, String
 from sqlalchemy.orm import relationship
 
 from ..core.database import Base
+from ..core.time import current_time
 
 
 class User(Base):
@@ -16,9 +15,11 @@ class User(Base):
     group_name = Column(String(50), nullable=True)
     course = Column(Integer, nullable=True)
     schedule_unit = Column(String(20), nullable=False, default='class')
-    created_at = Column(DateTime, default=datetime.utcnow)
+    last_study_day = Column(Date, nullable=True)
+    created_at = Column(DateTime, default=current_time)
 
     subjects = relationship('Subject', back_populates='user', cascade='all, delete-orphan')
     tasks = relationship('Task', back_populates='user', cascade='all, delete-orphan')
     schedule_items = relationship('ScheduleItem', back_populates='user', cascade='all, delete-orphan')
+    academic_events = relationship('AcademicEvent', back_populates='user', cascade='all, delete-orphan')
     notes = relationship('Note', back_populates='user', cascade='all, delete-orphan')

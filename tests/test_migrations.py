@@ -48,14 +48,20 @@ class MigrationTests(unittest.TestCase):
             inspector = inspect(engine)
             user_columns = {column['name'] for column in inspector.get_columns('users')}
             task_columns = {column['name'] for column in inspector.get_columns('tasks')}
+            academic_event_columns = {
+                column['name'] for column in inspector.get_columns('academic_events')
+            }
 
             self.assertIn('schedule_unit', user_columns)
+            self.assertIn('last_study_day', user_columns)
             self.assertIn('completed_at', task_columns)
             self.assertIn('recurrence_group_id', task_columns)
             self.assertIn('recurrence_type', task_columns)
             self.assertIn('recurrence_interval_days', task_columns)
             self.assertIn('scheduled_for_date', task_columns)
             self.assertIn('schedule_item_id', task_columns)
+            self.assertIn('event_date', academic_event_columns)
+            self.assertIn('event_type', academic_event_columns)
 
             with engine.begin() as connection:
                 versions = set(
@@ -67,6 +73,7 @@ class MigrationTests(unittest.TestCase):
                 {
                     '20260430_01_add_users_schedule_unit',
                     '20260430_02_add_tasks_recurrence_fields',
+                    '20260530_01_add_academic_calendar_fields',
                 },
             )
         finally:

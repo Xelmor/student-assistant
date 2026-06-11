@@ -1,229 +1,272 @@
 {% extends 'base.html' %}
-{% block title %}Предметы{% endblock %}
+{% block title %}Предметы · Student Assistant{% endblock %}
+{% block theme_color %}#070b1a{% endblock %}
+{% block body_class %}dashboard-page subjects-page{% endblock %}
+{% from 'components/empty_state.html' import empty_state %}
+
+{% macro icon(name) %}
+{% if name == 'book' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22zM20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22z"></path></svg>
+{% elif name == 'plus' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+{% elif name == 'user' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>
+{% elif name == 'building' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21h16M6 21V5l6-3 6 3v16M9 8h1m4 0h1M9 12h1m4 0h1M9 16h1m4 0h1"></path></svg>
+{% elif name == 'note' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v14l-4 4H5zM15 21v-4h4M8 8h8M8 12h6"></path></svg>
+{% elif name == 'filter' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.5 7.2V19l-3 1v-7.8z"></path></svg>
+{% elif name == 'search' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+{% elif name == 'grid' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"></rect><rect x="14" y="4" width="6" height="6" rx="1"></rect><rect x="4" y="14" width="6" height="6" rx="1"></rect><rect x="14" y="14" width="6" height="6" rx="1"></rect></svg>
+{% elif name == 'list' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"></path></svg>
+{% elif name == 'check' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg>
+{% elif name == 'edit' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.5-1 10-10-3.5-3.5-10 10z"></path><path d="m13.5 7 3.5 3.5"></path></svg>
+{% elif name == 'trash' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"></path></svg>
+{% endif %}
+{% endmacro %}
+
 {% block content %}
-<div class="page-intro">
-    <div>
-        <span class="eyebrow">Каталог предметов</span>
-        <h1 class="mt-3 mb-2">Управляй учебными дисциплинами без беспорядка</h1>
-        <p>Добавляй предметы, преподавателей, аудитории и заметки, а на телефоне редактируй всё прямо в карточках.</p>
-    </div>
-</div>
+{% set subject_stats = namespace(teacher=0, room=0, notes=0) %}
+{% for subject in subjects %}
+    {% if subject.teacher %}{% set subject_stats.teacher = subject_stats.teacher + 1 %}{% endif %}
+    {% if subject.room %}{% set subject_stats.room = subject_stats.room + 1 %}{% endif %}
+    {% if subject.notes %}{% set subject_stats.notes = subject_stats.notes + 1 %}{% endif %}
+{% endfor %}
 
-<div class="row g-4">
-    <div class="col-lg-4">
-        <div class="card shadow-sm" id="subject-create">
-            <div class="card-body">
-                <h3 class="mb-3">Добавить предмет</h3>
-                <form method="post" action="/subjects/add">
+<div class="subjects-dashboard">
+    {% if form_error %}
+    <div class="subjects-alert" role="alert">{{ form_error }}</div>
+    {% endif %}
+    <header class="subjects-overview">
+        <div class="subjects-title-block">
+            <span class="subjects-title-icon">{{ icon('book') }}</span>
+            <div>
+                <span class="subjects-eyebrow">Учебный каталог</span>
+                <h1>Предметы</h1>
+                <p>Управляй дисциплинами, преподавателями и аудиториями в одном удобном каталоге.</p>
+            </div>
+        </div>
+
+        <div class="subjects-stat-grid" aria-label="Статистика предметов">
+            <article class="subjects-stat-card is-total">
+                <span class="subjects-stat-icon">{{ icon('book') }}</span>
+                <div><span>Всего предметов</span><strong>{{ subjects|length }}</strong><small>предметов</small></div>
+            </article>
+            <article class="subjects-stat-card is-teacher">
+                <span class="subjects-stat-icon">{{ icon('user') }}</span>
+                <div><span>С преподавателем</span><strong>{{ subject_stats.teacher }}</strong><small>предметов</small></div>
+            </article>
+            <article class="subjects-stat-card is-room">
+                <span class="subjects-stat-icon">{{ icon('building') }}</span>
+                <div><span>С аудиторией</span><strong>{{ subject_stats.room }}</strong><small>предметов</small></div>
+            </article>
+            <article class="subjects-stat-card is-notes">
+                <span class="subjects-stat-icon">{{ icon('note') }}</span>
+                <div><span>С заметками</span><strong>{{ subject_stats.notes }}</strong><small>предметов</small></div>
+            </article>
+        </div>
+    </header>
+
+    <div class="subjects-workspace">
+        <aside class="subjects-sidebar">
+            <section class="subjects-panel subjects-create-panel" id="subject-create">
+                <div class="subjects-panel-heading">
+                    <span class="subjects-panel-icon">{{ icon('plus') }}</span>
+                    <div><h2>Быстрое добавление</h2><p>Новая дисциплина в каталоге</p></div>
+                </div>
+
+                <form method="post" action="/subjects/add" class="subjects-create-form">
                     {{ csrf_input(request) }}
-                    <div class="mb-3">
-                        <label class="form-label">Название</label>
-                        <input type="text" name="name" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Преподаватель</label>
-                        <input type="text" name="teacher" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Аудитория</label>
-                        <input type="text" name="room" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Цвет</label>
-                        <input type="color" name="color" class="form-control form-control-color" value="#0d6efd">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Заметка</label>
-                        <textarea name="notes" class="form-control" rows="3"></textarea>
-                    </div>
-                    <button class="btn btn-primary w-100">Добавить</button>
+                    <label class="subjects-field">
+                        <span>Название</span>
+                        <input id="subjectNameInput" type="text" name="name" class="form-control" placeholder="Введите название предмета" maxlength="100" required>
+                    </label>
+                    <label class="subjects-field">
+                        <span>Преподаватель</span>
+                        <span class="subjects-input-shell">{{ icon('user') }}<input type="text" name="teacher" class="form-control" maxlength="100" placeholder="ФИО преподавателя"></span>
+                    </label>
+                    <label class="subjects-field">
+                        <span>Аудитория</span>
+                        <span class="subjects-input-shell">{{ icon('building') }}<input type="text" name="room" class="form-control" maxlength="50" placeholder="Номер или название аудитории" autocomplete="off"></span>
+                    </label>
+                    <fieldset class="subjects-color-field">
+                        <legend>Цвет</legend>
+                        <input type="hidden" name="color" id="subjectColorValue" value="#3b82f6">
+                        <div class="subjects-color-palette" data-color-palette data-color-target="subjectColorValue">
+                            {% for color in ['#3b82f6', '#7c3aed', '#ec4899', '#fb6a55', '#f59e0b', '#22c55e', '#06b6d4'] %}
+                            <button type="button" class="subjects-color-swatch{% if loop.first %} is-active{% endif %}" style="--swatch: {{ color }};" data-color="{{ color }}" aria-label="Выбрать цвет {{ color }}"></button>
+                            {% endfor %}
+                            <label class="subjects-custom-color" title="Свой цвет">
+                                {{ icon('plus') }}
+                                <input type="color" value="#8b5cf6" data-custom-color aria-label="Выбрать свой цвет">
+                            </label>
+                        </div>
+                    </fieldset>
+                    <label class="subjects-field">
+                        <span>Заметка</span>
+                        <textarea name="notes" class="form-control" rows="2" maxlength="5000" placeholder="Краткая заметка о предмете (необязательно)"></textarea>
+                    </label>
+                    <button type="submit" class="subjects-primary-button">{{ icon('plus') }}<span>Добавить предмет</span></button>
                 </form>
+            </section>
+
+            <section class="subjects-panel subjects-filter-panel">
+                <div class="subjects-panel-heading">
+                    <span class="subjects-panel-icon is-blue">{{ icon('filter') }}</span>
+                    <div><h2>Фильтры</h2><p>Найди нужную дисциплину</p></div>
+                </div>
+                <div class="subjects-filter-pills" role="group" aria-label="Фильтр предметов">
+                    <button type="button" class="subjects-filter-pill is-active" data-subject-filter="all">Все</button>
+                    <button type="button" class="subjects-filter-pill" data-subject-filter="notes">С заметками</button>
+                    <button type="button" class="subjects-filter-pill" data-subject-filter="no-room">Без аудитории</button>
+                    <button type="button" class="subjects-filter-pill" data-subject-filter="main">Мои основные</button>
+                </div>
+                <label class="subjects-search">
+                    {{ icon('search') }}
+                    <input type="search" id="subjectSearchInput" placeholder="Поиск по предметам…" autocomplete="off">
+                    <kbd>⌘ K</kbd>
+                </label>
+                <div class="subjects-sort-segment" role="group" aria-label="Сортировка предметов">
+                    <span>Сортировка</span>
+                    <div>
+                        <button type="button" class="is-active" data-subject-sort="name">По названию</button>
+                        <button type="button" data-subject-sort="color">По цвету</button>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <section class="subjects-panel subjects-catalog-panel">
+            <div class="subjects-catalog-toolbar">
+                <div>
+                    <span class="subjects-eyebrow">Все дисциплины</span>
+                    <h2>Каталог предметов</h2>
+                </div>
+                <div class="subjects-catalog-controls">
+                    <label class="subjects-sort-select">
+                        <span>Сортировка:</span>
+                        <select id="subjectSortSelect" aria-label="Сортировка предметов">
+                            <option value="name">По названию (А-Я)</option>
+                            <option value="color">По цвету</option>
+                        </select>
+                    </label>
+                    <div class="subjects-view-switch" role="group" aria-label="Вид каталога">
+                        <button type="button" class="is-active" data-subject-view="grid" aria-label="Плитка" title="Плитка">{{ icon('grid') }}</button>
+                        <button type="button" data-subject-view="list" aria-label="Список" title="Список">{{ icon('list') }}</button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
 
-    <div class="col-lg-8">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h3 class="mb-3">Мои предметы</h3>
-                {% if subjects %}
-                <div class="subjects-desktop-list row g-3">
-                    {% for subject in subjects %}
-                    <div class="col-md-6">
-                        <div class="card h-100 subject-card" style="--subject-color: {{ subject.color }};">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                    <h5>{{ subject.name }}</h5>
-                                    <div class="action-group">
-                                        <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleSubjectEdit({{ subject.id }})">Изменить</button>
-                                        <form method="post" action="/subjects/delete/{{ subject.id }}" class="d-inline">
-                                            {{ csrf_input(request) }}
-                                            <button type="submit" class="btn btn-sm action-btn action-btn-delete">Удалить</button>
-                                        </form>
-                                    </div>
-                                </div>
-                                <p class="mb-1"><strong>Преподаватель:</strong> {{ subject.teacher or '—' }}</p>
-                                <p class="mb-1"><strong>Аудитория:</strong> {{ subject.room or '—' }}</p>
-                                <p class="mb-0 text-muted">{{ subject.notes or 'Без заметок' }}</p>
+            {{ empty_state(
+                'search',
+                'Предметы не найдены',
+                'Проверь запрос или сбрось фильтры, чтобы увидеть весь каталог.',
+                'Сбросить фильтры',
+                action_id='subjectsResetFilters',
+                variant='compact',
+                element_id='subjectsEmptyFilter',
+                hidden=true
+            ) }}
 
-                                <div id="subject-edit-{{ subject.id }}" class="subject-edit-panel d-none mt-3 pt-3 border-top">
-                                    <form method="post" action="/subjects/edit/{{ subject.id }}">
-                                        {{ csrf_input(request) }}
-                                        <div class="mb-3">
-                                            <label class="form-label">Название</label>
-                                            <input type="text" name="name" class="form-control" value="{{ subject.name }}" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Преподаватель</label>
-                                            <input type="text" name="teacher" class="form-control" value="{{ subject.teacher or '' }}">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Аудитория</label>
-                                            <input type="text" name="room" class="form-control" value="{{ subject.room or '' }}">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Цвет</label>
-                                            <input type="color" name="color" class="form-control form-control-color" value="{{ subject.color or '#0d6efd' }}">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Заметка</label>
-                                            <textarea name="notes" class="form-control" rows="3">{{ subject.notes or '' }}</textarea>
-                                        </div>
-                                        <div class="d-flex justify-content-end gap-2">
-                                            <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleSubjectEdit({{ subject.id }})">Отмена</button>
-                                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                        </div>
-                                    </form>
-                                </div>
+            {% if subjects %}
+            <div class="subjects-catalog-grid" id="subjectsCatalog">
+                {% for subject in subjects %}
+                <article
+                    class="subjects-subject-card"
+                    id="subject-card-{{ subject.id }}"
+                    style="--subject-color: {{ subject.safe_color }};"
+                    data-subject-item
+                    data-subject-name="{{ subject.name|lower|e }}"
+                    data-subject-search="{{ (subject.name ~ ' ' ~ (subject.teacher or '') ~ ' ' ~ (subject.room or '') ~ ' ' ~ (subject.notes or ''))|lower|e }}"
+                    data-subject-color="{{ subject.safe_color }}"
+                    data-subject-notes="{{ 'true' if subject.notes else 'false' }}"
+                    data-subject-room="{{ 'true' if subject.room else 'false' }}"
+                    data-subject-main="{{ 'true' if subject.teacher and subject.room else 'false' }}"
+                >
+                    <span class="subjects-card-stripe" aria-hidden="true"></span>
+                    <div class="subjects-card-content">
+                        <div class="subjects-card-head">
+                            <div class="subjects-card-title">
+                                <h3>{{ subject.name }}</h3>
+                                <span style="--subject-color: {{ subject.safe_color }};"></span>
                             </div>
+                            <div class="subjects-card-actions">
+                                <button type="button" class="subjects-action-button is-edit" onclick="toggleSubjectEdit({{ subject.id }})">{{ icon('edit') }}<span>Изменить</span></button>
+                                <form method="post" action="/subjects/delete/{{ subject.id }}" data-confirm-title="Удалить предмет «{{ subject.name|e }}»?">
+                                    {{ csrf_input(request) }}
+                                    <button type="submit" class="subjects-action-button is-delete">{{ icon('trash') }}<span>Удалить</span></button>
+                                </form>
+                            </div>
+                        </div>
+                        <dl class="subjects-card-meta">
+                            <div><dt>Преподаватель:</dt><dd>{{ subject.teacher or 'Не указан' }}</dd></div>
+                            <div><dt>Аудитория:</dt><dd>{{ subject.room or 'Не указана' }}</dd></div>
+                        </dl>
+                        <div class="subjects-card-note">{{ icon('note') }}<span>{{ subject.notes or 'Без заметок' }}</span></div>
+
+                        <div id="subject-edit-{{ subject.id }}" class="subjects-edit-panel subject-edit-panel d-none">
+                            <form method="post" action="/subjects/edit/{{ subject.id }}" class="subjects-edit-form">
+                                {{ csrf_input(request) }}
+                                <div class="subjects-edit-grid">
+                                    <label class="subjects-field">
+                                        <span>Название</span>
+                                        <input type="text" name="name" class="form-control" maxlength="100" value="{{ subject.name }}" required>
+                                    </label>
+                                    <label class="subjects-field">
+                                        <span>Преподаватель</span>
+                                        <input type="text" name="teacher" class="form-control" maxlength="100" value="{{ subject.teacher or '' }}">
+                                    </label>
+                                    <label class="subjects-field">
+                                        <span>Аудитория</span>
+                                        <input type="text" name="room" class="form-control" maxlength="50" value="{{ subject.room or '' }}" autocomplete="off">
+                                    </label>
+                                    <label class="subjects-field">
+                                        <span>Цвет</span>
+                                        <input type="color" name="color" class="form-control subjects-edit-color" value="{{ subject.safe_color }}">
+                                    </label>
+                                    <label class="subjects-field is-wide">
+                                        <span>Заметка</span>
+                                        <textarea name="notes" class="form-control" rows="2" maxlength="5000">{{ subject.notes or '' }}</textarea>
+                                    </label>
+                                </div>
+                                <div class="subjects-edit-actions">
+                                    <button type="button" class="subjects-secondary-button" onclick="toggleSubjectEdit({{ subject.id }})">Отмена</button>
+                                    <button type="submit" class="subjects-primary-button is-compact">Сохранить изменения</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                    {% endfor %}
-                </div>
+                </article>
+                {% endfor %}
 
-                <div class="subjects-mobile-list">
-                    {% for subject in subjects %}
-                    <article class="subject-mobile-card" style="--subject-color: {{ subject.color }};" id="subject-mobile-card-{{ subject.id }}">
-                        <div class="subject-mobile-head">
-                            <div class="subject-mobile-color" aria-hidden="true"></div>
-                            <div class="subject-mobile-main">
-                                <div class="subject-mobile-title">{{ subject.name }}</div>
-                                <div class="subject-mobile-copy">{{ subject.teacher or 'Преподаватель не указан' }}</div>
-                            </div>
-                        </div>
-
-                        <div class="subject-mobile-meta">
-                            <div class="subject-mobile-meta-item">
-                                <span>Аудитория</span>
-                                <strong>{{ subject.room or '—' }}</strong>
-                            </div>
-                            <div class="subject-mobile-meta-item">
-                                <span>Заметка</span>
-                                <strong>{{ subject.notes or 'Без заметок' }}</strong>
-                            </div>
-                        </div>
-
-                        <div class="subject-mobile-actions">
-                            <button type="button" class="btn action-btn action-btn-edit" onclick="toggleSubjectEdit({{ subject.id }})">Изменить</button>
-                            <form method="post" action="/subjects/delete/{{ subject.id }}">
-                                {{ csrf_input(request) }}
-                                <button type="submit" class="btn action-btn action-btn-delete">Удалить</button>
-                            </form>
-                        </div>
-
-                        <div id="subject-mobile-edit-{{ subject.id }}" class="subject-mobile-edit subject-edit-panel d-none">
-                            <form method="post" action="/subjects/edit/{{ subject.id }}" class="subject-mobile-edit-form">
-                                {{ csrf_input(request) }}
-                                <div class="mb-3">
-                                    <label class="form-label">Название</label>
-                                    <input type="text" name="name" class="form-control" value="{{ subject.name }}" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Преподаватель</label>
-                                    <input type="text" name="teacher" class="form-control" value="{{ subject.teacher or '' }}">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Аудитория</label>
-                                    <input type="text" name="room" class="form-control" value="{{ subject.room or '' }}">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Цвет</label>
-                                    <input type="color" name="color" class="form-control form-control-color" value="{{ subject.color or '#0d6efd' }}">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Заметка</label>
-                                    <textarea name="notes" class="form-control" rows="3">{{ subject.notes or '' }}</textarea>
-                                </div>
-                                <div class="subject-mobile-edit-actions">
-                                    <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleSubjectEdit({{ subject.id }})">Отмена</button>
-                                    <button type="submit" class="btn btn-primary">Сохранить</button>
-                                </div>
-                            </form>
-                        </div>
-                    </article>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-muted">Пока предметов нет.</p>
-                {% endif %}
+                <button type="button" class="subjects-add-more-card" id="subjectAddMore">
+                    <span>{{ icon('plus') }}</span>
+                    <strong>Добавить ещё предмет</strong>
+                </button>
             </div>
-        </div>
+            {% else %}
+            {{ empty_state(
+                'subjects',
+                'Пока нет предметов',
+                'Добавь учебные дисциплины, чтобы связывать с ними задачи, расписание и заметки.',
+                '+ Добавить предмет',
+                '#subject-create',
+                focus_target='#subjectNameInput',
+                hint='После этого предмет появится в формах задач, заметок и расписания.'
+            ) }}
+            {% endif %}
+        </section>
     </div>
 </div>
+{% endblock %}
 
-<script>
-function toggleSubjectEdit(subjectId) {
-    const desktopCard = document.getElementById(`subject-edit-${subjectId}`);
-    const mobileCard = document.getElementById(`subject-mobile-edit-${subjectId}`);
-    const isMobileViewport = window.innerWidth < 768;
-    const targetBlock = isMobileViewport ? (mobileCard || desktopCard) : (desktopCard || mobileCard);
-
-    if (!targetBlock) {
-        return;
-    }
-
-    const closePanel = (panel) => {
-        if (!panel || panel.classList.contains('d-none')) {
-            return;
-        }
-
-        panel.classList.remove('is-open');
-        panel.classList.add('is-closing');
-
-        window.setTimeout(() => {
-            panel.classList.add('d-none');
-            panel.classList.remove('is-closing');
-        }, 240);
-    };
-
-    const openPanel = (panel) => {
-        panel.classList.remove('d-none');
-        panel.classList.remove('is-closing');
-        window.requestAnimationFrame(() => {
-            panel.classList.add('is-open');
-        });
-    };
-
-    const shouldOpen = targetBlock.classList.contains('d-none');
-
-    document.querySelectorAll('.subject-edit-panel').forEach((element) => {
-        if (element === targetBlock) {
-            return;
-        }
-        closePanel(element);
-    });
-
-    if (!shouldOpen) {
-        closePanel(targetBlock);
-        return;
-    }
-
-    openPanel(targetBlock);
-
-    if (isMobileViewport && mobileCard) {
-        const scrollTarget = document.getElementById(`subject-mobile-card-${subjectId}`) || targetBlock;
-        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-}
-</script>
+{% block page_scripts %}
+<script src="/static/js/subjects.js?v=20260611-motion-v1"></script>
 {% endblock %}

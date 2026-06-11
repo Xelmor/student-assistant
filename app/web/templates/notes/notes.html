@@ -1,215 +1,250 @@
 {% extends 'base.html' %}
-{% block title %}Заметки{% endblock %}
-{% block content %}
-<div class="page-intro">
-    <div>
-        <span class="eyebrow">База знаний</span>
-        <h1 class="mt-3 mb-2">Заметки, ссылки и идеи по учебе</h1>
-        <p>Храни конспекты, полезные ссылки и быстрые мысли. На телефоне заметки открываются карточками и редактируются прямо на месте.</p>
-    </div>
-</div>
+{% block title %}Заметки · Student Assistant{% endblock %}
+{% block theme_color %}#070b1a{% endblock %}
+{% block body_class %}dashboard-page notes-page{% endblock %}
+{% from 'components/empty_state.html' import empty_state %}
 
-<div class="row g-4">
-    <div class="col-lg-4">
-        <div class="card shadow-sm" id="note-create">
-            <div class="card-body">
-                <h3 class="mb-3">Добавить заметку</h3>
-                <form method="post" action="/notes/add">
-                    {{ csrf_input(request) }}
-                    <div class="mb-3">
-                        <label class="form-label">Заголовок</label>
-                        <input type="text" name="title" class="form-control" required>
+{% macro icon(name) %}
+{% if name == 'note' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v14l-4 4H5z"></path><path d="M15 21v-4h4M8 8h8M8 12h6"></path></svg>
+{% elif name == 'plus' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+{% elif name == 'search' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+{% elif name == 'filter' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.5 7.2V19l-3 1v-7.8z"></path></svg>
+{% elif name == 'edit' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.5-1 10-10-3.5-3.5-10 10z"></path><path d="m13.5 7 3.5 3.5"></path></svg>
+{% elif name == 'trash' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"></path></svg>
+{% elif name == 'pin' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 4 6 6-3 1-4 4-1 4-3-3-5 5-1-1 5-5-3-3 4-1 4-4z"></path></svg>
+{% elif name == 'link' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"></path><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"></path></svg>
+{% elif name == 'chevron-left' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+{% elif name == 'chevron-right' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+{% elif name == 'sort' %}
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h11M8 12h8M8 18h5M4 4v16m0 0-2-2m2 2 2-2"></path></svg>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<div class="notes-dashboard">
+    <header class="notes-overview">
+        <div class="notes-title-block">
+            <span class="notes-title-icon">{{ icon('note') }}</span>
+            <div>
+                <span class="notes-eyebrow">База знаний</span>
+                <h1>Заметки, ссылки и идеи по учёбе</h1>
+                <p>Храни конспекты, полезные ссылки и быстрые мысли. На телефоне заметки открываются карточками и редактируются прямо на месте.</p>
+            </div>
+        </div>
+        <a href="#note-create" class="notes-new-button">{{ icon('plus') }}<span>Новая заметка</span></a>
+    </header>
+
+    {% if form_error %}
+    <div class="notes-alert" role="alert">{{ form_error }}</div>
+    {% endif %}
+
+    <div class="notes-workspace">
+        <aside class="notes-sidebar">
+            <section class="notes-panel notes-create-panel" id="note-create">
+                <div class="notes-panel-heading">
+                    <span class="notes-panel-icon">{{ icon('plus') }}</span>
+                    <div>
+                        <h2>Создать заметку</h2>
+                        <p>Сохрани важное, пока мысль рядом</p>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Предмет</label>
+                </div>
+
+                <form method="post" action="/notes/add" class="notes-create-form">
+                    {{ csrf_input(request) }}
+                    <label class="notes-field">
+                        <span>Заголовок</span>
+                        <input id="noteTitleInput" type="text" name="title" class="form-control" placeholder="Название заметки" maxlength="150" required>
+                    </label>
+                    <label class="notes-field">
+                        <span>Предмет</span>
                         <select name="subject_id" class="form-select">
                             <option value="">Без предмета</option>
                             {% for subject in subjects %}
                             <option value="{{ subject.id }}">{{ subject.name }}</option>
                             {% endfor %}
                         </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Ссылка</label>
-                        <input type="url" name="link" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Текст</label>
-                        <textarea name="content" class="form-control" rows="6"></textarea>
-                    </div>
-                    <button class="btn btn-primary w-100">Добавить</button>
+                    </label>
+                    <label class="notes-field">
+                        <span>Ссылка <small>необязательно</small></span>
+                        <span class="notes-input-shell">{{ icon('link') }}<input type="url" name="link" class="form-control" maxlength="255" placeholder="https://example.com"></span>
+                    </label>
+                    <label class="notes-field">
+                        <span>Текст заметки</span>
+                        <textarea name="content" class="form-control" rows="8" maxlength="10000" placeholder="Конспект, идея, список или полезная мысль…"></textarea>
+                    </label>
+                    <button type="submit" class="notes-primary-button">{{ icon('note') }}<span>Сохранить заметку</span></button>
                 </form>
+            </section>
+        </aside>
+
+        <section class="notes-panel notes-list-panel">
+            <div class="notes-list-heading">
+                <div>
+                    <span class="notes-eyebrow">Личная коллекция</span>
+                    <h2>Мои заметки</h2>
+                </div>
+                <span class="notes-count"><strong id="notesVisibleCount">{{ notes|length }}</strong> заметок</span>
             </div>
-        </div>
-    </div>
 
-    <div class="col-lg-8">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h3 class="mb-3">Мои заметки</h3>
-                {% if notes %}
-                <div class="notes-desktop-list">
-                    {% for note in notes %}
-                    <div class="card mb-3 note-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start gap-3">
-                                <div>
-                                    <h5>{{ note.title }}</h5>
-                                    <div class="small text-muted mb-2">
-                                        {% if note.subject %}{{ note.subject.name }} · {% endif %}
-                                        {{ note.created_at.strftime('%d.%m.%Y %H:%M') }}
-                                    </div>
-                                </div>
-                                <div class="action-group">
-                                    <button type="button" class="btn btn-sm action-btn action-btn-edit" onclick="toggleNoteEdit({{ note.id }})">Изменить</button>
-                                    <form method="post" action="/notes/delete/{{ note.id }}" class="d-inline">
-                                        {{ csrf_input(request) }}
-                                        <button type="submit" class="btn btn-sm action-btn action-btn-delete">Удалить</button>
-                                    </form>
-                                </div>
-                            </div>
-                            {% if note.link %}
-                            <p><a href="{{ note.link }}" target="_blank" rel="noopener noreferrer">{{ note.link }}</a></p>
-                            {% endif %}
-                            <p class="mb-0">{{ note.content or '' }}</p>
+            <div class="notes-toolbar">
+                <label class="notes-search">
+                    {{ icon('search') }}
+                    <input type="search" id="notesSearchInput" placeholder="Поиск по заметкам…" autocomplete="off">
+                </label>
+                <label class="notes-toolbar-select">
+                    <span class="visually-hidden">Предмет</span>
+                    <select id="notesSubjectFilter">
+                        <option value="">Все предметы</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                        {% endfor %}
+                        <option value="none">Без предмета</option>
+                    </select>
+                </label>
+                <label class="notes-toolbar-select">
+                    <span class="visually-hidden">Тип заметки</span>
+                    <select id="notesTypeFilter">
+                        <option value="">Все типы</option>
+                        <option value="text">Текстовые</option>
+                        <option value="link">Со ссылкой</option>
+                    </select>
+                </label>
+                <label class="notes-toolbar-select notes-sort-select">
+                    {{ icon('sort') }}
+                    <select id="notesSortSelect">
+                        <option value="newest">Сначала новые</option>
+                        <option value="oldest">Сначала старые</option>
+                        <option value="title">По названию</option>
+                    </select>
+                </label>
+                <button type="button" class="notes-filter-button" id="notesResetFilters" aria-label="Сбросить фильтры" title="Сбросить фильтры">{{ icon('filter') }}</button>
+            </div>
 
-                            <div id="note-edit-{{ note.id }}" class="d-none mt-3 pt-3 border-top">
-                                <form method="post" action="/notes/edit/{{ note.id }}">
-                                    {{ csrf_input(request) }}
-                                    <div class="row g-3">
-                                        <div class="col-12">
-                                            <label class="form-label">Заголовок</label>
-                                            <input type="text" name="title" class="form-control" value="{{ note.title }}" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label">Предмет</label>
-                                            <select name="subject_id" class="form-select">
-                                                <option value="">Без предмета</option>
-                                                {% for subject in subjects %}
-                                                <option value="{{ subject.id }}" {% if note.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label">Ссылка</label>
-                                            <input type="url" name="link" class="form-control" value="{{ note.link or '' }}">
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label">Текст</label>
-                                            <textarea name="content" class="form-control" rows="5">{{ note.content or '' }}</textarea>
-                                        </div>
-                                        <div class="col-12 d-flex justify-content-end gap-2">
-                                            <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleNoteEdit({{ note.id }})">Отмена</button>
-                                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
+            {% if notes %}
+            <div class="notes-list" id="notesList">
+                {% for note in notes %}
+                <article
+                    class="notes-item"
+                    id="note-card-{{ note.id }}"
+                    style="--note-color: {{ note.safe_subject_color }};"
+                    data-note-item
+                    data-note-id="{{ note.id }}"
+                    data-note-subject="{{ note.subject_id or 'none' }}"
+                    data-note-types="{% if note.content %}text {% endif %}{% if note.safe_link %}link{% endif %}"
+                    data-note-created="{{ note.created_at.strftime('%Y-%m-%dT%H:%M:%S') }}"
+                    data-note-title="{{ note.title|lower|e }}"
+                    data-note-search="{{ (note.title ~ ' ' ~ (note.content or '') ~ ' ' ~ (note.link or '') ~ ' ' ~ (note.subject.name if note.subject else 'без предмета'))|lower|e }}"
+                >
+                    <span class="notes-item-accent"></span>
+                    <div class="notes-item-icon">{{ icon('note') }}</div>
+                    <div class="notes-item-content">
+                        <div class="notes-item-title-row">
+                            <h3>{{ note.title }}</h3>
+                            <button type="button" class="notes-pin-button" data-note-pin="{{ note.id }}" aria-label="Закрепить заметку" title="Закрепить">{{ icon('pin') }}</button>
+                        </div>
+                        {% if note.content %}
+                        <p>{{ note.content }}</p>
+                        {% elif note.safe_link %}
+                        <p>Сохранённая ссылка: {{ note.safe_link }}</p>
+                        {% elif note.link %}
+                        <p>Ссылка скрыта из-за небезопасного формата.</p>
+                        {% else %}
+                        <p class="is-empty">У заметки пока нет текста.</p>
+                        {% endif %}
+                        {% if note.safe_link %}
+                        <a href="{{ note.safe_link }}" target="_blank" rel="noopener noreferrer" class="notes-item-link">{{ icon('link') }}<span>{{ note.safe_link }}</span></a>
+                        {% endif %}
+                        <div class="notes-item-meta">
+                            <span class="notes-subject-badge">{{ note.subject.name if note.subject else 'Без предмета' }}</span>
+                            <time datetime="{{ note.created_at.isoformat() }}">{{ note.created_at.strftime('%d.%m.%Y %H:%M') }}</time>
                         </div>
                     </div>
-                    {% endfor %}
-                </div>
+                    <div class="notes-item-actions">
+                        <button type="button" class="notes-action-button is-edit" onclick="toggleNoteEdit({{ note.id }})" aria-label="Редактировать заметку" title="Редактировать">{{ icon('edit') }}</button>
+                        <form method="post" action="/notes/delete/{{ note.id }}" data-confirm-title="Удалить заметку «{{ note.title|e }}»?">
+                            {{ csrf_input(request) }}
+                            <button type="submit" class="notes-action-button is-delete" aria-label="Удалить заметку" title="Удалить">{{ icon('trash') }}</button>
+                        </form>
+                    </div>
 
-                <div class="notes-mobile-list">
-                    {% for note in notes %}
-                    <article class="note-mobile-card" id="note-mobile-card-{{ note.id }}">
-                        <div class="note-mobile-head">
-                            <div class="note-mobile-main">
-                                <div class="note-mobile-title">{{ note.title }}</div>
-                                <div class="note-mobile-subtitle">
-                                    {% if note.subject %}{{ note.subject.name }} · {% endif %}
-                                    {{ note.created_at.strftime('%d.%m.%Y %H:%M') }}
-                                </div>
+                    <div id="note-edit-{{ note.id }}" class="{% if selected_note_id != note.id %}d-none {% endif %}mt-3 pt-3 border-top">
+                        <div class="notes-edit-shell">
+                            <div class="notes-edit-heading">
+                                <div><span class="notes-panel-icon is-small">{{ icon('edit') }}</span><strong>Редактирование заметки</strong></div>
+                                <button type="button" onclick="toggleNoteEdit({{ note.id }})" aria-label="Закрыть">×</button>
                             </div>
-                        </div>
-
-                        {% if note.link %}
-                        <a href="{{ note.link }}" target="_blank" rel="noopener noreferrer" class="note-mobile-link">{{ note.link }}</a>
-                        {% endif %}
-
-                        {% if note.content %}
-                        <div class="note-mobile-copy">{{ note.content }}</div>
-                        {% endif %}
-
-                        <div class="note-mobile-actions">
-                            <button type="button" class="btn action-btn action-btn-edit" onclick="toggleNoteEdit({{ note.id }})">Изменить</button>
-                            <form method="post" action="/notes/delete/{{ note.id }}">
+                            <form method="post" action="/notes/edit/{{ note.id }}" class="notes-edit-form">
                                 {{ csrf_input(request) }}
-                                <button type="submit" class="btn action-btn action-btn-delete">Удалить</button>
-                            </form>
-                        </div>
-
-                        <div id="note-mobile-edit-{{ note.id }}" class="note-mobile-edit d-none">
-                            <form method="post" action="/notes/edit/{{ note.id }}" class="note-mobile-edit-form">
-                                {{ csrf_input(request) }}
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label">Заголовок</label>
-                                        <input type="text" name="title" class="form-control" value="{{ note.title }}" required>
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label">Предмет</label>
-                                        <select name="subject_id" class="form-select">
-                                            <option value="">Без предмета</option>
-                                            {% for subject in subjects %}
-                                            <option value="{{ subject.id }}" {% if note.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label">Ссылка</label>
-                                        <input type="url" name="link" class="form-control" value="{{ note.link or '' }}">
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label">Текст</label>
-                                        <textarea name="content" class="form-control" rows="5">{{ note.content or '' }}</textarea>
-                                    </div>
-                                    <div class="col-12 note-mobile-edit-actions">
-                                        <button type="button" class="btn action-btn action-btn-cancel" onclick="toggleNoteEdit({{ note.id }})">Отмена</button>
-                                        <button type="submit" class="btn btn-primary">Сохранить</button>
-                                    </div>
+                                <label class="notes-field notes-wide-field">
+                                    <span>Заголовок</span>
+                                    <input type="text" name="title" class="form-control" value="{{ note.title }}" maxlength="150" required>
+                                </label>
+                                <label class="notes-field">
+                                    <span>Предмет</span>
+                                    <select name="subject_id" class="form-select">
+                                        <option value="">Без предмета</option>
+                                        {% for subject in subjects %}
+                                        <option value="{{ subject.id }}" {% if note.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                                <label class="notes-field">
+                                    <span>Ссылка</span>
+                                    <input type="url" name="link" class="form-control" maxlength="255" value="{{ note.link or '' }}">
+                                </label>
+                                <label class="notes-field notes-wide-field">
+                                    <span>Текст</span>
+                                    <textarea name="content" class="form-control" rows="5" maxlength="10000">{{ note.content or '' }}</textarea>
+                                </label>
+                                <div class="notes-edit-actions">
+                                    <button type="button" class="notes-secondary-button" onclick="toggleNoteEdit({{ note.id }})">Отмена</button>
+                                    <button type="submit" class="notes-primary-button is-compact">Сохранить изменения</button>
                                 </div>
                             </form>
                         </div>
-                    </article>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-muted">Пока заметок нет.</p>
-                {% endif %}
+                    </div>
+                </article>
+                {% endfor %}
             </div>
-        </div>
+
+            {{ empty_state(
+                'search',
+                'Заметки не найдены',
+                'Попробуй другой запрос или выбери другой предмет.',
+                'Очистить поиск',
+                action_id='notesEmptyReset',
+                variant='compact',
+                element_id='notesEmptyFilter',
+                hidden=true
+            ) }}
+
+            <nav class="notes-pagination" id="notesPagination" aria-label="Страницы заметок"></nav>
+            {% else %}
+            {{ empty_state(
+                'notes',
+                'Пока нет заметок',
+                'Сохраняй конспекты, ссылки и идеи, чтобы всё важное было под рукой.',
+                '+ Создать заметку',
+                '#note-create',
+                focus_target='#noteTitleInput',
+                hint='Можно добавить текст, ссылку и привязать запись к предмету.'
+            ) }}
+            {% endif %}
+        </section>
     </div>
 </div>
+{% endblock %}
 
-<script>
-function toggleNoteEdit(noteId) {
-    const desktopBlock = document.getElementById(`note-edit-${noteId}`);
-    const mobileBlock = document.getElementById(`note-mobile-edit-${noteId}`);
-    const currentBlock = mobileBlock || desktopBlock;
-    if (!currentBlock) {
-        return;
-    }
-
-    const shouldOpen = currentBlock.classList.contains('d-none');
-
-    document.querySelectorAll('[id^="note-edit-"], [id^="note-mobile-edit-"]').forEach((element) => {
-        element.classList.add('d-none');
-    });
-
-    if (!shouldOpen) {
-        return;
-    }
-
-    if (desktopBlock) {
-        desktopBlock.classList.remove('d-none');
-    }
-
-    if (mobileBlock) {
-        mobileBlock.classList.remove('d-none');
-        const scrollTarget = document.getElementById(`note-mobile-card-${noteId}`) || mobileBlock;
-        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-}
-</script>
+{% block page_scripts %}
+<script src="/static/js/notes.js?v=20260611-motion-v1"></script>
 {% endblock %}

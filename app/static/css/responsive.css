@@ -300,6 +300,54 @@
         color: #a44f2e;
     }
 
+    .calendar-mobile-chip.is-academic {
+        background: rgba(217, 92, 66, 0.12);
+        color: #9f3f2c;
+    }
+
+    .calendar-mobile-chip.is-override {
+        background: rgba(124, 92, 170, 0.12);
+        color: #62458f;
+    }
+
+    .week-board,
+    .calendar-forms-grid,
+    .session-overview-list {
+        grid-template-columns: 1fr;
+    }
+
+    .week-column {
+        min-height: 0;
+        padding: 0.8rem;
+        border-radius: 18px;
+    }
+
+    .week-column-head {
+        align-items: center;
+    }
+
+    .calendar-form-grid,
+    .calendar-form-grid-compact,
+    .calendar-override-dates,
+    .calendar-inline-form {
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-section-head,
+    .calendar-override-header,
+    .calendar-override-banner {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .calendar-form-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-form-actions .btn {
+        width: 100%;
+    }
 
     .agenda-summary-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

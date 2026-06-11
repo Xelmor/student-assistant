@@ -1,9 +1,8 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from ..core.database import Base
+from ..core.time import current_time
 
 
 class Note(Base):
@@ -15,7 +14,7 @@ class Note(Base):
     title = Column(String(150), nullable=False)
     content = Column(Text, nullable=True)
     link = Column(String(255), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=current_time)
 
     user = relationship('User', back_populates='notes')
     subject = relationship('Subject', back_populates='note_items')

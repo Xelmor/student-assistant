@@ -1,166 +1,288 @@
 {% extends 'base.html' %}
-{% block title %}Профиль{% endblock %}
+{% block title %}Настройки профиля{% endblock %}
+{% block theme_color %}#070b1a{% endblock %}
+{% block body_class %}dashboard-page profile-page profile-settings-page{% endblock %}
+
+{% macro icon(name) -%}
+<svg viewBox="0 0 24 24" aria-hidden="true">
+    {% if name == 'user' %}
+    <circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.6-4 3-6 7-6s6.4 2 7 6"></path>
+    {% elif name == 'check' %}
+    <path d="m5 12 4 4L19 6"></path>
+    {% elif name == 'palette' %}
+    <path d="M12 3a9 9 0 1 0 0 18h1.5a2 2 0 0 0 0-4H12a2 2 0 0 1 0-4h3a6 6 0 0 0-3-10Z"></path><circle cx="7.5" cy="10" r=".8"></circle><circle cx="10" cy="6.8" r=".8"></circle><circle cx="14.2" cy="7" r=".8"></circle>
+    {% elif name == 'clock' %}
+    <circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>
+    {% elif name == 'shield' %}
+    <path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6Z"></path><path d="m9 12 2 2 4-5"></path>
+    {% elif name == 'lock' %}
+    <rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+    {% elif name == 'logout' %}
+    <path d="M10 5H5v14h5m4-4 4-3-4-3m4 3H9"></path>
+    {% elif name == 'refresh' %}
+    <path d="M20 7v5h-5"></path><path d="M18.5 15a8 8 0 1 1-.7-7.8L20 9"></path>
+    {% elif name == 'database' %}
+    <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5"></path><path d="M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"></path>
+    {% elif name == 'download' %}
+    <path d="M12 3v12m-4-4 4 4 4-4"></path><path d="M5 19h14"></path>
+    {% elif name == 'upload' %}
+    <path d="M12 16V4m-4 4 4-4 4 4"></path><path d="M5 20h14"></path>
+    {% elif name == 'arrow' %}
+    <path d="M5 12h14m-5-5 5 5-5 5"></path>
+    {% elif name == 'chevron' %}
+    <path d="m7 10 5 5 5-5"></path>
+    {% endif %}
+</svg>
+{%- endmacro %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-xl-10">
-        <section class="profile-hero">
-            <div class="profile-hero-main">
-                <span class="eyebrow">Личный кабинет</span>
-                <h1 class="profile-hero-title">Профиль</h1>
-                <p class="profile-hero-copy">Обновляй основные данные аккаунта, сохраняй бэкапы и держи всё в одном аккуратном месте.</p>
-            </div>
-            <div class="profile-hero-badge">
-                <div class="profile-avatar profile-avatar-large">
-                    {{ user.username[0]|upper if user.username else 'U' }}
-                </div>
-                <div>
-                    <div class="profile-hero-name">{{ user.username }}</div>
-                    <div class="profile-hero-email">{{ user.email }}</div>
-                </div>
-            </div>
-        </section>
-
-        <div class="row g-4">
-            <div class="col-lg-4">
-                <div class="card profile-summary-card h-100">
-                    <div class="card-body">
-                        <div class="profile-card-title">Кратко</div>
-                        <div class="profile-meta-list">
-                            <div class="profile-meta-item">
-                                <span>Группа</span>
-                                <strong>{{ user.group_name or 'Не указана' }}</strong>
-                            </div>
-                            <div class="profile-meta-item">
-                                <span>Курс</span>
-                                <strong>{{ user.course or 'Не указан' }}</strong>
-                            </div>
-                            <div class="profile-meta-item">
-                                <span>Регистрация</span>
-                                <strong>{{ user.created_at.strftime('%d.%m.%Y') if user.created_at else '-' }}</strong>
-                            </div>
-                        </div>
-
-                        <div class="profile-action-stack">
-                            <a href="/forgot-password" class="btn btn-primary">Сменить пароль</a>
-                            {% if local_private_data_available %}
-                            <a href="/local-profile" class="btn btn-outline-secondary">Локальные данные</a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-8">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="profile-card-title">Данные аккаунта</div>
-
-                        {% if error %}
-                        <div class="alert alert-danger">{{ error }}</div>
-                        {% endif %}
-
-                        {% if success %}
-                        <div class="alert alert-success">{{ success }}</div>
-                        {% endif %}
-
-                        <form method="post" action="/profile" class="row g-3">
-                            {{ csrf_input(request) }}
-                            <div class="col-md-6">
-                                <label class="form-label">Логин</label>
-                                <input type="text" name="username" class="form-control" value="{{ user.username }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Email</label>
-                                <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Группа</label>
-                                <input type="text" name="group_name" class="form-control" value="{{ user.group_name or '' }}" placeholder="Например, ИС-21">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Курс</label>
-                                <input type="number" name="course" class="form-control" min="1" max="10" value="{{ user.course or '' }}" placeholder="Например, 2">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Формат расписания</label>
-                                <select name="schedule_unit" class="form-select">
-                                    {% for unit_key, unit in schedule_unit_options.items() %}
-                                    <option value="{{ unit_key }}" {% if (user.schedule_unit or 'class') == unit_key %}selected{% endif %}>{{ unit.label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-12 d-flex flex-wrap gap-2 pt-2">
-                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                <a href="/dashboard" class="btn btn-outline-secondary">На главную</a>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+<div class="profile-simple" id="profile-settings">
+    <header class="profile-simple-header">
+        <div class="profile-simple-title">
+            <span class="profile-simple-title-icon">{{ icon('user') }}</span>
+            <div>
+                <span class="profile-eyebrow">Личный кабинет</span>
+                <h1>Настройки профиля</h1>
+                <p>Данные аккаунта и основные параметры интерфейса в одном месте.</p>
             </div>
         </div>
+        <a href="/dashboard" class="profile-simple-back">Вернуться на главную {{ icon('arrow') }}</a>
+    </header>
 
-        <section class="data-hub mt-4">
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="card data-card h-100">
-                        <div class="card-body">
-                            <div class="data-card-icon data-card-icon-export">&#8595;</div>
-                            <div class="profile-card-title mb-2">Экспорт данных</div>
-                            <p class="data-card-copy">Скачай свои предметы, задачи, расписание и заметки. Для бэкапа лучше подходит JSON, для просмотра и портфолио &#8212; CSV-архив.</p>
+    <div class="profile-simple-layout">
+        <aside class="profile-simple-sidebar">
+            <section class="profile-simple-person">
+                <span class="profile-simple-person-label">Профиль</span>
+                <div class="profile-simple-avatar" data-user-avatar>{{ user.username[0]|upper if user.username else 'U' }}</div>
+                <h2>{{ user.username }}</h2>
+                <p>{{ user.email }}</p>
+                <span class="profile-simple-status"><i></i> Аккаунт активен</span>
 
-                            <div class="data-action-row">
-                                <a href="/data/export/json" class="btn btn-primary" download>Скачать JSON</a>
-                                <a href="/data/export/csv" class="btn btn-outline-secondary" download>Скачать CSV</a>
-                            </div>
+                <div class="profile-simple-meta">
+                    <div>
+                        <span>Группа</span>
+                        <strong>{{ user.group_name or 'Не указана' }}</strong>
+                    </div>
+                    <div>
+                        <span>Курс</span>
+                        <strong>{{ user.course or '—' }}</strong>
+                    </div>
+                </div>
+            </section>
 
-                            <div class="data-card-note">
-                                В JSON сохраняется структура данных для обратного импорта. CSV выгружается архивом `.zip` с отдельными таблицами.
-                            </div>
-                        </div>
+            <nav class="profile-simple-nav" aria-label="Разделы настроек профиля">
+                <a href="#profile-main" class="is-active">{{ icon('user') }} Основные данные</a>
+                <a href="#profile-appearance">{{ icon('palette') }} Внешний вид</a>
+                <a href="#profile-time">{{ icon('clock') }} Регион и время</a>
+                <a href="#profile-security">{{ icon('shield') }} Аккаунт</a>
+                <a href="#profile-data">{{ icon('database') }} Резервная копия</a>
+            </nav>
+
+            {% if local_private_data_available %}
+            <a href="/local-profile" class="profile-simple-private">
+                {{ icon('database') }}
+                <span><strong>Личные данные</strong><small>Локальный защищённый раздел</small></span>
+                {{ icon('arrow') }}
+            </a>
+            {% endif %}
+        </aside>
+
+        <main class="profile-simple-content">
+            <section class="profile-simple-card" id="profile-main">
+                <div class="profile-simple-card-heading">
+                    <span class="profile-simple-card-icon">{{ icon('user') }}</span>
+                    <div>
+                        <h2>Основные данные</h2>
+                        <p>Имя, email и информация об учёбе.</p>
                     </div>
                 </div>
 
-                <div class="col-lg-6">
-                    <div class="card data-card h-100">
-                        <div class="card-body">
-                            <div class="data-card-icon data-card-icon-import">&#8593;</div>
-                            <div class="profile-card-title mb-2">Импорт данных</div>
-                            <p class="data-card-copy">Загрузи свой JSON-бэкап обратно в систему. Можно либо добавить данные к текущим, либо полностью заменить текущее содержимое.</p>
+                <div class="profile-simple-avatar-row">
+                    <div class="profile-settings-avatar" data-user-avatar>{{ user.username[0]|upper if user.username else 'U' }}</div>
+                    <div>
+                        <strong>Аватар профиля</strong>
+                        <p>Градиент сохраняется локально в этом браузере.</p>
+                    </div>
+                    <details class="profile-avatar-picker">
+                        <summary>Изменить</summary>
+                        <div class="profile-avatar-options" aria-label="Выбор аватара">
+                            {% for avatar in ['violet', 'blue', 'pink', 'green', 'orange', 'cyan'] %}
+                            <button type="button" class="profile-avatar-option" data-avatar-option="{{ avatar }}" aria-label="Выбрать аватар {{ loop.index }}" aria-pressed="false">{{ user.username[0]|upper if user.username else 'U' }}</button>
+                            {% endfor %}
+                        </div>
+                    </details>
+                </div>
 
-                            {% if data_error %}
-                            <div class="alert alert-danger">{{ data_error }}</div>
-                            {% endif %}
+                {% if error %}
+                <div class="alert alert-danger profile-alert">{{ error }}</div>
+                {% endif %}
+                {% if success %}
+                <div class="alert alert-success profile-alert">{{ success }}</div>
+                {% endif %}
 
-                            {% if data_success %}
-                            <div class="alert alert-success">{{ data_success }}</div>
-                            {% endif %}
+                <form method="post" action="/profile" class="profile-account-form profile-simple-form">
+                    {{ csrf_input(request) }}
+                    <label class="profile-field">
+                        <span>Имя пользователя</span>
+                        <input type="text" name="username" value="{{ user.username }}" maxlength="50" required autocomplete="username">
+                    </label>
+                    <label class="profile-field">
+                        <span>Email</span>
+                        <input type="email" name="email" value="{{ user.email }}" maxlength="120" required autocomplete="email">
+                    </label>
+                    <label class="profile-field">
+                        <span>Группа</span>
+                        <input type="text" name="group_name" value="{{ user.group_name or '' }}" maxlength="50" placeholder="Например, ИКБО-42-24">
+                    </label>
+                    <label class="profile-field">
+                        <span>Курс</span>
+                        <input type="number" name="course" min="1" max="12" value="{{ user.course or '' }}" placeholder="Например, 2">
+                    </label>
+                    <label class="profile-field is-wide">
+                        <span>Формат расписания</span>
+                        <select name="schedule_unit">
+                            {% for unit_key, unit in schedule_unit_options.items() %}
+                            <option value="{{ unit_key }}" {% if (user.schedule_unit or 'class') == unit_key %}selected{% endif %}>{{ unit.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <div class="profile-form-actions">
+                        <button type="submit" class="profile-primary-button">{{ icon('check') }} Сохранить изменения</button>
+                        <button type="reset" class="profile-secondary-button">Отменить изменения</button>
+                    </div>
+                </form>
+            </section>
 
-                            <form method="post" action="/data/import" enctype="multipart/form-data" class="row g-3">
-                                {{ csrf_input(request) }}
-                                <div class="col-12">
-                                    <label class="form-label">JSON-файл</label>
-                                    <input type="file" name="import_file" class="form-control" accept=".json,application/json" required>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Режим импорта</label>
-                                    <select name="import_mode" class="form-select">
-                                        <option value="merge">Добавить к текущим данным</option>
-                                        <option value="replace">Полностью заменить мои данные</option>
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <button type="submit" class="btn btn-primary w-100">Импортировать данные</button>
-                                </div>
-                            </form>
-
-                            <div class="data-card-note">
-                                Сейчас импорт поддерживается из JSON-файла, который был выгружен из этого приложения.
-                            </div>
+            <div class="profile-simple-settings-row">
+                <section class="profile-simple-card profile-simple-compact" id="profile-appearance">
+                    <div class="profile-simple-card-heading">
+                        <span class="profile-simple-card-icon">{{ icon('palette') }}</span>
+                        <div>
+                            <h2>Внешний вид</h2>
+                            <p>Цвет акцента интерфейса.</p>
                         </div>
                     </div>
-                </div>
+                    <div class="profile-simple-accent">
+                        <span class="profile-settings-label">Цвет акцента</span>
+                        <div class="profile-accent-options" aria-label="Выбор цвета акцента">
+                            {% for accent, label in [('purple', 'Фиолетовый'), ('blue', 'Синий'), ('pink', 'Розовый'), ('green', 'Зелёный'), ('orange', 'Оранжевый'), ('cyan', 'Голубой')] %}
+                            <button type="button" class="profile-accent-option" data-accent-option="{{ accent }}" aria-label="{{ label }}" title="{{ label }}" aria-pressed="false"></button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="profile-simple-card profile-simple-compact" id="profile-time">
+                    <div class="profile-simple-card-heading">
+                        <span class="profile-simple-card-icon">{{ icon('clock') }}</span>
+                        <div>
+                            <h2>Регион и время</h2>
+                            <p>Часовой пояс и формат часов.</p>
+                        </div>
+                    </div>
+                    <form class="profile-setting-stack" id="profileTimeForm">
+                        <label class="profile-field">
+                            <span>Часовой пояс</span>
+                            <select id="profileTimezoneSelect">
+                                <option value="system" data-system-timezone>Системный</option>
+                                <option value="Europe/Moscow">Europe/Moscow</option>
+                                <option value="Europe/Vienna">Europe/Vienna</option>
+                                <option value="Europe/London">Europe/London</option>
+                                <option value="Asia/Shanghai">Asia/Shanghai</option>
+                                <option value="UTC">UTC</option>
+                            </select>
+                        </label>
+                        <label class="profile-field">
+                            <span>Формат времени</span>
+                            <select id="profileTimeFormatSelect">
+                                <option value="24">24-часовой</option>
+                                <option value="12">12-часовой</option>
+                            </select>
+                        </label>
+                        <button type="submit" class="profile-secondary-button profile-time-save">{{ icon('check') }} Сохранить время</button>
+                    </form>
+                </section>
             </div>
-        </section>
+
+            <section class="profile-simple-card" id="profile-security">
+                <div class="profile-simple-card-heading">
+                    <span class="profile-simple-card-icon">{{ icon('shield') }}</span>
+                    <div>
+                        <h2>Аккаунт и безопасность</h2>
+                        <p>Пароль, текущая сессия и локальные настройки.</p>
+                    </div>
+                </div>
+
+                <div class="profile-simple-actions">
+                    <a href="/forgot-password" class="profile-simple-action">
+                        <span>{{ icon('lock') }}</span>
+                        <span><strong>Изменить пароль</strong><small>Обновить данные для входа</small></span>
+                        {{ icon('arrow') }}
+                    </a>
+                    <form method="post" action="/logout">
+                        {{ csrf_input(request) }}
+                        <button type="submit" class="profile-simple-action">
+                            <span>{{ icon('logout') }}</span>
+                            <span><strong>Выйти из аккаунта</strong><small>Завершить текущую сессию</small></span>
+                            {{ icon('arrow') }}
+                        </button>
+                    </form>
+                </div>
+
+                <div class="profile-simple-local-actions">
+                    <button type="button" id="profileResetSettings">{{ icon('refresh') }} Сбросить интерфейс</button>
+                    <button type="button" class="is-danger" id="profileDeleteLocalSettings">{{ icon('database') }} Удалить локальные настройки</button>
+                </div>
+            </section>
+
+            <details class="profile-simple-card profile-simple-data" id="profile-data" {% if data_error or data_success %}open{% endif %}>
+                <summary>
+                    <span class="profile-simple-card-icon">{{ icon('database') }}</span>
+                    <span>
+                        <strong>Резервная копия данных</strong>
+                        <small>Экспорт и восстановление JSON или CSV</small>
+                    </span>
+                    <i>{{ icon('chevron') }}</i>
+                </summary>
+
+                <div class="profile-simple-data-body">
+                    {% if data_error %}
+                    <div class="alert alert-danger profile-alert">{{ data_error }}</div>
+                    {% endif %}
+                    {% if data_success %}
+                    <div class="alert alert-success profile-alert">{{ data_success }}</div>
+                    {% endif %}
+
+                    <div class="profile-simple-export">
+                        <div>
+                            <h3>Скачать данные</h3>
+                            <p>JSON подходит для восстановления, CSV — для просмотра.</p>
+                        </div>
+                        <div class="profile-data-actions">
+                            <a href="/data/export/json" class="profile-primary-button" download>{{ icon('download') }} JSON</a>
+                            <a href="/data/export/csv" class="profile-secondary-button" download>CSV</a>
+                        </div>
+                    </div>
+
+                    <form method="post" action="/data/import" enctype="multipart/form-data" class="profile-simple-import">
+                        {{ csrf_input(request) }}
+                        <label class="profile-file-field">
+                            <span>{{ icon('upload') }}</span>
+                            <span><b>Выбрать JSON-файл</b><small>Формат .json</small></span>
+                            <input type="file" name="import_file" accept=".json,application/json" required>
+                        </label>
+                        <label class="profile-field">
+                            <span>Режим импорта</span>
+                            <select name="import_mode">
+                                <option value="merge">Добавить к текущим данным</option>
+                                <option value="replace">Полностью заменить мои данные</option>
+                            </select>
+                        </label>
+                        <button type="submit" class="profile-secondary-button">{{ icon('upload') }} Импортировать</button>
+                    </form>
+                </div>
+            </details>
+        </main>
     </div>
 </div>
 {% endblock %}

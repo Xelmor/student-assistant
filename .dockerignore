@@ -1,0 +1,16 @@
+.git
+.gitignore
+.DS_Store
+.env
+.env.*
+!.env.example
+.idea
+.vscode
+venv
+.venv
+__pycache__
+*.py[cod]
+*.db
+.pytest_cache
+pytest-cache-files-*
+tests/.tmp

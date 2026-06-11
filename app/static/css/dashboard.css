@@ -1304,3 +1304,438 @@ body.motion-ready .today-panel:nth-of-type(4) .today-note-item:nth-child(3) {
 .calendar-day-today {
     animation: none !important;
 }
+
+/* Premium dashboard command center */
+.dashboard-hero.dashboard-command-center {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(14rem, 0.72fr) minmax(17rem, 0.92fr);
+    gap: 0;
+    align-items: stretch;
+    min-height: 22rem;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(38, 34, 36, 0.38);
+    border-radius: 20px;
+    background: #2b292c;
+    box-shadow:
+        0 28px 64px rgba(41, 33, 36, 0.2),
+        inset 0 1px rgba(255, 255, 255, 0.08);
+    color: #fffaf3;
+}
+
+.dashboard-hero.dashboard-command-center::after {
+    display: none;
+}
+
+.dashboard-command-center .dashboard-hero-main {
+    min-width: 0;
+    padding: 2rem 2.1rem 1.7rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.dashboard-hero-kicker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 0.7rem;
+    align-items: center;
+    color: rgba(255, 250, 243, 0.68);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dashboard-status-dot {
+    width: 0.48rem;
+    height: 0.48rem;
+    border-radius: 50%;
+    background: #c7a66a;
+    box-shadow: 0 0 0 4px rgba(199, 166, 106, 0.14);
+}
+
+.dashboard-command-center .dashboard-badge {
+    width: auto;
+    margin-left: auto;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    color: rgba(255, 250, 243, 0.68);
+    font-size: inherit;
+    letter-spacing: inherit;
+}
+
+.dashboard-command-center .dashboard-hero-title {
+    max-width: 32rem;
+    margin: 2.2rem 0 0.65rem;
+    color: #fffaf3;
+    font-size: clamp(2.15rem, 3.4vw, 3.35rem);
+    line-height: 1.02;
+    letter-spacing: 0;
+}
+
+.dashboard-command-center .dashboard-hero-title + p {
+    max-width: 34rem;
+    color: rgba(255, 250, 243, 0.66);
+    font-size: 0.96rem;
+    line-height: 1.65;
+}
+
+.dashboard-command-center .dashboard-quote {
+    display: grid;
+    gap: 0.32rem;
+    max-width: 34rem;
+    margin-top: 1.35rem;
+    padding: 0 0 0 0.95rem;
+    border: 0;
+    border-left: 2px solid #c7a66a;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: rgba(255, 250, 243, 0.86);
+    font-size: 0.91rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.dashboard-command-center .dashboard-quote:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.dashboard-quote-label,
+.dashboard-section-label,
+.dashboard-live-strip > span {
+    color: rgba(255, 250, 243, 0.48);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.dashboard-hero-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    max-width: 32rem;
+    margin-top: auto;
+    padding-top: 1.35rem;
+}
+
+.dashboard-hero-summary > div {
+    display: flex;
+    gap: 0.7rem;
+    align-items: baseline;
+    min-width: 0;
+    padding-right: 1.25rem;
+}
+
+.dashboard-hero-summary > div + div {
+    padding-left: 1.25rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.dashboard-hero-summary strong {
+    color: #fffaf3;
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-size: 1.55rem;
+    line-height: 1;
+}
+
+.dashboard-hero-summary span {
+    color: rgba(255, 250, 243, 0.58);
+    font-size: 0.76rem;
+    line-height: 1.3;
+}
+
+.dashboard-command-center .dashboard-calendar-wrap {
+    display: block;
+    width: auto;
+    min-width: 0;
+    padding: 1.65rem 1.35rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.dashboard-command-center .dashboard-calendar-widget {
+    width: 100%;
+    max-width: none;
+    margin-top: 1.2rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+}
+
+.dashboard-command-center .dashboard-calendar-head {
+    margin-bottom: 1rem;
+    color: #fffaf3;
+}
+
+.dashboard-command-center .dashboard-calendar-head span {
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-size: 1.12rem;
+}
+
+.dashboard-command-center .dashboard-calendar-head strong {
+    color: #d4b77f;
+    font-size: 0.82rem;
+}
+
+.dashboard-command-center .dashboard-calendar-grid {
+    gap: 0.28rem;
+}
+
+.dashboard-command-center .dashboard-calendar-weekdays span {
+    color: rgba(255, 250, 243, 0.4);
+    font-size: 0.64rem;
+}
+
+.dashboard-command-center .calendar-day {
+    width: 1.72rem;
+    height: 1.72rem;
+    color: rgba(255, 250, 243, 0.84);
+    font-size: 0.78rem;
+}
+
+.dashboard-command-center .calendar-day-muted {
+    color: rgba(255, 250, 243, 0.22);
+}
+
+.dashboard-command-center .calendar-day-today {
+    background: #8f5260;
+    box-shadow: 0 8px 18px rgba(16, 12, 14, 0.34);
+    color: #fffaf3;
+}
+
+.dashboard-command-center .dashboard-calendar-grid:not(.dashboard-calendar-weekdays) .calendar-day:not(.calendar-day-today):hover {
+    background: rgba(255, 255, 255, 0.09);
+    box-shadow: none;
+}
+
+.dashboard-command-center .dashboard-widget-stack {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+    align-self: stretch;
+    width: auto;
+    min-width: 0;
+    background: #f6f1ea;
+}
+
+.dashboard-live-strip {
+    padding: 1.45rem 1.55rem 1.3rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    background: #353136;
+}
+
+.dashboard-live-strip > span {
+    color: #d4b77f;
+}
+
+.dashboard-command-center .dashboard-clock {
+    width: auto;
+    margin-top: 0.35rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: #fffaf3;
+    font-size: clamp(2rem, 3.1vw, 2.75rem);
+    letter-spacing: 0;
+    text-align: left;
+}
+
+.dashboard-command-center .dashboard-clock:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.dashboard-command-center .dashboard-next-widget {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 1.45rem 1.55rem 1.5rem;
+    border: 0;
+    border-radius: 0;
+    background: #f6f1ea;
+    box-shadow: none;
+}
+
+.dashboard-command-center .dashboard-next-widget::after {
+    display: none;
+}
+
+.dashboard-command-center .dashboard-next-widget-overdue {
+    background: #fff1ef;
+}
+
+.dashboard-command-center .dashboard-next-head {
+    margin-bottom: 1.15rem;
+}
+
+.dashboard-command-center .dashboard-next-icon {
+    width: 2.15rem;
+    height: 2.15rem;
+    border-radius: 8px;
+    border: 1px solid rgba(143, 82, 96, 0.28);
+    background: #8f5260;
+    box-shadow: 0 8px 18px rgba(94, 49, 60, 0.16);
+    font-size: 1rem;
+}
+
+.dashboard-command-center .dashboard-next-widget:hover .dashboard-next-icon {
+    transform: none;
+    box-shadow: none;
+}
+
+.dashboard-command-center .dashboard-task-title {
+    color: #342d31;
+    font-size: 0.72rem;
+}
+
+.dashboard-command-center .dashboard-task-subtitle {
+    color: #8b7b72;
+    font-size: 0.78rem;
+}
+
+.dashboard-command-center .dashboard-next-main {
+    overflow-wrap: anywhere;
+    color: #2f292d;
+    font-size: 1.48rem;
+    line-height: 1.18;
+}
+
+.dashboard-command-center .dashboard-next-time {
+    color: #8f5260;
+}
+
+.dashboard-command-center .dashboard-next-time-overdue {
+    color: #b33a32;
+}
+
+.dashboard-command-center .dashboard-next-meta {
+    color: #85736a;
+}
+
+.dashboard-command-center .dashboard-next-chip-row {
+    margin-top: auto;
+    padding-top: 1rem;
+}
+
+.dashboard-command-center .dashboard-next-chip {
+    padding: 0.38rem 0.55rem;
+    border: 1px solid rgba(96, 76, 67, 0.16);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.5);
+    color: #66554e;
+    font-size: 0.72rem;
+}
+
+.dashboard-command-center .dashboard-next-chip-overdue {
+    border-color: rgba(179, 58, 50, 0.14);
+    background: rgba(193, 59, 51, 0.08);
+    color: #a5322c;
+}
+
+.dashboard-command-center .dashboard-next-link {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+}
+
+.dashboard-command-center .dashboard-next-link:hover,
+.dashboard-command-center .dashboard-next-link:focus {
+    transform: none;
+}
+
+@media (max-width: 991.98px) {
+    .dashboard-hero.dashboard-command-center {
+        grid-template-columns: minmax(14rem, 0.75fr) minmax(0, 1.25fr);
+    }
+
+    .dashboard-command-center .dashboard-hero-main {
+        grid-column: 1 / -1;
+        min-height: 20rem;
+        border-right: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+    }
+
+    .dashboard-command-center .dashboard-calendar-wrap {
+        width: auto;
+    }
+
+    .dashboard-command-center .dashboard-widget-stack {
+        width: auto;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-hero.dashboard-command-center {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
+    }
+
+    .dashboard-command-center .dashboard-hero-main {
+        grid-column: auto;
+        min-height: 0;
+        padding: 1.5rem;
+    }
+
+    .dashboard-command-center .dashboard-widget-stack {
+        order: 2;
+        width: auto;
+    }
+
+    .dashboard-command-center .dashboard-calendar-wrap {
+        order: 3;
+        width: auto;
+        padding: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.11);
+        border-right: 0;
+    }
+
+    .dashboard-command-center .dashboard-hero-title {
+        margin-top: 1.65rem;
+        font-size: 2.4rem;
+    }
+
+    .dashboard-command-center .dashboard-calendar-widget {
+        max-width: 25rem;
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    .dashboard-command-center .calendar-day {
+        width: 2rem;
+        height: 2rem;
+    }
+}
+
+@media (max-width: 479.98px) {
+    .dashboard-command-center .dashboard-badge {
+        flex-basis: 100%;
+        width: auto;
+        margin: 0.2rem 0 0;
+        padding-left: 1.2rem;
+    }
+
+    .dashboard-command-center .dashboard-hero-title {
+        font-size: 2.08rem;
+    }
+
+    .dashboard-hero-summary > div {
+        display: grid;
+        gap: 0.35rem;
+        align-content: start;
+    }
+
+    .dashboard-command-center .calendar-day {
+        width: 1.8rem;
+        height: 1.8rem;
+    }
+}

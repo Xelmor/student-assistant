@@ -1,0 +1,82 @@
+{% macro icon(name) -%}
+<svg viewBox="0 0 24 24" aria-hidden="true">
+    {% if name == 'calendar' %}
+    <rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M7 3v4m10-4v4M3 10h18"></path><path d="M8 14h3v3H8z"></path>
+    {% elif name == 'book' %}
+    <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22Z"></path><path d="M4 5.5v13A3.5 3.5 0 0 1 7.5 15H20"></path>
+    {% elif name == 'chart' %}
+    <path d="M4 19V9m5 10V5m5 14v-7m5 7V3"></path><path d="m4 13 5-4 5 3 5-7"></path>
+    {% elif name == 'users' %}
+    <circle cx="9" cy="8" r="3"></circle><path d="M3 20c.5-4 2.5-6 6-6s5.5 2 6 6"></path><path d="M16 5a3 3 0 0 1 0 6m1 3c2.4.5 3.7 2.4 4 6"></path>
+    {% elif name == 'user' %}
+    <circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.6-4 3-6 7-6s6.4 2 7 6"></path>
+    {% elif name == 'mail' %}
+    <rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="m4 7 8 6 8-6"></path>
+    {% elif name == 'lock' %}
+    <rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path><path d="M12 14v2"></path>
+    {% elif name == 'group' %}
+    <path d="M4 4h16v16H4Z"></path><path d="M8 9h8M8 13h5M8 17h3"></path>
+    {% elif name == 'course' %}
+    <path d="m3 9 9-5 9 5-9 5Z"></path><path d="M7 12v5c3 2 7 2 10 0v-5"></path>
+    {% elif name == 'check' %}
+    <path d="m5 12 4 4L19 6"></path>
+    {% elif name == 'send' %}
+    <path d="m3 11 18-8-8 18-2-7Z"></path><path d="m11 14 4-4"></path>
+    {% elif name == 'arrow-left' %}
+    <path d="M19 12H5m5-5-5 5 5 5"></path>
+    {% endif %}
+</svg>
+{%- endmacro %}
+
+{% macro showcase(kicker, title, accent_prefix, accent, subtitle) -%}
+<section class="auth-showcase">
+    <span class="auth-kicker">{{ kicker }}</span>
+    <h1>
+        {{ title }}
+        <span>{{ accent_prefix }} <strong>{{ accent }}</strong></span>
+    </h1>
+    <p class="auth-showcase-copy">{{ subtitle }}</p>
+
+    <div class="auth-benefit-list">
+        <article>
+            <span class="auth-benefit-icon is-purple">{{ icon('calendar') }}</span>
+            <div>
+                <h2>Планируй эффективно</h2>
+                <p>Расписание, задачи и дедлайны в одном месте</p>
+            </div>
+        </article>
+        <article>
+            <span class="auth-benefit-icon is-blue">{{ icon('book') }}</span>
+            <div>
+                <h2>Учись с удовольствием</h2>
+                <p>Заметки, материалы и конспекты всегда под рукой</p>
+            </div>
+        </article>
+        <article>
+            <span class="auth-benefit-icon is-green">{{ icon('chart') }}</span>
+            <div>
+                <h2>Достигай большего</h2>
+                <p>Отслеживай прогресс и улучшай результаты</p>
+            </div>
+        </article>
+    </div>
+
+    <div class="auth-stat-grid" aria-label="Student Assistant в цифрах">
+        <div>
+            <span class="is-purple">{{ icon('users') }}</span>
+            <strong>12.5K+</strong>
+            <small>студентов с нами</small>
+        </div>
+        <div>
+            <span class="is-blue">{{ icon('book') }}</span>
+            <strong>250K+</strong>
+            <small>конспектов и материалов</small>
+        </div>
+        <div>
+            <span class="is-green">{{ icon('check') }}</span>
+            <strong>98%</strong>
+            <small>довольных студентов</small>
+        </div>
+    </div>
+</section>
+{%- endmacro %}

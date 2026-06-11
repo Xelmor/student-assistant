@@ -1,0 +1,64 @@
+{% macro empty_state(
+    icon,
+    title,
+    description,
+    action_label='',
+    action_href='',
+    action_id='',
+    focus_target='',
+    hint='',
+    variant='default',
+    element_id='',
+    hidden=false
+) -%}
+<div
+    class="empty-state empty-state--{{ variant }}"
+    {% if element_id %}id="{{ element_id }}"{% endif %}
+    {% if hidden %}hidden{% endif %}
+>
+    <span class="empty-state__glow" aria-hidden="true"></span>
+    <span class="empty-state__icon empty-state__icon--{{ icon }}" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+            {% if icon == 'tasks' %}
+            <rect x="5" y="4" width="14" height="17" rx="3"></rect><path d="m9 10 2 2 4-5M9 16h6"></path>
+            {% elif icon == 'subjects' %}
+            <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22zM20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22z"></path>
+            {% elif icon == 'notes' %}
+            <path d="M6 3h9l4 4v14H6z"></path><path d="M14 3v5h5M9 12h7M9 16h5"></path>
+            {% elif icon == 'schedule' %}
+            <rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M7 3v4m10-4v4M3 10h18M8 14h3m2 0h3M8 18h3"></path>
+            {% elif icon == 'calendar' %}
+            <rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M7 3v4m10-4v4M3 10h18m-9 3v5m-2.5-2.5h5"></path>
+            {% elif icon == 'search' %}
+            <circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 4.5 4.5M8 10.5h5"></path>
+            {% elif icon == 'notifications' %}
+            <path d="M18 9a6 6 0 0 0-12 0c0 6-3 6-3 8h18c0-2-3-2-3-8"></path><path d="M10 21h4"></path>
+            {% elif icon == 'reminders' %}
+            <circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>
+            {% else %}
+            <path d="M12 3v18M3 12h18"></path>
+            {% endif %}
+        </svg>
+    </span>
+    <div class="empty-state__copy">
+        <h3>{{ title }}</h3>
+        <p>{{ description }}</p>
+    </div>
+    {% if action_label %}
+        {% if action_href %}
+        <a
+            class="empty-state__action"
+            href="{{ action_href }}"
+            {% if focus_target %}data-empty-focus="{{ focus_target }}"{% endif %}
+        >{{ action_label }}</a>
+        {% else %}
+        <button
+            type="button"
+            class="empty-state__action"
+            {% if action_id %}id="{{ action_id }}"{% endif %}
+        >{{ action_label }}</button>
+        {% endif %}
+    {% endif %}
+    {% if hint %}<small class="empty-state__hint">{{ hint }}</small>{% endif %}
+</div>
+{%- endmacro %}

@@ -1,214 +1,114 @@
 # Student Assistant
 
-Student Assistant - это веб-приложение на FastAPI для учебного планирования. Проект объединяет предметы, задачи, заметки, расписание, календарь и инструменты резервного копирования в одном интерфейсе.
+Student Assistant это веб-приложение для учебы и личного планирования. В одном месте собраны задачи, заметки, расписание, календарь и профиль пользователя.
 
-## Что умеет проект
+## Для чего нужен проект
 
-- регистрация, вход и выход из аккаунта
-- восстановление и смена пароля по email
-- личный кабинет с редактированием профиля
-- управление предметами
-- управление задачами с приоритетом, сложностью, дедлайнами и статусом выполнения
-- повторяющиеся задачи: ежедневно, еженедельно и каждые N дней
+Приложение помогает держать под контролем учебную нагрузку и не распыляться между разными сервисами. Оно подходит для локального использования и для развертывания на сервере.
+
+## Основные возможности
+
+- регистрация, вход и восстановление пароля
+- управление задачами с дедлайнами, приоритетами и повторениями
 - ведение заметок
-- управление недельным расписанием
-- календарь учебной нагрузки
-- экспорт данных в `JSON`, `CSV` и календарь `ICS`
-- импорт данных из `JSON`
-- адаптивный веб-интерфейс для десктопа и смартфонов
-- PWA-элементы: `manifest`, service worker, иконки
+- расписание занятий
+- календарь с объединением задач и расписания
+- профиль пользователя
+- экспорт и импорт данных
+- установка как PWA на телефон или компьютер
 
-## Стек
+## Что нужно для запуска
 
-- Python 3.12+
-- FastAPI
-- Jinja2
-- SQLAlchemy
-- SQLite для локальной разработки
-- PostgreSQL для production
-- Uvicorn
+- Python 3.12 или новее
+- `pip`
+- для локального запуска достаточно SQLite
+- для production рекомендуется PostgreSQL
 
-## Структура проекта
+## Быстрый запуск
 
-```text
-app/
-  core/        конфиг, БД, безопасность, время
-  models/      SQLAlchemy-модели
-  services/    бизнес-логика, экспорт, импорт, календарь, email
-  web/         HTML-роуты, шаблоны и зависимости
-  static/      CSS, JS, PWA-файлы, иконки
-tests/         smoke-тесты
-run.py         точка запуска приложения
-requirements.txt
-.env.example
-```
-
-## Основные сущности
-
-- `User` - пользователь
-- `Subject` - предмет
-- `Task` - задача
-- `ScheduleItem` - элемент расписания
-- `Note` - заметка
-
-## Локальный запуск
-
-1. Создай виртуальное окружение:
+### Windows PowerShell
 
 ```powershell
 python -m venv venv
-```
-
-2. Активируй его:
-
-```powershell
 venv\Scripts\Activate.ps1
-```
-
-3. Установи зависимости:
-
-```powershell
 pip install -r requirements.txt
-```
-
-4. Создай `.env`:
-
-```powershell
 Copy-Item .env.example .env
-```
-
-5. Запусти приложение:
-
-```powershell
 python run.py
 ```
 
-Сайт по умолчанию будет доступен по адресу `http://127.0.0.1:8000`.
+### Linux / macOS
 
-## Переменные окружения
-
-Базовый локальный набор:
-
-```env
-APP_ENV=development
-SECRET_KEY=replace_with_a_unique_random_string_at_least_32_chars_long
-COOKIE_SECURE=false
-DATABASE_URL=sqlite:///./student_assistant.db
-HOST=0.0.0.0
-PORT=8000
-RELOAD=false
-APP_TIMEZONE=Europe/Moscow
-ALLOW_LOCAL_PRIVATE_DATA=true
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+python run.py
 ```
 
-Email для восстановления пароля:
+После запуска приложение обычно доступно по адресу `http://127.0.0.1:8000`.
 
-```env
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USERNAME=
-SMTP_PASSWORD=
-SMTP_FROM_EMAIL=
-SMTP_FROM_NAME=Student Assistant
-SMTP_STARTTLS=true
-SMTP_SSL=false
-PASSWORD_RESET_TOKEN_TTL_SECONDS=3600
-```
+## Минимальная настройка `.env`
 
-Дополнительные переменные, оставленные в шаблоне окружения:
+Основные переменные:
 
-```env
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-5-mini
-OPENAI_TIMEOUT_SECONDS=30
-AI_INPUT_MAX_LENGTH=2500
-```
+| Переменная | Для чего нужна | Пример |
+| --- | --- | --- |
+| `APP_ENV` | режим приложения | `development` |
+| `SECRET_KEY` | ключ для сессий | длинная случайная строка |
+| `DATABASE_URL` | подключение к базе данных | `sqlite:///./data/student_assistant.db` |
+| `HOST` | адрес запуска | `0.0.0.0` |
+| `ALLOWED_HOSTS` | разрешённые Host-заголовки | `localhost,127.0.0.1` |
+| `PUBLIC_BASE_URL` | публичный HTTPS origin для reset-ссылок | `https://example.com` |
+| `PORT` | порт запуска | `8000` |
+| `RELOAD` | автоперезапуск в разработке | `false` |
+| `COOKIE_SECURE` | защищенные cookie | `false` |
+| `SESSION_MAX_AGE_SECONDS` | срок session-cookie в секундах | `43200` |
+| `APP_TIMEZONE` | часовой пояс | `Europe/Moscow` |
 
-Сейчас README фиксирует текущее состояние проекта как веб-приложения. Если эти переменные будут использованы в будущих фичах, их уже не нужно будет заново добавлять в шаблон.
+Если нужен сброс пароля по email, дополнительно настраиваются SMTP-переменные в `.env`.
 
-## Production и Render
-
-Для деплоя на Render рекомендуется использовать PostgreSQL. Приложение должно слушать значение из переменной `PORT`; на Render её обычно задаёт сама платформа, поэтому не стоит завязываться на фиксированное значение вроде `10000`.
-
-Минимальный production-набор:
-
-```env
-APP_ENV=production
-SECRET_KEY=replace_with_a_unique_random_string_at_least_32_chars_long
-COOKIE_SECURE=true
-DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME
-HOST=0.0.0.0
-PORT=8000
-RELOAD=false
-ALLOW_LOCAL_PRIVATE_DATA=false
-```
-
-Настройки сервиса в Render:
-
-- `Build Command`: `pip install -r requirements.txt`
-- `Start Command`: `python run.py`
-
-Если используешь Render PostgreSQL:
-
-1. Создай базу данных в Render.
-2. Скопируй `External Database URL`.
-3. Вставь её в `DATABASE_URL`.
-4. Укажи production-переменные окружения.
-5. Запусти redeploy.
-
-## Экспорт и импорт данных
-
-В профиле доступны:
-
-- экспорт в `JSON` для полного бэкапа и последующего восстановления
-- экспорт в `CSV` в виде zip-архива
-- импорт из ранее выгруженного `JSON`
-
-Поддерживаются два режима импорта:
-
-- `merge` - добавить данные к существующим
-- `replace` - полностью заменить пользовательские данные
-
-## Календарь
-
-Раздел календаря поддерживает:
-
-- просмотр месяца
-- компактный недельный режим
-- объединение дедлайнов и расписания на одной странице
-- экспорт учебного календаря в `.ics`
-
-## Безопасность и поведение приложения
-
-- используется session-based авторизация
-- в `development` и `test` при пустом или слишком коротком `SECRET_KEY` используется локальный fallback-ключ, но для production `SECRET_KEY` обязателен и должен быть длиной не менее 32 символов
-- при `APP_ENV=production` переменная `COOKIE_SECURE` должна быть `true`
-- для SQLite используется локальный файл `student_assistant.db`
-- в production лучше использовать PostgreSQL, чтобы не терять данные при redeploy
-
-## Проверка проекта
-
-Минимальная проверка:
-
-```powershell
-python -m pytest
-```
-
-Тест проверяет:
-
-- что приложение импортируется
-- что основные роуты существуют
-- что шаблоны на месте
-- что базовые CSS-файлы подключены
-
-## Docker
-
-Локальный запуск через Docker Compose:
+## Запуск через Docker
 
 ```powershell
 docker compose up --build
 ```
 
-## Текущее состояние
+## Тесты
 
-Проект сейчас ориентирован на веб-интерфейс. Telegram-интеграция из кода удалена, и README описывает уже актуальную, очищенную версию приложения.
+```powershell
+python -m pytest
+```
+
+## Production
+
+Для production рекомендуется:
+
+- использовать PostgreSQL
+- задать уникальный длинный `SECRET_KEY`
+- включить `COOKIE_SECURE=true`
+- использовать `APP_ENV=production`
+- не хардкодить порт, а брать его из `PORT`
+
+Минимальный пример:
+
+```env
+APP_ENV=production
+SECRET_KEY=replace_with_a_unique_random_string_at_least_32_chars_long
+COOKIE_SECURE=true
+SESSION_MAX_AGE_SECONDS=43200
+DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME
+HOST=0.0.0.0
+ALLOWED_HOSTS=student-assistant.example.com
+PUBLIC_BASE_URL=https://student-assistant.example.com
+PORT=8000
+RELOAD=false
+```
+
+## Деплой
+
+Подробные шаги по развертыванию вынесены отдельно: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+
+## Примечание
+
+В этом `README` намеренно нет описания внутренней архитектуры, приватных настроек и служебных деталей реализации. Здесь оставлена только информация, которая нужна для запуска, использования и базового развертывания проекта.

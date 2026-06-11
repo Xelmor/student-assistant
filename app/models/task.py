@@ -1,9 +1,8 @@
-from datetime import datetime
-
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from ..core.database import Base
+from ..core.time import current_time
 
 
 class Task(Base):
@@ -16,7 +15,7 @@ class Task(Base):
     description = Column(Text, nullable=True)
     deadline = Column(DateTime, nullable=True)
     scheduled_for_date = Column(Date, nullable=True)
-    schedule_item_id = Column(Integer, ForeignKey('schedule_items.id'), nullable=True)
+    schedule_item_id = Column(Integer, ForeignKey('schedule_items.id', ondelete='SET NULL'), nullable=True)
     priority = Column(String(20), default='medium')
     difficulty = Column(String(20), default='medium')
     is_completed = Column(Boolean, default=False)
@@ -24,7 +23,7 @@ class Task(Base):
     recurrence_group_id = Column(Integer, nullable=True, index=True)
     recurrence_type = Column(String(20), nullable=False, default='none')
     recurrence_interval_days = Column(Integer, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=current_time)
 
     user = relationship('User', back_populates='tasks')
     subject = relationship('Subject', back_populates='tasks')
