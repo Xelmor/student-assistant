@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from .about import router as about_router
 from .auth import router as auth_router
 from .calendar import router as calendar_router
 from .dashboard import router as dashboard_router
@@ -12,6 +13,7 @@ from .tasks import router as tasks_router
 
 
 router = APIRouter()
+router.include_router(about_router)
 router.include_router(auth_router)
 router.include_router(profile_router)
 router.include_router(data_router)

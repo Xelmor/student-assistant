@@ -152,11 +152,18 @@ def calendar_page(
     if not user:
         return RedirectResponse('/login', status_code=302)
 
+    onboarding_calendar_completed = False
+    if not user.onboarding_completed and not user.onboarding_calendar_opened:
+        user.onboarding_calendar_opened = True
+        db.commit()
+        onboarding_calendar_completed = True
+
     context = build_calendar_page_context(user, db, year, month, selected, view)
     context.update({
         'user': user,
         'weekdays': WEEKDAYS,
         'calendar_error': request.query_params.get('calendar_error'),
+        'onboarding_calendar_completed': onboarding_calendar_completed,
     })
     return templates.TemplateResponse(request, 'calendar/calendar.html', context)
 

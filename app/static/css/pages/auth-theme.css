@@ -582,6 +582,20 @@ body.auth-page::after {
     font-weight: 700;
 }
 
+.auth-field > span:first-child small {
+    margin-left: 0.3rem;
+    color: #657087;
+    font-size: 0.57rem;
+    font-weight: 650;
+}
+
+.auth-field-help {
+    margin: -0.05rem 0 0;
+    color: #68748a;
+    font-size: 0.58rem;
+    line-height: 1.45;
+}
+
 .auth-input-shell {
     position: relative;
     display: block;
@@ -655,6 +669,69 @@ body.auth-page::after {
 .auth-password-toggle:focus {
     color: #c4b5fd;
     background: rgba(139, 92, 246, 0.1);
+}
+
+.auth-password-assist {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.auth-hint-button {
+    display: inline-flex;
+    width: fit-content;
+    gap: 0.45rem;
+    align-items: center;
+    padding: 0.35rem 0.5rem;
+    border: 0;
+    border-radius: 8px;
+    color: #9b8bc8;
+    background: transparent;
+    font-size: 0.63rem;
+    font-weight: 740;
+    transition: color 160ms ease, background 160ms ease;
+}
+
+.auth-hint-button svg {
+    width: 0.85rem;
+    height: 0.85rem;
+}
+
+.auth-hint-button:hover,
+.auth-hint-button:focus-visible {
+    color: #d8b4fe;
+    background: rgba(139, 92, 246, 0.09);
+}
+
+.auth-hint-button:disabled {
+    cursor: wait;
+    opacity: 0.68;
+}
+
+.auth-hint-button.is-loading svg {
+    animation: auth-hint-pulse 900ms ease-in-out infinite alternate;
+}
+
+.auth-hint-result {
+    margin: 0;
+    padding: 0.72rem 0.8rem;
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    border-radius: 11px;
+    color: #d8d0ee;
+    background: rgba(91, 33, 182, 0.11);
+    font-size: 0.67rem;
+    line-height: 1.5;
+}
+
+.auth-hint-result.is-error {
+    border-color: rgba(239, 68, 68, 0.22);
+    color: #fecaca;
+    background: rgba(127, 29, 29, 0.15);
+}
+
+@keyframes auth-hint-pulse {
+    to {
+        opacity: 0.42;
+    }
 }
 
 .auth-form-meta {
@@ -972,6 +1049,10 @@ body.auth-page::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .auth-hint-button.is-loading svg {
+        animation: none;
+    }
+
     .auth-submit-button,
     .auth-input-shell input {
         transition: none;

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Date, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, Date, DateTime, Integer, String
 from sqlalchemy.orm import relationship
 
 from ..core.database import Base
@@ -12,10 +12,15 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(120), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
+    password_hint = Column(String(120), nullable=True)
+    display_name = Column(String(40), nullable=True)
     group_name = Column(String(50), nullable=True)
     course = Column(Integer, nullable=True)
     schedule_unit = Column(String(20), nullable=False, default='class')
     last_study_day = Column(Date, nullable=True)
+    onboarding_chat_completed = Column(Boolean, nullable=False, default=False)
+    onboarding_completed = Column(Boolean, nullable=False, default=False)
+    onboarding_calendar_opened = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=current_time)
 
     subjects = relationship('Subject', back_populates='user', cascade='all, delete-orphan')

@@ -8,11 +8,120 @@
     Сегодня: {{ now.strftime('%d.%m.%Y') }}
 </span>
 
+{% if onboarding_chat_visible %}
+    {% include 'components/onboarding_chat.html' %}
+{% endif %}
+<span id="onboardingChatStatus" data-status="{{ onboarding_chat_status or '' }}" hidden></span>
+
+{% if onboarding.visible %}
+<section
+    class="onboarding-card{% if onboarding.all_completed %} is-complete{% endif %}"
+    id="dashboardOnboarding"
+    data-onboarding-completed="{{ onboarding.completed_count }}"
+    data-onboarding-total="{{ onboarding.total_count }}"
+    aria-labelledby="onboardingTitle"
+>
+    <div class="onboarding-glow-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+            <path d="M14 4c3.1.6 5.4 2.9 6 6l-5.2 5.2-6-6L14 4Z"></path>
+            <path d="m8.8 9.2-3.5.6-2 2 4.3 1.1m7.2 2.1-.6 3.5-2 2-1.1-4.3"></path>
+            <path d="m8.2 15.8-2 2m4-9.8 5.8 5.8"></path>
+        </svg>
+    </div>
+
+    <header class="onboarding-header">
+        <div class="onboarding-heading">
+            <span class="onboarding-kicker">Быстрый старт</span>
+            {% if onboarding.all_completed %}
+                <h2 id="onboardingTitle">Рабочее пространство готово!</h2>
+                <p>Отлично, теперь можно планировать учёбу и следить за дедлайнами.</p>
+            {% else %}
+                <h2 id="onboardingTitle">Добро пожаловать в Student Assistant!</h2>
+                <p>Давай быстро настроим рабочее пространство, чтобы тебе было удобнее планировать учёбу.</p>
+            {% endif %}
+        </div>
+        {% if not onboarding.all_completed %}
+        <button type="button" class="onboarding-skip" id="onboardingSkipButton">Пропустить</button>
+        {% endif %}
+    </header>
+
+    <div class="onboarding-progress">
+        <div class="onboarding-progress-copy">
+            <strong><span id="onboardingCompletedCount">{{ onboarding.completed_count }}</span> из {{ onboarding.total_count }} выполнено</strong>
+            <span id="onboardingPercent">{{ onboarding.percent }}%</span>
+        </div>
+        <div
+            class="onboarding-progress-track"
+            role="progressbar"
+            aria-label="Прогресс первоначальной настройки"
+            aria-valuemin="0"
+            aria-valuemax="{{ onboarding.total_count }}"
+            aria-valuenow="{{ onboarding.completed_count }}"
+        >
+            <span id="onboardingProgressBar" style="--onboarding-progress: {{ onboarding.percent }}%;"></span>
+        </div>
+    </div>
+
+    <div class="onboarding-steps">
+        {% for step in onboarding.steps %}
+        <article
+            class="onboarding-step{% if step.completed %} is-completed{% elif step.active %} is-active{% endif %}"
+            data-onboarding-step="{{ step.key }}"
+        >
+            <span class="onboarding-step-state" aria-hidden="true">
+                {% if step.completed %}
+                    <svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg>
+                {% else %}
+                    <span></span>
+                {% endif %}
+            </span>
+            <span class="onboarding-step-icon" aria-hidden="true">
+                {% if step.icon == 'book' %}
+                    <svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"></path><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z"></path></svg>
+                {% elif step.icon == 'check' %}
+                    <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"></rect><path d="m8 12 2.5 2.5L16 9"></path></svg>
+                {% elif step.icon == 'calendar' %}
+                    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M8 3v4m8-4v4M3 10h18"></path></svg>
+                {% else %}
+                    <svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9L12 3Z"></path></svg>
+                {% endif %}
+            </span>
+            <div class="onboarding-step-copy">
+                <span>Шаг {{ loop.index }}</span>
+                <h3>{{ step.title }}</h3>
+                <p>{{ step.description }}</p>
+            </div>
+            <a class="onboarding-step-action" href="{{ step.url }}">
+                {% if step.completed %}Открыть{% else %}{{ step.action_label }}{% endif %}
+                <span aria-hidden="true">→</span>
+            </a>
+        </article>
+        {% endfor %}
+    </div>
+
+    {% if onboarding.all_completed %}
+    <form method="post" action="/onboarding/complete" class="onboarding-complete-form" data-skip-toast="true">
+        {{ csrf_input(request) }}
+        <button type="submit" class="onboarding-complete-button">
+            <span aria-hidden="true">✓</span>
+            Скрыть подсказки
+        </button>
+    </form>
+    {% else %}
+    <form method="post" action="/onboarding/skip" id="onboardingSkipForm" data-skip-toast="true" hidden>
+        {{ csrf_input(request) }}
+    </form>
+    {% endif %}
+</section>
+{% endif %}
+
+<span id="onboardingStatus" data-status="{{ onboarding_status or '' }}" hidden></span>
+
 <section class="dashboard-overview-grid">
     <article class="dashboard-card dashboard-hero-card">
         <div class="dashboard-hero-copy">
             <span class="dashboard-eyebrow">Твой центр продуктивности</span>
-            <h1>Добрый день,<br><strong>{{ user.username }}</strong></h1>
+            <h1>Добрый день,<br><strong>{{ user.display_name or user.username }}</strong></h1>
             <p>Фокус, план и дисциплина помогают двигаться к большим результатам каждый день.</p>
             <div class="dashboard-focus-chip">
                 <span aria-hidden="true">✦</span>
@@ -351,4 +460,7 @@
     </article>
 </section>
 {% endblock %}
-{% block page_scripts %}<script src="/static/js/dashboard.js?v=20260611-preferences-v1"></script>{% endblock %}
+{% block page_scripts %}
+<script src="/static/js/dashboard.js?v=20260612-onboarding-chat-v1"></script>
+<script src="/static/js/onboarding-chat.js?v=20260612-smart-onboarding-v1"></script>
+{% endblock %}

@@ -2,20 +2,22 @@ import calendar
 import random
 from datetime import date, datetime, time, timedelta
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session, joinedload
 
 from ...core.database import get_db
 from ...core.time import WEEKDAYS, current_time
-from ...models import Note, ScheduleItem, Task
+from ...core.validation import normalize_bounded_text, normalize_choice
+from ...models import AcademicEvent, Note, ScheduleItem, Subject, Task
 from ..dependencies import (
     MOTIVATIONAL_QUOTES,
     get_schedule_terms,
     is_local_private_data_enabled,
     require_user,
     templates,
+    validate_csrf,
 )
 
 router = APIRouter()
@@ -40,6 +42,84 @@ PRIORITY_LABELS = {
     'medium': 'Средний приоритет',
     'low': 'Низкий приоритет',
 }
+
+ONBOARDING_STEPS = (
+    {
+        'key': 'subject',
+        'title': 'Добавь первый предмет',
+        'description': 'Создай дисциплину, чтобы связывать с ней задачи, заметки и расписание.',
+        'action_label': 'Добавить предмет',
+        'url': '/subjects#subject-create',
+        'icon': 'book',
+    },
+    {
+        'key': 'task',
+        'title': 'Создай первую задачу',
+        'description': 'Запиши ближайший дедлайн или домашнюю работу.',
+        'action_label': 'Добавить задачу',
+        'url': '/tasks#task-create',
+        'icon': 'check',
+    },
+    {
+        'key': 'schedule',
+        'title': 'Настрой расписание',
+        'description': 'Добавь пары по дням недели, чтобы видеть учебную нагрузку.',
+        'action_label': 'Открыть расписание',
+        'url': '/schedule#schedule-form-panel',
+        'icon': 'calendar',
+    },
+    {
+        'key': 'calendar',
+        'title': 'Открой календарь',
+        'description': 'Проверь неделю, добавь экзамены, дедлайны и важные события.',
+        'action_label': 'Открыть календарь',
+        'url': '/calendar?onboarding_step=calendar',
+        'icon': 'star',
+    },
+)
+
+ONBOARDING_ACCENTS = {'purple', 'blue', 'cyan', 'green', 'orange', 'pink'}
+ONBOARDING_TIME_FORMATS = {'24', '12'}
+
+
+def build_onboarding_state(db: Session, user) -> dict:
+    completed_by_key = {
+        'subject': db.query(Subject.id).filter(Subject.user_id == user.id).first() is not None,
+        'task': db.query(Task.id).filter(Task.user_id == user.id).first() is not None,
+        'schedule': (
+            db.query(ScheduleItem.id)
+            .filter(ScheduleItem.user_id == user.id)
+            .first()
+            is not None
+        ),
+        'calendar': bool(user.onboarding_calendar_opened) or (
+            db.query(AcademicEvent.id)
+            .filter(AcademicEvent.user_id == user.id)
+            .first()
+            is not None
+        ),
+    }
+    completed_count = sum(completed_by_key.values())
+    next_step_key = next(
+        (step['key'] for step in ONBOARDING_STEPS if not completed_by_key[step['key']]),
+        None,
+    )
+    steps = [
+        {
+            **step,
+            'completed': completed_by_key[step['key']],
+            'active': step['key'] == next_step_key,
+        }
+        for step in ONBOARDING_STEPS
+    ]
+    return {
+        'visible': not bool(user.onboarding_completed),
+        'steps': steps,
+        'completed_count': completed_count,
+        'total_count': len(ONBOARDING_STEPS),
+        'percent': round((completed_count / len(ONBOARDING_STEPS)) * 100),
+        'all_completed': completed_count == len(ONBOARDING_STEPS),
+    }
 
 
 def build_streak_state(completed_task_dates: list[date], today: date):
@@ -266,6 +346,8 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             next_schedule_item = item
 
     schedule_terms = get_schedule_terms(user)
+    onboarding = build_onboarding_state(db, user)
+    onboarding_chat_status = request.query_params.get('onboarding_chat')
     dashboard_notes, today_notes_are_recent = get_dashboard_notes(db, user.id, now)
     today_focus_tasks = urgent_tasks[:3]
     today_reminders = build_today_reminders(
@@ -308,5 +390,158 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         'calendar_month_name': MONTH_NAMES_RU[now.month],
         'motivation_quote': random.choice(MOTIVATIONAL_QUOTES),
         'schedule_terms': schedule_terms,
+        'onboarding': onboarding,
+        'onboarding_status': request.query_params.get('onboarding'),
+        'onboarding_chat_visible': not bool(user.onboarding_chat_completed),
+        'onboarding_chat_status': onboarding_chat_status,
+        'onboarding_chat_restart': onboarding_chat_status == 'restart',
     }
     return templates.TemplateResponse(request, 'dashboard/dashboard.html', context)
+
+
+@router.post('/onboarding/complete')
+def complete_onboarding(
+    request: Request,
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    onboarding = build_onboarding_state(db, user)
+    if not onboarding['all_completed']:
+        return RedirectResponse('/dashboard?onboarding=incomplete', status_code=302)
+
+    user.onboarding_completed = True
+    db.commit()
+    return RedirectResponse('/dashboard?onboarding=completed', status_code=302)
+
+
+@router.post('/onboarding/skip')
+def skip_onboarding(
+    request: Request,
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    user.onboarding_completed = True
+    db.commit()
+    return RedirectResponse('/dashboard?onboarding=skipped', status_code=302)
+
+
+def _onboarding_chat_response(request: Request, location: str, payload: dict):
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JSONResponse(payload)
+    return RedirectResponse(location, status_code=302)
+
+
+@router.post('/onboarding/chat/complete')
+def complete_onboarding_chat(
+    request: Request,
+    display_name: str = Form(''),
+    group_name: str = Form(''),
+    course: int | None = Form(None),
+    accent: str = Form('purple'),
+    time_format: str = Form('24'),
+    destination: str = Form('/dashboard'),
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    try:
+        normalized_display_name = normalize_bounded_text(
+            display_name,
+            label='Имя',
+            max_length=40,
+        )
+        normalized_group_name = normalize_bounded_text(
+            group_name,
+            label='Группа',
+            max_length=50,
+        )
+        if course is not None and not 1 <= course <= 12:
+            raise ValueError('Курс должен быть числом от 1 до 12.')
+        normalized_accent = normalize_choice(
+            accent,
+            label='Цвет акцента',
+            allowed=ONBOARDING_ACCENTS,
+        )
+        normalized_time_format = normalize_choice(
+            time_format,
+            label='Формат времени',
+            allowed=ONBOARDING_TIME_FORMATS,
+        )
+    except ValueError as error:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JSONResponse({'ok': False, 'error': str(error)}, status_code=422)
+        return RedirectResponse('/dashboard?onboarding_chat=invalid', status_code=302)
+
+    if normalized_display_name:
+        user.display_name = normalized_display_name
+    if normalized_group_name:
+        user.group_name = normalized_group_name
+    if course is not None:
+        user.course = course
+    user.onboarding_chat_completed = True
+    db.commit()
+
+    current_display_name = user.display_name or user.username
+    request.session['username'] = current_display_name
+    request.session['username_initial'] = (current_display_name[:1] or 'U').upper()
+    redirect_to = (
+        '/subjects#subject-create'
+        if destination == '/subjects#subject-create'
+        else '/dashboard?onboarding_chat=completed'
+    )
+    return _onboarding_chat_response(
+        request,
+        redirect_to,
+        {
+            'ok': True,
+            'redirect': redirect_to,
+            'displayName': current_display_name,
+            'accent': normalized_accent,
+            'timeFormat': normalized_time_format,
+        },
+    )
+
+
+@router.post('/onboarding/chat/skip')
+def skip_onboarding_chat(
+    request: Request,
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    user.onboarding_chat_completed = True
+    db.commit()
+    return _onboarding_chat_response(
+        request,
+        '/dashboard?onboarding_chat=skipped',
+        {'ok': True, 'redirect': '/dashboard?onboarding_chat=skipped'},
+    )
+
+
+@router.post('/onboarding/chat/restart')
+def restart_onboarding_chat(
+    request: Request,
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    user.onboarding_chat_completed = False
+    db.commit()
+    return RedirectResponse('/dashboard?onboarding_chat=restart', status_code=302)

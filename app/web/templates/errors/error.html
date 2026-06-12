@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}{{ code }} — {{ title }}{% endblock %}
+{% block theme_color %}#050816{% endblock %}
+{% block body_class %}error-page error-page--{{ tone }}{% endblock %}
+
+{% block content %}
+<section class="error-stage" aria-labelledby="errorPageTitle">
+    <span class="error-stage__orb error-stage__orb--one" aria-hidden="true"></span>
+    <span class="error-stage__orb error-stage__orb--two" aria-hidden="true"></span>
+    <span class="error-stage__grid" aria-hidden="true"></span>
+    <span class="error-stage__star error-stage__star--one" aria-hidden="true"></span>
+    <span class="error-stage__star error-stage__star--two" aria-hidden="true"></span>
+    <span class="error-stage__star error-stage__star--three" aria-hidden="true"></span>
+
+    <article class="error-card">
+        <div class="error-card__visual" aria-hidden="true">
+            <span class="error-card__halo"></span>
+            <span class="error-card__icon">
+                {% if icon == 'lock' %}
+                <svg viewBox="0 0 48 48">
+                    <path d="M14 22v-6a10 10 0 0 1 20 0v6"></path>
+                    <rect x="9" y="21" width="30" height="22" rx="7"></rect>
+                    <path d="M24 30v6"></path>
+                </svg>
+                {% elif icon == 'warning' %}
+                <svg viewBox="0 0 48 48">
+                    <path d="M24 6 43 40H5L24 6Z"></path>
+                    <path d="M24 18v10"></path>
+                    <path d="M24 35h.01"></path>
+                </svg>
+                {% else %}
+                <svg viewBox="0 0 48 48">
+                    <circle cx="21" cy="21" r="13"></circle>
+                    <path d="m31 31 10 10"></path>
+                    <path d="M15 21h12"></path>
+                    <path d="M21 15v12"></path>
+                </svg>
+                {% endif %}
+            </span>
+        </div>
+
+        <span class="error-card__code">{{ code }}</span>
+        <span class="error-card__eyebrow">Student Assistant</span>
+        <h1 id="errorPageTitle">{{ title }}</h1>
+        <p class="error-card__description">{{ description }}</p>
+
+        <div class="error-card__actions">
+            {% if primary_action == 'reload' %}
+            <button type="button" class="error-action error-action--primary" data-error-reload>
+                {{ primary_label }}
+            </button>
+            {% elif primary_href %}
+            <a class="error-action error-action--primary" href="{{ primary_href }}">
+                {{ primary_label }}
+            </a>
+            {% endif %}
+
+            {% if secondary_action == 'back' %}
+            <button
+                type="button"
+                class="error-action error-action--secondary"
+                data-error-back
+                data-fallback-href="{{ secondary_href or home_href }}"
+            >
+                {{ secondary_label }}
+            </button>
+            {% elif secondary_href %}
+            <a class="error-action error-action--secondary" href="{{ secondary_href }}">
+                {{ secondary_label }}
+            </a>
+            {% endif %}
+        </div>
+
+        <p class="error-card__hint">
+            <span aria-hidden="true">✦</span>
+            {{ hint }}
+        </p>
+    </article>
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="/static/js/error-page.js?v=20260612-error-pages-v1"></script>
+{% endblock %}

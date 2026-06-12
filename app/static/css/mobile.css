@@ -202,83 +202,214 @@
 
 .install-sheet {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     z-index: 1055;
     display: flex;
+    align-items: flex-end;
     justify-content: center;
-    padding: 1rem;
+    padding: clamp(0.75rem, 3vw, 1.5rem);
+    background: rgba(2, 4, 15, 0);
+    backdrop-filter: blur(0);
+    -webkit-backdrop-filter: blur(0);
     pointer-events: none;
     opacity: 0;
-    transform: translateY(12px);
-    transition: opacity 0.22s ease, transform 0.22s ease;
+    transition:
+        opacity 0.22s ease,
+        background-color 0.22s ease,
+        backdrop-filter 0.22s ease;
 }
 
 .install-sheet.is-visible {
     pointer-events: auto;
     opacity: 1;
-    transform: translateY(0);
+    background: rgba(2, 4, 15, 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .install-sheet-card {
     position: relative;
-    width: min(100%, 28rem);
-    padding: 1.15rem 1.15rem 1rem;
-    border: 1px solid rgba(104, 67, 38, 0.14);
-    border-radius: 20px 20px 16px 16px;
+    isolation: isolate;
+    width: min(100%, 30rem);
+    padding: clamp(1.15rem, 4vw, 1.55rem);
+    overflow: hidden;
+    border: 1px solid rgba(167, 139, 250, 0.28);
+    border-radius: 24px;
     background:
-        radial-gradient(circle at top right, rgba(255, 215, 173, 0.45), transparent 30%),
-        linear-gradient(180deg, rgba(255, 249, 242, 0.98), rgba(255, 242, 228, 0.98));
-    box-shadow: 0 -10px 24px rgba(90, 47, 20, 0.12);
+        radial-gradient(circle at 88% 4%, rgba(124, 58, 237, 0.25), transparent 34%),
+        radial-gradient(circle at 8% 100%, rgba(37, 99, 235, 0.14), transparent 38%),
+        linear-gradient(145deg, rgba(15, 18, 43, 0.97), rgba(7, 10, 27, 0.94));
+    box-shadow:
+        0 28px 80px rgba(0, 0, 0, 0.52),
+        0 0 44px rgba(109, 40, 217, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(24px) saturate(135%);
+    -webkit-backdrop-filter: blur(24px) saturate(135%);
+    transform: translateY(18px) scale(0.985);
+    transition:
+        transform 0.22s ease,
+        border-color 0.22s ease,
+        box-shadow 0.22s ease;
+}
+
+.install-sheet.is-visible .install-sheet-card {
+    transform: translateY(0) scale(1);
+}
+
+.install-sheet-card::before {
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    right: 3rem;
+    left: 1.5rem;
+    height: 1px;
+    content: "";
+    background: linear-gradient(90deg, transparent, rgba(196, 181, 253, 0.7), transparent);
 }
 
 .install-sheet-badge {
     display: inline-flex;
-    margin-bottom: 0.65rem;
-    padding: 0.32rem 0.72rem;
+    align-items: center;
+    min-height: 1.65rem;
+    margin: 0 3rem 0.75rem 0;
+    padding: 0.28rem 0.62rem;
+    border: 1px solid rgba(139, 92, 246, 0.28);
     border-radius: 999px;
-    background: rgba(247, 127, 69, 0.14);
-    color: #a34f26;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
+    background: rgba(124, 58, 237, 0.12);
+    color: #c4b5fd;
+    font-size: 0.66rem;
+    font-weight: 750;
+    letter-spacing: 0.1em;
+    line-height: 1;
     text-transform: uppercase;
 }
 
 .install-sheet-title {
-    margin-bottom: 0.45rem;
-    font-size: 1.12rem;
+    margin: 0 2.75rem 0.55rem 0;
+    color: #f8faff;
+    font-size: clamp(1.2rem, 5vw, 1.45rem);
+    font-weight: 800;
+    line-height: 1.18;
+    letter-spacing: -0.025em;
 }
 
 .install-sheet-text,
 .install-sheet-hint {
-    margin-bottom: 0.85rem;
-    color: var(--muted);
-    font-size: 0.95rem;
+    color: #aab5d1;
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.install-sheet-text {
+    max-width: 25rem;
+    margin: 0 0 1.15rem;
+}
+
+.install-sheet-hint {
+    margin: 0.9rem 0 0;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid rgba(96, 165, 250, 0.16);
+    border-radius: 13px;
+    background: rgba(15, 23, 50, 0.58);
+}
+
+.install-sheet-hint strong {
+    color: #d8dfff;
+    font-weight: 700;
 }
 
 .install-sheet-actions {
-    display: flex;
-    gap: 0.65rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 0.7rem;
 }
 
 .install-sheet-actions .btn {
-    flex: 1 1 0;
+    min-width: 0;
+    min-height: 3rem;
+    padding: 0.72rem 1rem;
+    border-radius: 13px;
+    font-size: 0.92rem;
+    font-weight: 750;
+    line-height: 1.1;
+    transition:
+        transform 0.18s ease,
+        border-color 0.18s ease,
+        background-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.install-sheet-actions .btn:hover,
+.install-sheet-actions .btn:focus-visible {
+    transform: translateY(-1px);
+}
+
+.install-sheet-actions .btn:focus-visible,
+.install-sheet-close:focus-visible {
+    outline: 2px solid rgba(167, 139, 250, 0.9);
+    outline-offset: 3px;
+}
+
+#installAction {
+    border-color: transparent;
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d3fe8 48%, #3568f4 100%);
+    color: #fff;
+    box-shadow:
+        0 12px 28px rgba(91, 64, 224, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+#installAction:hover,
+#installAction:focus-visible {
+    border-color: transparent;
+    background: linear-gradient(135deg, #9a6cff 0%, #794df0 48%, #4778ff 100%);
+    color: #fff;
+    box-shadow:
+        0 15px 34px rgba(91, 64, 224, 0.36),
+        inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+#installLater {
+    border-color: rgba(154, 166, 207, 0.25);
+    background: rgba(13, 17, 39, 0.64);
+    color: #c1c9dc;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+#installLater:hover,
+#installLater:focus-visible {
+    border-color: rgba(167, 139, 250, 0.48);
+    background: rgba(31, 28, 65, 0.78);
+    color: #fff;
 }
 
 .install-sheet-close {
     position: absolute;
-    top: 0.85rem;
-    right: 0.85rem;
-    width: 2rem;
-    height: 2rem;
-    border: 0;
+    top: 1rem;
+    right: 1rem;
+    display: inline-grid;
+    place-items: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    padding: 0;
+    border: 1px solid rgba(160, 173, 211, 0.2);
     border-radius: 999px;
-    background: rgba(95, 59, 33, 0.08);
-    color: var(--muted);
-    font-size: 1.2rem;
+    background: rgba(12, 16, 37, 0.72);
+    color: #aeb8d2;
+    font-size: 1.35rem;
     line-height: 1;
+    transition:
+        color 0.18s ease,
+        border-color 0.18s ease,
+        background-color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.install-sheet-close:hover {
+    border-color: rgba(167, 139, 250, 0.48);
+    background: rgba(43, 32, 83, 0.82);
+    color: #fff;
+    transform: translateY(-1px);
 }
 
 @media (max-width: 767.98px) {
@@ -327,11 +458,45 @@
     }
 
     .install-sheet {
-        padding: 0.75rem 0.75rem calc(max(0.75rem, env(safe-area-inset-bottom)));
+        padding:
+            0.7rem
+            0.7rem
+            max(0.7rem, env(safe-area-inset-bottom));
     }
 
     .install-sheet-card {
         width: 100%;
+        max-height: calc(100dvh - 1.4rem);
+        overflow-y: auto;
+        border-radius: 22px;
+    }
+}
+
+@media (max-width: 479.98px) {
+    .install-sheet-card {
+        padding: 1.1rem;
+    }
+
+    .install-sheet-actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .install-sheet-actions .btn {
+        width: 100%;
+    }
+
+    .install-sheet-close {
+        top: 0.85rem;
+        right: 0.85rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .install-sheet,
+    .install-sheet-card,
+    .install-sheet-actions .btn,
+    .install-sheet-close {
+        transition: none;
     }
 }
 body.motion-ready .mobile-quick-actions-toggle {

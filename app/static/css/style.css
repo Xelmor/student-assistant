@@ -7,14 +7,16 @@
 @import url("/static/css/mobile.css?v=20260420-mobilequick");
 @import url("/static/css/landing.css?v=20260420-mobilequick");
 @import url("/static/css/pages/dashboard-theme.css?v=20260607-dark-dashboard-v2");
+@import url("/static/css/pages/onboarding.css?v=20260612-onboarding-v1");
+@import url("/static/css/pages/onboarding-chat.css?v=20260612-onboarding-chat-fix-v1");
 @import url("/static/css/pages/tasks-theme.css?v=20260607-dark-tasks");
 @import url("/static/css/pages/subjects-theme.css?v=20260608-dark-subjects");
 @import url("/static/css/pages/schedule-theme.css?v=20260608-dark-schedule");
 @import url("/static/css/pages/calendar.css?v=20260609-week-timeline");
 @import url("/static/css/pages/notes-theme.css?v=20260610-dark-notes-v1");
 @import url("/static/css/pages/profile.css?v=20260610-dark-profile-v1");
-@import url("/static/css/pages/landing.css?v=20260610-landing-nav-v2");
-@import url("/static/css/pages/auth-theme.css?v=20260610-dark-auth-v1");
+@import url("/static/css/pages/landing.css?v=20260612-about-link-v2");
+@import url("/static/css/pages/auth-theme.css?v=20260612-password-hint-v1");
 @import url("/static/css/pages/navbar-tools.css?v=20260611-dark-only-v1");
 @import url("/static/css/pages/empty-state.css?v=20260610-empty-states-v1");
 @import url("/static/css/pages/actions-feedback.css?v=20260610-actions-feedback-v1");
@@ -24,3 +26,5 @@
 @import url("/static/css/pages/local-profile.css?v=20260611-local-profile-v1");
 @import url("/static/css/pages/profile-simple.css?v=20260611-dark-only-v1");
 @import url("/static/css/pages/password-recovery.css?v=20260611-password-recovery-v1");
+@import url("/static/css/pages/error-pages.css?v=20260612-error-pages-v1");
+@import url("/static/css/pages/about.css?v=20260612-about-v2");

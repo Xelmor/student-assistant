@@ -14,7 +14,7 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js?v=20260611-dark-only-v1').catch(() => {});
+      navigator.serviceWorker.register('/service-worker.js?v=20260612-password-hint-v1').catch(() => {});
     });
   }
 

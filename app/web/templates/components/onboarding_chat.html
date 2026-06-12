@@ -1,0 +1,99 @@
+<section
+    class="onboarding-chat"
+    id="onboardingChat"
+    data-user-id="{{ user.id }}"
+    data-username="{{ user.username }}"
+    data-email="{{ user.email }}"
+    data-display-name="{{ user.display_name or '' }}"
+    data-group-name="{{ user.group_name or '' }}"
+    data-course="{{ user.course or '' }}"
+    data-restart="{{ 'true' if onboarding_chat_restart else 'false' }}"
+    aria-labelledby="onboardingChatTitle"
+    hidden
+>
+    <div class="onboarding-chat__backdrop" aria-hidden="true"></div>
+    <div class="onboarding-chat__dialog" role="dialog" aria-modal="true" aria-describedby="onboardingChatSubtitle">
+        <aside class="onboarding-chat__assistant">
+            <div class="onboarding-chat__assistant-mark" aria-hidden="true">
+                <span>SA</span>
+                <i></i>
+            </div>
+            <div>
+                <span class="onboarding-chat__eyebrow">Первый запуск</span>
+                <h2 id="onboardingChatTitle">SA Assistant</h2>
+                <p id="onboardingChatSubtitle">Коротко познакомимся и настроим кабинет под тебя.</p>
+            </div>
+            <div class="onboarding-chat__assistant-note">
+                <span aria-hidden="true">✦</span>
+                <p>Без длинных анкет. Один вопрос за раз.</p>
+            </div>
+        </aside>
+
+        <div class="onboarding-chat__main">
+            <header class="onboarding-chat__header">
+                <div class="onboarding-chat__progress-copy">
+                    <span id="onboardingChatStepLabel">Подготовка настройки</span>
+                    <strong id="onboardingChatStepTitle">Приветствие</strong>
+                </div>
+                <div class="onboarding-chat__header-actions">
+                    <button type="button" class="onboarding-chat__skip" id="onboardingChatSkip" hidden>
+                        Пропустить
+                    </button>
+                    <button type="button" class="onboarding-chat__close" id="onboardingChatClose" aria-label="Закрыть настройку">
+                        ×
+                    </button>
+                </div>
+            </header>
+
+            <div
+                class="onboarding-chat__progress"
+                id="onboardingChatProgress"
+                role="progressbar"
+                aria-label="Прогресс настройки профиля"
+                aria-valuemin="1"
+                aria-valuemax="7"
+                aria-valuenow="1"
+            >
+                <span style="--chat-progress: 0%"></span>
+            </div>
+
+            <div class="onboarding-chat__messages" id="onboardingChatMessages" aria-live="polite">
+                <article class="onboarding-chat__message is-assistant">
+                    <span class="onboarding-chat__bubble-avatar" aria-hidden="true">SA</span>
+                    <div class="onboarding-chat__bubble">
+                        {% if onboarding_chat_restart %}
+                        <p>Привет, {{ user.display_name or user.username }}! Давай ещё раз пройдём персональную настройку.</p>
+                        <p>Текущие данные уже подставлены — можно оставить их как есть или изменить.</p>
+                        {% elif user.display_name and user.group_name and user.course %}
+                        <p>Привет, {{ user.display_name }}! Аккаунт уже создан.</p>
+                        <p>Осталось настроить внешний вид и формат времени.</p>
+                        {% else %}
+                        <p>Привет, {{ user.display_name or user.username }}! Я помогу быстро настроить твой кабинет.</p>
+                        <p>Данные аккаунта уже подтянуты — спрошу только то, чего не хватает.</p>
+                        {% endif %}
+                    </div>
+                </article>
+            </div>
+
+            <div class="onboarding-chat__composer" id="onboardingChatComposer">
+                <button type="button" class="onboarding-chat__primary" id="onboardingChatStart">
+                    Начать
+                    <span aria-hidden="true">→</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" action="/onboarding/chat/complete" id="onboardingChatCompleteForm" hidden>
+        {{ csrf_input(request) }}
+        <input type="hidden" name="display_name" value="{{ user.display_name or '' }}">
+        <input type="hidden" name="group_name" value="{{ user.group_name or '' }}">
+        <input type="hidden" name="course" value="{{ user.course or '' }}">
+        <input type="hidden" name="accent" value="purple">
+        <input type="hidden" name="time_format" value="24">
+        <input type="hidden" name="destination" value="/dashboard">
+    </form>
+    <form method="post" action="/onboarding/chat/skip" id="onboardingChatSkipForm" hidden>
+        {{ csrf_input(request) }}
+    </form>
+</section>

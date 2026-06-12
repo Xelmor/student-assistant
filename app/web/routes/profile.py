@@ -4,6 +4,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ...core.database import get_db
+from ...core.validation import normalize_bounded_text
 from ...models import User
 from .auth import normalize_account_identity, normalize_profile_metadata, normalize_username_lookup
 from ..dependencies import (
@@ -61,6 +62,7 @@ def update_profile(
     request: Request,
     username: str = Form(...),
     email: str = Form(...),
+    display_name: str = Form(''),
     group_name: str = Form(''),
     course: int | None = Form(None),
     schedule_unit: str = Form('class'),
@@ -73,6 +75,11 @@ def update_profile(
 
     try:
         normalized_username, normalized_email = normalize_account_identity(username, email)
+        normalized_display_name = normalize_bounded_text(
+            display_name,
+            label='Имя',
+            max_length=40,
+        )
         normalized_group_name, normalized_course = normalize_profile_metadata(group_name, course)
     except ValueError as error:
         return templates.TemplateResponse(
@@ -104,13 +111,15 @@ def update_profile(
 
     user.username = normalized_username
     user.email = normalized_email
+    user.display_name = normalized_display_name
     user.group_name = normalized_group_name
     user.course = normalized_course
     user.schedule_unit = schedule_unit
     db.commit()
     db.refresh(user)
-    request.session['username'] = user.username
-    request.session['username_initial'] = (user.username[:1] or 'U').upper()
+    session_name = user.display_name or user.username
+    request.session['username'] = session_name
+    request.session['username_initial'] = (session_name[:1] or 'U').upper()
 
     return templates.TemplateResponse(
         request,

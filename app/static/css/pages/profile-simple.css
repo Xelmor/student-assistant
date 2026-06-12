@@ -525,7 +525,8 @@
     border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.profile-simple-local-actions button {
+.profile-simple-local-actions button,
+.profile-simple-local-actions form button {
     display: inline-flex;
     min-height: 2.25rem;
     gap: 0.4rem;
@@ -540,7 +541,9 @@
 }
 
 .profile-simple-local-actions button:hover,
-.profile-simple-local-actions button:focus-visible {
+.profile-simple-local-actions button:focus-visible,
+.profile-simple-local-actions form button:hover,
+.profile-simple-local-actions form button:focus-visible {
     border-color: var(--accent-border);
     color: #fff;
     background: var(--accent-soft);
@@ -549,6 +552,10 @@
 .profile-simple-local-actions button.is-danger {
     margin-left: auto;
     color: #e9a2a2;
+}
+
+.profile-onboarding-restart {
+    margin: 0;
 }
 
 .profile-simple-data {
@@ -764,6 +771,10 @@
         width: 100%;
         margin-left: 0;
         justify-content: center;
+    }
+
+    .profile-onboarding-restart {
+        width: 100%;
     }
 
     .profile-simple-export {

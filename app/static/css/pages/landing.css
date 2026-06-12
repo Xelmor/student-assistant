@@ -1293,6 +1293,73 @@ body.public-landing-page::after {
     line-height: 1.65;
 }
 
+.neon-landing-footer {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    margin: 1rem 1rem 0;
+    padding: 1.15rem 1.3rem;
+    border: 1px solid var(--landing-border);
+    border-radius: 18px;
+    background: rgba(8, 12, 28, 0.68);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.16);
+    backdrop-filter: blur(16px);
+}
+
+.neon-landing-footer > div {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.neon-landing-footer__mark {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+    border: 1px solid rgba(216, 180, 254, 0.3);
+    border-radius: 11px;
+    color: #fff;
+    background: linear-gradient(145deg, #8b5cf6, #5b21b6);
+    font-size: 0.72rem;
+    font-weight: 900;
+}
+
+.neon-landing-footer p {
+    display: grid;
+    margin: 0;
+}
+
+.neon-landing-footer strong {
+    color: #fff;
+    font-size: 0.82rem;
+}
+
+.neon-landing-footer small {
+    margin-top: 0.15rem;
+    color: var(--landing-muted);
+    font-size: 0.65rem;
+}
+
+.neon-landing-footer nav {
+    display: flex;
+    gap: 1.1rem;
+    align-items: center;
+}
+
+.neon-landing-footer a {
+    color: #9ca6ba;
+    font-size: 0.72rem;
+    font-weight: 740;
+    text-decoration: none;
+    transition: color 160ms ease;
+}
+
+.neon-landing-footer a:hover {
+    color: #c4b5fd;
+}
+
 @media (max-width: 1199.98px) {
     .public-landing-page .public-topbar .nav-link,
     .public-landing-page .public-topbar .navbar-nav .nav-link {
@@ -1474,6 +1541,10 @@ body.public-landing-page::after {
     .neon-study-grid article:last-child {
         grid-column: auto;
     }
+
+    .neon-landing-footer {
+        margin-inline: 0;
+    }
 }
 
 @media (max-width: 575.98px) {
@@ -1575,6 +1646,19 @@ body.public-landing-page::after {
 
     .neon-faq-list details p {
         padding-inline: 0.9rem;
+    }
+
+    .neon-landing-footer {
+        gap: 1rem;
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .neon-landing-footer nav {
+        width: 100%;
+        justify-content: space-between;
+        padding-top: 0.8rem;
+        border-top: 1px solid var(--landing-border);
     }
 }
 

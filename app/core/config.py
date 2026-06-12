@@ -33,8 +33,19 @@ def env_flag(name: str, default: str = 'false') -> bool:
 
 
 def parse_allowed_hosts(raw_value: str) -> tuple[str, ...]:
-    hosts = tuple(host.strip().lower() for host in raw_value.split(',') if host.strip())
-    return hosts or ('localhost', '127.0.0.1', 'testserver')
+    return tuple(host.strip().lower() for host in raw_value.split(',') if host.strip())
+
+
+def merge_allowed_hosts(*host_groups: tuple[str, ...] | list[str]) -> tuple[str, ...]:
+    merged = []
+    seen = set()
+    for group in host_groups:
+        for host in group:
+            normalized = host.strip().lower()
+            if normalized and normalized not in seen:
+                seen.add(normalized)
+                merged.append(normalized)
+    return tuple(merged)
 
 
 def normalize_public_base_url(raw_value: str) -> str:
@@ -132,16 +143,26 @@ def get_settings() -> Settings:
         base_dir,
     )
     host = (getenv('HOST') or '127.0.0.1').strip() or '127.0.0.1'
-    allowed_hosts = parse_allowed_hosts(
-        getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver')
-    )
     public_base_url = normalize_public_base_url(getenv('PUBLIC_BASE_URL', ''))
+    configured_allowed_hosts = parse_allowed_hosts(getenv('ALLOWED_HOSTS', ''))
+    public_hostname = (urlparse(public_base_url).hostname or '').lower()
+    render_hostname = (getenv('RENDER_EXTERNAL_HOSTNAME') or '').strip().lower()
+
+    derived_allowed_hosts = [public_hostname, render_hostname]
+    if app_env != 'production':
+        derived_allowed_hosts.extend(
+            ['localhost', '127.0.0.1', '0.0.0.0', '::1', 'testserver', host]
+        )
+    allowed_hosts = merge_allowed_hosts(configured_allowed_hosts, derived_allowed_hosts)
 
     if app_env == 'production':
         if '*' in allowed_hosts:
             raise RuntimeError('ALLOWED_HOSTS must not contain * when APP_ENV=production.')
         if not allowed_hosts:
-            raise RuntimeError('ALLOWED_HOSTS must contain at least one production hostname.')
+            raise RuntimeError(
+                'Set ALLOWED_HOSTS, PUBLIC_BASE_URL, or RENDER_EXTERNAL_HOSTNAME '
+                'to the exact production hostname.'
+            )
         if public_base_url and not public_base_url.startswith('https://'):
             raise RuntimeError('PUBLIC_BASE_URL must use https when APP_ENV=production.')
 

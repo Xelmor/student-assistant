@@ -41,6 +41,9 @@
 {% endmacro %}
 
 {% block content %}
+{% if onboarding_calendar_completed %}
+<span id="onboardingCalendarCompleted" hidden></span>
+{% endif %}
 {% set week_state = namespace(events=0) %}
 {% for day in week_days %}
     {% set week_state.events = week_state.events + day.event_count %}
@@ -455,5 +458,5 @@
 {% endblock %}
 
 {% block page_scripts %}
-<script src="/static/js/calendar.js?v=20260611-motion-v1"></script>
+<script src="/static/js/calendar.js?v=20260612-onboarding-v1"></script>
 {% endblock %}

@@ -46,7 +46,7 @@
                         <span>Имя пользователя</span>
                         <span class="auth-input-shell">
                             <i>{{ icon('user') }}</i>
-                            <input type="text" name="username" placeholder="Например, Xelmor" maxlength="50" required autocomplete="username" autofocus>
+                            <input type="text" name="username" value="{{ username }}" placeholder="Например, Xelmor" maxlength="50" required autocomplete="username" autofocus>
                         </span>
                     </label>
 
@@ -54,7 +54,7 @@
                         <span>Email</span>
                         <span class="auth-input-shell">
                             <i>{{ icon('mail') }}</i>
-                            <input type="email" name="email" placeholder="student@example.com" maxlength="120" required autocomplete="email">
+                            <input type="email" name="email" value="{{ email }}" placeholder="student@example.com" maxlength="120" required autocomplete="email">
                         </span>
                     </label>
 
@@ -73,21 +73,24 @@
                         </span>
                     </label>
 
-                    <label class="auth-field">
-                        <span>Группа</span>
+                    <label class="auth-field is-wide">
+                        <span>Подсказка к паролю <small>необязательно</small></span>
                         <span class="auth-input-shell">
-                            <i>{{ icon('group') }}</i>
-                            <input type="text" name="group_name" placeholder="Например, ИКБО-42-24" maxlength="50">
+                            <i>{{ icon('hint') }}</i>
+                            <input
+                                type="text"
+                                name="password_hint"
+                                value="{{ password_hint }}"
+                                placeholder="Например: название любимой книги"
+                                minlength="3"
+                                maxlength="120"
+                                autocomplete="off"
+                                aria-describedby="passwordHintHelp"
+                            >
                         </span>
+                        <small class="auth-field-help" id="passwordHintHelp">Не указывай здесь сам пароль. Подсказку можно будет запросить на странице входа.</small>
                     </label>
 
-                    <label class="auth-field">
-                        <span>Курс</span>
-                        <span class="auth-input-shell">
-                            <i>{{ icon('course') }}</i>
-                            <input type="number" name="course" min="1" max="12" placeholder="Например, 2">
-                        </span>
-                    </label>
                 </div>
 
                 <button type="submit" class="auth-submit-button">Зарегистрироваться</button>

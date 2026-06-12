@@ -45,7 +45,7 @@
                     <span>Логин</span>
                     <span class="auth-input-shell">
                         <i>{{ icon('user') }}</i>
-                        <input type="text" name="username" placeholder="username или email" required autocomplete="username" autofocus>
+                        <input type="text" id="login-username" name="username" value="{{ username }}" placeholder="username или email" required autocomplete="username" autofocus>
                     </span>
                 </label>
 
@@ -64,6 +64,20 @@
                     </span>
                 </label>
 
+                <div class="auth-password-assist">
+                    <button
+                        type="button"
+                        class="auth-hint-button"
+                        data-password-hint-request
+                        aria-controls="passwordHintResult"
+                        aria-expanded="false"
+                    >
+                        {{ icon('hint') }}
+                        <span>Показать подсказку к паролю</span>
+                    </button>
+                    <p class="auth-hint-result" id="passwordHintResult" data-password-hint-result hidden aria-live="polite"></p>
+                </div>
+
                 <div class="auth-form-meta">
                     <span class="auth-secure-note">{{ icon('lock') }} Защищённая сессия</span>
                     <a href="/forgot-password">Забыли пароль?</a>
@@ -78,4 +92,8 @@
         </section>
     </div>
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="/static/js/auth-password-hint.js?v=20260612-password-hint-v1"></script>
 {% endblock %}

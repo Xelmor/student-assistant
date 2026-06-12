@@ -42,3 +42,11 @@
         });
     });
 })();
+if (document.getElementById('onboardingCalendarCompleted')) {
+    window.showToast?.({
+        type: 'success',
+        title: 'Шаг выполнен',
+        description: 'Календарь открыт и добавлен в прогресс настройки.',
+        duration: 4200,
+    });
+}

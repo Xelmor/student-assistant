@@ -16,6 +16,8 @@ class AppSmokeTests(unittest.TestCase):
             '/',
             '/login',
             '/register',
+            '/password-hint',
+            '/about',
             '/dashboard',
             '/subjects',
             '/tasks',
@@ -23,6 +25,9 @@ class AppSmokeTests(unittest.TestCase):
             '/calendar',
             '/notes',
             '/profile',
+            '/onboarding/chat/complete',
+            '/onboarding/chat/skip',
+            '/onboarding/chat/restart',
             '/manifest.webmanifest',
             '/service-worker.js',
         }
@@ -41,6 +46,7 @@ class AppSmokeTests(unittest.TestCase):
             'auth/register.html',
             'auth/forgot_password.html',
             'auth/reset_password.html',
+            'about/about.html',
             'dashboard/dashboard.html',
             'subjects/subjects.html',
             'tasks/tasks.html',
@@ -49,6 +55,7 @@ class AppSmokeTests(unittest.TestCase):
             'notes/notes.html',
             'profile/profile.html',
             'profile/local_profile.html',
+            'errors/error.html',
         ]
         for relative_path in expected_templates:
             with self.subTest(template=relative_path):
@@ -68,6 +75,8 @@ class AppSmokeTests(unittest.TestCase):
         }
         expected_page_css = {
             'dashboard.css',
+            'onboarding.css',
+            'onboarding-chat.css',
             'entities.css',
             'profile.css',
             'calendar.css',
@@ -85,6 +94,8 @@ class AppSmokeTests(unittest.TestCase):
             'local-profile.css',
             'profile-simple.css',
             'password-recovery.css',
+            'error-pages.css',
+            'about.css',
         }
 
         self.assertTrue(expected_core_css.issubset({path.name for path in (css_dir / 'core').iterdir()}))
@@ -101,17 +112,104 @@ class AppSmokeTests(unittest.TestCase):
         text = (self._template_dir() / 'base.html').read_text(encoding='utf-8')
         self.assertIn('/static/vendor/bootstrap/bootstrap.min.css', text)
         self.assertIn('/static/vendor/bootstrap/bootstrap.bundle.min.js', text)
-        self.assertIn('/static/css/style.css?v=20260611-dark-only-v1', text)
+        self.assertIn('/static/css/style.css?v=20260612-password-hint-v1', text)
         self.assertIn('/static/js/base.js?v=20260611-motion-v1', text)
         self.assertIn('/static/js/user-preferences.js?v=20260611-dark-only-v1', text)
         self.assertIn('/static/js/actions-feedback.js?v=20260611-preferences-v1', text)
         self.assertIn('/static/js/navbar-tools.js?v=20260611-preferences-v1', text)
-        self.assertIn('/static/js/pwa.js?v=20260611-dark-only-v1', text)
+        self.assertIn('/static/js/pwa.js?v=20260612-password-hint-v1', text)
         self.assertNotIn('id="themeToggle"', text)
         self.assertNotIn('student-assistant-theme', text)
         self.assertNotIn('https://cdn.jsdelivr.net', text)
         self.assertNotIn('https://fonts.googleapis.com', text)
         self.assertNotIn('https://fonts.gstatic.com', text)
+
+    def test_pwa_install_prompt_uses_dark_glass_layout(self):
+        template_text = (self._template_dir() / 'base.html').read_text(encoding='utf-8')
+        styles = Path('app/static/css/mobile.css').read_text(encoding='utf-8')
+        script = Path('app/static/js/pwa.js').read_text(encoding='utf-8')
+
+        self.assertIn('id="installSheetTitle"', template_text)
+        self.assertIn('aria-modal="true"', template_text)
+        self.assertIn('linear-gradient(145deg, rgba(15, 18, 43, 0.97)', styles)
+        self.assertIn('backdrop-filter: blur(24px)', styles)
+        self.assertIn('#installAction', styles)
+        self.assertIn('#installLater', styles)
+        self.assertIn('beforeinstallprompt', script)
+        self.assertIn('deferredPrompt.prompt()', script)
+
+    def test_error_pages_use_shared_dark_safe_template(self):
+        template_text = (self._template_dir() / 'errors/error.html').read_text(encoding='utf-8')
+        styles = Path('app/static/css/pages/error-pages.css').read_text(encoding='utf-8')
+        script = Path('app/static/js/error-page.js').read_text(encoding='utf-8')
+        main_text = Path('app/main.py').read_text(encoding='utf-8')
+
+        self.assertIn('{{ code }}', template_text)
+        self.assertIn('{{ title }}', template_text)
+        self.assertIn('{{ description }}', template_text)
+        self.assertIn('data-error-back', template_text)
+        self.assertIn('data-error-reload', template_text)
+        self.assertIn('backdrop-filter: blur(24px)', styles)
+        self.assertIn('@media (max-width: 767.98px)', styles)
+        self.assertIn('window.history.back()', script)
+        self.assertIn('window.location.reload()', script)
+        self.assertIn('@app.exception_handler(StarletteHTTPException)', main_text)
+        self.assertIn('@app.exception_handler(Exception)', main_text)
+
+    def test_dashboard_onboarding_uses_persistent_dark_checklist(self):
+        template_text = (self._template_dir() / 'dashboard/dashboard.html').read_text(encoding='utf-8')
+        route_text = Path('app/web/routes/dashboard.py').read_text(encoding='utf-8')
+        styles = Path('app/static/css/pages/onboarding.css').read_text(encoding='utf-8')
+        script = Path('app/static/js/dashboard.js').read_text(encoding='utf-8')
+
+        self.assertIn('id="dashboardOnboarding"', template_text)
+        self.assertIn('Добавь первый предмет', route_text)
+        self.assertIn('Создай первую задачу', route_text)
+        self.assertIn('Настрой расписание', route_text)
+        self.assertIn('Открой календарь', route_text)
+        self.assertIn('action="/onboarding/complete"', template_text)
+        self.assertIn('action="/onboarding/skip"', template_text)
+        self.assertIn('linear-gradient(145deg, rgba(15, 23, 42, 0.94)', styles)
+        self.assertIn('@media (max-width: 479.98px)', styles)
+        self.assertIn('window.requestConfirmation', script)
+        self.assertIn("title: 'Onboarding завершён'", script)
+
+    def test_first_run_onboarding_chat_uses_scripted_conversation(self):
+        dashboard_text = (self._template_dir() / 'dashboard/dashboard.html').read_text(encoding='utf-8')
+        component_text = (self._template_dir() / 'components/onboarding_chat.html').read_text(encoding='utf-8')
+        route_text = Path('app/web/routes/dashboard.py').read_text(encoding='utf-8')
+        styles = Path('app/static/css/pages/onboarding-chat.css').read_text(encoding='utf-8')
+        script = Path('app/static/js/onboarding-chat.js').read_text(encoding='utf-8')
+        profile_text = (self._template_dir() / 'profile/profile.html').read_text(encoding='utf-8')
+
+        self.assertIn("include 'components/onboarding_chat.html'", dashboard_text)
+        self.assertIn('id="onboardingChatMessages"', component_text)
+        self.assertIn('hidden', component_text)
+        self.assertIn('role="progressbar"', component_text)
+        self.assertIn('action="/onboarding/chat/complete"', component_text)
+        self.assertIn('action="/onboarding/chat/skip"', component_text)
+        self.assertIn("@router.post('/onboarding/chat/complete')", route_text)
+        self.assertIn("@router.post('/onboarding/chat/restart')", route_text)
+        self.assertIn('backdrop-filter: blur(14px)', styles)
+        self.assertIn('@media (max-width: 479.98px)', styles)
+        self.assertIn('window.requestConfirmation', script)
+        self.assertIn('chat.hidden = false', script)
+        self.assertIn('const buildSteps = () =>', script)
+        self.assertIn('restartMode || !state.displayName', script)
+        self.assertIn('restartMode || !state.groupName', script)
+        self.assertIn('restartMode || !state.course', script)
+        self.assertIn("title: 'Профиль настроен'", script)
+        self.assertIn('action="/onboarding/chat/restart"', profile_text)
+
+    def test_registration_contains_only_account_creation_fields(self):
+        register_text = (self._template_dir() / 'auth/register.html').read_text(encoding='utf-8')
+
+        self.assertIn('name="username"', register_text)
+        self.assertIn('name="email"', register_text)
+        self.assertIn('name="password"', register_text)
+        self.assertIn('name="password_hint"', register_text)
+        self.assertNotIn('name="group_name"', register_text)
+        self.assertNotIn('name="course"', register_text)
 
     def test_post_scroll_restore_is_enabled_globally(self):
         base_script = Path('app/static/js/base.js').read_text(encoding='utf-8')
@@ -128,6 +226,14 @@ class AppSmokeTests(unittest.TestCase):
             response = client.get('/')
 
         self.assertEqual(response.status_code, 400)
+
+    def test_local_bind_host_is_accepted(self):
+        from fastapi.testclient import TestClient
+
+        with TestClient(app, base_url='http://0.0.0.0') as client:
+            response = client.get('/')
+
+        self.assertEqual(response.status_code, 200)
 
     def test_security_headers_are_present(self):
         from fastapi.testclient import TestClient

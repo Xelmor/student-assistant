@@ -53,8 +53,8 @@
         <aside class="profile-simple-sidebar">
             <section class="profile-simple-person">
                 <span class="profile-simple-person-label">Профиль</span>
-                <div class="profile-simple-avatar" data-user-avatar>{{ user.username[0]|upper if user.username else 'U' }}</div>
-                <h2>{{ user.username }}</h2>
+                <div class="profile-simple-avatar" data-user-avatar>{{ (user.display_name or user.username)[0]|upper }}</div>
+                <h2>{{ user.display_name or user.username }}</h2>
                 <p>{{ user.email }}</p>
                 <span class="profile-simple-status"><i></i> Аккаунт активен</span>
 
@@ -98,7 +98,7 @@
                 </div>
 
                 <div class="profile-simple-avatar-row">
-                    <div class="profile-settings-avatar" data-user-avatar>{{ user.username[0]|upper if user.username else 'U' }}</div>
+                    <div class="profile-settings-avatar" data-user-avatar>{{ (user.display_name or user.username)[0]|upper }}</div>
                     <div>
                         <strong>Аватар профиля</strong>
                         <p>Градиент сохраняется локально в этом браузере.</p>
@@ -107,7 +107,7 @@
                         <summary>Изменить</summary>
                         <div class="profile-avatar-options" aria-label="Выбор аватара">
                             {% for avatar in ['violet', 'blue', 'pink', 'green', 'orange', 'cyan'] %}
-                            <button type="button" class="profile-avatar-option" data-avatar-option="{{ avatar }}" aria-label="Выбрать аватар {{ loop.index }}" aria-pressed="false">{{ user.username[0]|upper if user.username else 'U' }}</button>
+                            <button type="button" class="profile-avatar-option" data-avatar-option="{{ avatar }}" aria-label="Выбрать аватар {{ loop.index }}" aria-pressed="false">{{ (user.display_name or user.username)[0]|upper }}</button>
                             {% endfor %}
                         </div>
                     </details>
@@ -123,7 +123,11 @@
                 <form method="post" action="/profile" class="profile-account-form profile-simple-form">
                     {{ csrf_input(request) }}
                     <label class="profile-field">
-                        <span>Имя пользователя</span>
+                        <span>Отображаемое имя</span>
+                        <input type="text" name="display_name" value="{{ user.display_name or '' }}" maxlength="40" placeholder="Как к тебе обращаться">
+                    </label>
+                    <label class="profile-field">
+                        <span>Логин</span>
                         <input type="text" name="username" value="{{ user.username }}" maxlength="50" required autocomplete="username">
                     </label>
                     <label class="profile-field">
@@ -230,6 +234,10 @@
                 </div>
 
                 <div class="profile-simple-local-actions">
+                    <form method="post" action="/onboarding/chat/restart" class="profile-onboarding-restart">
+                        {{ csrf_input(request) }}
+                        <button type="submit">{{ icon('refresh') }} Пройти настройку заново</button>
+                    </form>
                     <button type="button" id="profileResetSettings">{{ icon('refresh') }} Сбросить интерфейс</button>
                     <button type="button" class="is-danger" id="profileDeleteLocalSettings">{{ icon('database') }} Удалить локальные настройки</button>
                 </div>

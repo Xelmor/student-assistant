@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 
 from email_validator import EmailNotValidError, validate_email
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -33,6 +33,8 @@ PASSWORD_LENGTH_ERROR = (
 )
 ACCOUNT_IDENTITY_ERROR = 'Логин и email не должны быть пустыми.'
 PASSWORD_RESET_GENERIC_SUCCESS = 'Если email найден, инструкция по сбросу уже отправлена.'
+PASSWORD_HINT_MAX_LENGTH = 120
+PASSWORD_HINT_EMPTY_MESSAGE = 'Для этого аккаунта подсказка не сохранена.'
 
 
 def normalize_username(value: str) -> str:
@@ -77,6 +79,21 @@ def validate_password_strength(password: str) -> None:
         raise ValueError(PASSWORD_LENGTH_ERROR)
 
 
+def normalize_password_hint(value: str, password: str) -> str | None:
+    hint = normalize_bounded_text(
+        value,
+        label='Подсказка к паролю',
+        max_length=PASSWORD_HINT_MAX_LENGTH,
+    )
+    if not hint:
+        return None
+    if len(hint) < 3:
+        raise ValueError('Подсказка к паролю должна содержать минимум 3 символа.')
+    if password.casefold() in hint.casefold():
+        raise ValueError('Подсказка не должна содержать сам пароль.')
+    return hint
+
+
 def normalize_profile_metadata(group_name: str, course: int | None) -> tuple[str | None, int | None]:
     normalized_group = normalize_bounded_text(
         group_name,
@@ -97,11 +114,12 @@ def build_password_reset_url(request: Request, token: str) -> str:
 
 
 def establish_user_session(request: Request, user: User) -> None:
+    display_name = user.display_name or user.username
     request.session.clear()
     request.session['csrf_token'] = secrets.token_urlsafe(32)
     request.session['user_id'] = user.id
-    request.session['username'] = user.username
-    request.session['username_initial'] = (user.username[:1] or 'U').upper()
+    request.session['username'] = display_name
+    request.session['username_initial'] = (display_name[:1] or 'U').upper()
 
 
 @router.get('/', response_class=HTMLResponse)
@@ -114,7 +132,11 @@ def home(request: Request, db: Session = Depends(get_db)):
 
 @router.get('/register', response_class=HTMLResponse)
 def register_page(request: Request):
-    return templates.TemplateResponse(request, 'auth/register.html', {'error': None})
+    return templates.TemplateResponse(
+        request,
+        'auth/register.html',
+        {'error': None, 'username': '', 'email': '', 'password_hint': ''},
+    )
 
 
 @router.post('/register', response_class=HTMLResponse)
@@ -123,6 +145,7 @@ def register(
     username: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
+    password_hint: str = Form(''),
     group_name: str = Form(''),
     course: int | None = Form(None),
     _: None = Depends(validate_csrf),
@@ -138,11 +161,17 @@ def register(
         username, email = normalize_account_identity(username, email)
         group_name, course = normalize_profile_metadata(group_name, course)
         validate_password_strength(password)
+        password_hint = normalize_password_hint(password_hint, password)
     except ValueError as error:
         return templates.TemplateResponse(
             request,
             'auth/register.html',
-            {'error': str(error)},
+            {
+                'error': str(error),
+                'username': username.strip(),
+                'email': email.strip(),
+                'password_hint': password_hint.strip(),
+            },
         )
 
     existing = db.query(User).filter(
@@ -152,16 +181,26 @@ def register(
         return templates.TemplateResponse(
             request,
             'auth/register.html',
-            {'error': 'Пользователь с таким логином или email уже существует.'},
+            {
+                'error': 'Пользователь с таким логином или email уже существует.',
+                'username': username,
+                'email': email,
+                'password_hint': password_hint or '',
+            },
         )
 
     user = User(
         username=username,
         email=email,
         password_hash=hash_password(password),
+        password_hint=password_hint,
+        display_name=None,
         group_name=group_name,
         course=course,
         schedule_unit='class',
+        onboarding_chat_completed=False,
+        onboarding_completed=False,
+        onboarding_calendar_opened=False,
     )
     db.add(user)
     db.commit()
@@ -172,7 +211,48 @@ def register(
 
 @router.get('/login', response_class=HTMLResponse)
 def login_page(request: Request):
-    return templates.TemplateResponse(request, 'auth/login.html', {'error': None})
+    return templates.TemplateResponse(
+        request,
+        'auth/login.html',
+        {'error': None, 'username': ''},
+    )
+
+
+@router.post('/password-hint', response_class=JSONResponse)
+def password_hint(
+    request: Request,
+    username: str = Form(''),
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    identity = normalize_username(username)
+    if not identity:
+        return JSONResponse(
+            {'message': 'Сначала введи логин или email.'},
+            status_code=400,
+        )
+
+    normalized_username = normalize_username_lookup(identity)
+    normalized_email = normalize_email(identity)
+    enforce_rate_limit(
+        request,
+        scope='password-hint-ip',
+        limit=15,
+        window_seconds=5 * 60,
+    )
+    enforce_rate_limit(
+        request,
+        scope='password-hint-identity',
+        discriminator=normalized_username,
+        limit=5,
+        window_seconds=5 * 60,
+    )
+
+    user = db.query(User).filter(
+        (func.lower(User.username) == normalized_username) | (User.email == normalized_email)
+    ).first()
+    message = user.password_hint if user and user.password_hint else PASSWORD_HINT_EMPTY_MESSAGE
+    return JSONResponse({'message': message})
 
 
 @router.post('/login', response_class=HTMLResponse)
@@ -211,7 +291,7 @@ def login(
         return templates.TemplateResponse(
             request,
             'auth/login.html',
-            {'error': 'Неверный логин или пароль.'},
+            {'error': 'Неверный логин или пароль.', 'username': username},
         )
     auth_rate_limiter.clear(rate_limit_key(request, 'login-ip'))
     auth_rate_limiter.clear(rate_limit_key(request, 'login-identity', normalized_username))
@@ -367,6 +447,7 @@ def reset_password(
         )
 
     user.password_hash = hash_password(new_password)
+    user.password_hint = None
     db.commit()
 
     return templates.TemplateResponse(

@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% block title %}О проекте — Student Assistant{% endblock %}
+{% block meta_description %}Student Assistant — учебный веб-сервис для управления задачами, расписанием, предметами, заметками и дедлайнами студента.{% endblock %}
+{% block theme_color %}#070b1a{% endblock %}
+{% block body_class %}about-page{% endblock %}
+
+{% macro icon(name) -%}
+<svg viewBox="0 0 24 24" aria-hidden="true">
+    {% if name == 'student' %}
+    <path d="m3 10 9-5 9 5-9 5Z"></path><path d="M7 13v4c2.8 2 7.2 2 10 0v-4m4-3v6"></path>
+    {% elif name == 'spark' %}
+    <path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6Z"></path><path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7Z"></path>
+    {% elif name == 'users' %}
+    <circle cx="9" cy="8" r="3"></circle><path d="M3 20c.5-4 2.5-6 6-6s5.5 2 6 6m1-11a3 3 0 0 1 0 6m1-1c2.5.3 3.8 2.3 4 6"></path>
+    {% elif name == 'compass' %}
+    <circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5Z"></path>
+    {% elif name == 'layers' %}
+    <path d="m12 3 9 5-9 5-9-5Z"></path><path d="m3 12 9 5 9-5M3 16l9 5 9-5"></path>
+    {% elif name == 'alert' %}
+    <path d="M12 3 2.5 20h19Z"></path><path d="M12 9v4m0 3h.01"></path>
+    {% elif name == 'calendar' %}
+    <rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M7 3v4m10-4v4M3 10h18m4 4h.01m4 0h.01m4 0h.01"></path>
+    {% elif name == 'note' %}
+    <path d="M6 3h9l3 3v15H6Z"></path><path d="M14 3v4h4M9 12h6M9 16h4"></path>
+    {% elif name == 'dashboard' %}
+    <rect x="3" y="3" width="8" height="8" rx="2"></rect><rect x="13" y="3" width="8" height="5" rx="2"></rect><rect x="3" y="13" width="8" height="8" rx="2"></rect><rect x="13" y="10" width="8" height="11" rx="2"></rect>
+    {% elif name == 'task' %}
+    <rect x="4" y="3" width="16" height="18" rx="3"></rect><path d="m8 9 1.5 1.5L13 7m-5 8 1.5 1.5L13 13m2-4h2m-2 6h2"></path>
+    {% elif name == 'book' %}
+    <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22Z"></path><path d="M4 5.5v13A3.5 3.5 0 0 1 7.5 15H20"></path>
+    {% elif name == 'clock' %}
+    <circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>
+    {% elif name == 'bell' %}
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"></path>
+    {% elif name == 'profile' %}
+    <circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-4.7 3.3-7 8-7s7.3 2.3 8 7"></path>
+    {% elif name == 'server' %}
+    <rect x="3" y="4" width="18" height="6" rx="2"></rect><rect x="3" y="14" width="18" height="6" rx="2"></rect><path d="M7 7h.01M7 17h.01m4-10h6m-6 10h6"></path>
+    {% elif name == 'code' %}
+    <path d="m8 9-3 3 3 3m8-6 3 3-3 3m-2-9-4 12"></path>
+    {% elif name == 'database' %}
+    <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"></path>
+    {% elif name == 'rocket' %}
+    <path d="M14 5c3-3 6-2 6-2s1 3-2 6l-6 6-4-4Z"></path><path d="m8 11-4 1-2 3 6 1m5-2 1 6 3-2 1-4M6 18l-2 2"></path><circle cx="16" cy="7" r="1.5"></circle>
+    {% elif name == 'shield' %}
+    <path d="M12 3 4 6v5c0 5.2 3 8.4 8 10 5-1.6 8-4.8 8-10V6Z"></path><path d="m8.5 12 2.2 2.2 4.8-5"></path>
+    {% elif name == 'lock' %}
+    <rect x="5" y="10" width="14" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"></path>
+    {% elif name == 'check' %}
+    <circle cx="12" cy="12" r="9"></circle><path d="m8 12 2.5 2.5L16 9"></path>
+    {% elif name == 'arrow' %}
+    <path d="M5 12h14m-5-5 5 5-5 5"></path>
+    {% endif %}
+</svg>
+{%- endmacro %}
+
+{% block content %}
+<div class="about-shell">
+    <section class="about-hero" aria-labelledby="aboutTitle">
+        <div class="about-hero__copy">
+            <span class="about-kicker">Учебный веб-сервис</span>
+            <h1 id="aboutTitle">О проекте <strong>Student Assistant</strong></h1>
+            <p>
+                Student Assistant — это веб-приложение для студентов, которое помогает управлять
+                учебными задачами, расписанием, предметами, заметками и дедлайнами в одном удобном
+                пространстве.
+            </p>
+            <div class="about-hero__actions">
+                <a class="about-button about-button--primary" href="{% if request.session.get('user_id') %}/dashboard{% else %}/register{% endif %}">
+                    {% if request.session.get('user_id') %}Открыть кабинет{% else %}Начать пользоваться{% endif %}
+                    {{ icon('arrow') }}
+                </a>
+                <a class="about-button about-button--secondary" href="/">На главную</a>
+            </div>
+            <div class="about-hero__facts" aria-label="Ключевые особенности проекта">
+                <span><i></i><strong>8 разделов</strong><small>единая учебная система</small></span>
+                <span><i></i><strong>Адаптивный UI</strong><small>desktop, tablet и mobile</small></span>
+                <span><i></i><strong>PWA</strong><small>установка на главный экран</small></span>
+            </div>
+        </div>
+
+        <div class="about-visual" aria-label="Учебные инструменты Student Assistant">
+            <span class="about-visual__glow"></span>
+            <div class="about-visual__logo">
+                <span>SA</span>
+                <small>Student Assistant</small>
+            </div>
+            <div class="about-visual__tile about-visual__tile--calendar">{{ icon('calendar') }}<span>Расписание</span></div>
+            <div class="about-visual__tile about-visual__tile--book">{{ icon('book') }}<span>Предметы</span></div>
+            <div class="about-visual__tile about-visual__tile--task">{{ icon('task') }}<span>Задачи</span></div>
+            <div class="about-visual__tile about-visual__tile--note">{{ icon('note') }}<span>Заметки</span></div>
+        </div>
+    </section>
+
+    <section class="about-signal-strip" aria-label="Основа Student Assistant">
+        <article>
+            <span class="about-card-icon is-purple">{{ icon('server') }}</span>
+            <div><strong>FastAPI backend</strong><small>Маршруты и бизнес-логика приложения</small></div>
+        </article>
+        <article>
+            <span class="about-card-icon is-blue">{{ icon('database') }}</span>
+            <div><strong>Учебные данные связаны</strong><small>Задачи, предметы, пары, события и заметки</small></div>
+        </article>
+        <article>
+            <span class="about-card-icon is-pink">{{ icon('spark') }}</span>
+            <div><strong>Единый dark dashboard</strong><small>Спокойный интерфейс без визуального шума</small></div>
+        </article>
+    </section>
+
+    <section class="about-section about-section--open" aria-labelledby="audienceTitle">
+        <div class="about-section__heading">
+            <span class="about-kicker">Аудитория</span>
+            <h2 id="audienceTitle">Для кого создан</h2>
+            <p>Проект помогает быстро планировать учебные дела, отслеживать дедлайны, хранить заметки и видеть расписание без лишнего хаоса.</p>
+        </div>
+        <div class="about-card-grid about-card-grid--three">
+            <article class="about-info-card">
+                <span class="about-card-icon is-purple">{{ icon('student') }}</span>
+                <h3>Студенты</h3>
+                <p>Для ежедневного планирования учёбы.</p>
+            </article>
+            <article class="about-info-card">
+                <span class="about-card-icon is-blue">{{ icon('compass') }}</span>
+                <h3>Первокурсники</h3>
+                <p>Чтобы быстрее привыкнуть к расписанию, предметам и дедлайнам.</p>
+            </article>
+            <article class="about-info-card">
+                <span class="about-card-icon is-pink">{{ icon('spark') }}</span>
+                <h3>Активные пользователи</h3>
+                <p>Для тех, кто хочет держать задачи, заметки и события в одном месте.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="about-section about-section--panel" aria-labelledby="problemsTitle">
+        <div class="about-section__heading">
+            <span class="about-kicker">Задача проекта</span>
+            <h2 id="problemsTitle">Какие проблемы решает</h2>
+        </div>
+        <div class="about-card-grid about-card-grid--four">
+            <article class="about-problem-card">
+                <span>01</span>
+                <h3>Разрозненные данные</h3>
+                <p>Задачи, расписание, заметки и предметы часто лежат в разных приложениях.</p>
+            </article>
+            <article class="about-problem-card">
+                <span>02</span>
+                <h3>Забытые дедлайны</h3>
+                <p>Студент может пропустить домашнюю работу, зачёт или важную пару.</p>
+            </article>
+            <article class="about-problem-card">
+                <span>03</span>
+                <h3>Неудобное расписание</h3>
+                <p>Обычные таблицы часто плохо читаются и не помогают планировать день.</p>
+            </article>
+            <article class="about-problem-card">
+                <span>04</span>
+                <h3>Заметки без структуры</h3>
+                <p>Конспекты и ссылки сложно искать, если они не связаны с предметами.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="about-section about-section--open" aria-labelledby="featuresTitle">
+        <div class="about-section__heading">
+            <span class="about-kicker">Возможности</span>
+            <h2 id="featuresTitle">Основные функции</h2>
+            <p>Ключевые инструменты собраны в одном интерфейсе и работают с общими учебными данными.</p>
+        </div>
+        <div class="about-feature-grid">
+            {% set features = [
+                ('dashboard', 'Главная панель', 'Краткий обзор задач, событий, расписания и прогресса.', 'is-purple'),
+                ('task', 'Задачи', 'Создание, фильтрация, статусы, приоритеты и дедлайны.', 'is-pink'),
+                ('book', 'Предметы', 'Каталог дисциплин с преподавателями, аудиториями и цветами.', 'is-blue'),
+                ('clock', 'Расписание', 'Пары по дням недели с типом занятия, временем и аудиторией.', 'is-green'),
+                ('calendar', 'Календарь', 'Недельный таймлайн, события, экзамены и дедлайны.', 'is-purple'),
+                ('note', 'Заметки', 'Учебные заметки, ссылки и конспекты по предметам.', 'is-blue'),
+                ('bell', 'Уведомления', 'Напоминания о важных задачах, дедлайнах и событиях.', 'is-orange'),
+                ('profile', 'Профиль', 'Данные пользователя, аватар, цвет акцента и формат времени.', 'is-pink')
+            ] %}
+            {% for icon_name, title, description, tone in features %}
+            <article class="about-feature-card">
+                <span class="about-card-icon {{ tone }}">{{ icon(icon_name) }}</span>
+                <div>
+                    <h3>{{ title }}</h3>
+                    <p>{{ description }}</p>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="about-section about-tech-section" aria-labelledby="techTitle">
+        <div class="about-section__heading">
+            <span class="about-kicker">Реальный стек</span>
+            <h2 id="techTitle">Технологии проекта</h2>
+            <p>Список составлен по зависимостям, исходному коду и конфигурационным файлам проекта.</p>
+        </div>
+        <div class="about-tech-list" aria-label="Технологии Student Assistant">
+            <span><b>Py</b>Python</span>
+            <span><b>FA</b>FastAPI</span>
+            <span><b>J2</b>Jinja2</span>
+            <span><b>SA</b>SQLAlchemy</span>
+            <span><b>DB</b>SQLite</span>
+            <span><b>PG</b>PostgreSQL</span>
+            <span><b>H5</b>HTML5</span>
+            <span><b>C3</b>CSS3</span>
+            <span><b>JS</b>JavaScript</span>
+            <span><b>B5</b>Bootstrap 5.3</span>
+            <span><b>Uv</b>Uvicorn</span>
+            <span><b>Dc</b>Docker</span>
+            <span><b>PW</b>PWA / Service Worker</span>
+        </div>
+        <p class="about-tech-note">Для локальной работы используется SQLite; конфигурация также поддерживает PostgreSQL через драйвер Psycopg.</p>
+    </section>
+
+    <section class="about-section about-section--open" aria-labelledby="architectureTitle">
+        <div class="about-section__heading">
+            <span class="about-kicker">Устройство</span>
+            <h2 id="architectureTitle">Архитектура проекта</h2>
+            <p>Проект состоит из backend-части, шаблонов интерфейса, статических файлов, базы данных и страниц для управления учебной информацией.</p>
+        </div>
+        <div class="about-card-grid about-card-grid--four">
+            <article class="about-architecture-card">
+                <span class="about-card-icon is-purple">{{ icon('server') }}</span>
+                <h3>Backend</h3>
+                <p>Маршруты FastAPI, авторизация, данные пользователя и бизнес-логика.</p>
+            </article>
+            <article class="about-architecture-card">
+                <span class="about-card-icon is-blue">{{ icon('code') }}</span>
+                <h3>Frontend</h3>
+                <p>Jinja2-шаблоны, адаптивный HTML, CSS, JavaScript и Bootstrap.</p>
+            </article>
+            <article class="about-architecture-card">
+                <span class="about-card-icon is-green">{{ icon('database') }}</span>
+                <h3>Данные</h3>
+                <p>SQLAlchemy-модели задач, предметов, заметок, расписания, событий и профиля.</p>
+            </article>
+            <article class="about-architecture-card">
+                <span class="about-card-icon is-pink">{{ icon('rocket') }}</span>
+                <h3>Deployment</h3>
+                <p>Uvicorn, Docker-конфигурация и настройки окружения для размещения на Render.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="about-section about-security" aria-labelledby="securityTitle">
+        <div class="about-security__copy">
+            <span class="about-card-icon is-purple about-security__icon">{{ icon('shield') }}</span>
+            <span class="about-kicker">Базовые меры</span>
+            <h2 id="securityTitle">Безопасность</h2>
+            <p>В проекте предусмотрены базовые меры безопасности: защита приватных страниц, безопасная работа с паролями, проверка форм, подтверждение удаления данных и аккуратная обработка ошибок.</p>
+        </div>
+        <div class="about-security__list">
+            <span>{{ icon('lock') }}Авторизация</span>
+            <span>{{ icon('check') }}Безопасные формы</span>
+            <span>{{ icon('check') }}Подтверждение удаления</span>
+            <span>{{ icon('check') }}Страницы ошибок</span>
+            <span>{{ icon('shield') }}Проверка доступа</span>
+        </div>
+    </section>
+
+    <section class="about-section about-author-section" aria-labelledby="authorTitle">
+        <article class="about-author-card">
+            <div class="about-author-card__identity">
+                <span class="about-author-card__avatar">MA</span>
+                <div>
+                    <span class="about-kicker">Создатель</span>
+                    <h2 id="authorTitle">Автор проекта</h2>
+                    <p>Проект разработан как учебный веб-сервис для организации учебного процесса студента.</p>
+                </div>
+            </div>
+            <dl>
+                <div><dt>Автор</dt><dd>Max Alekseenko</dd></div>
+                <div><dt>Проект</dt><dd>Student Assistant</dd></div>
+                <div><dt>Назначение</dt><dd>Учебный проект / веб-приложение для студентов</dd></div>
+                <div><dt>Платформа</dt><dd>Web</dd></div>
+            </dl>
+        </article>
+    </section>
+
+    <section class="about-section about-section--open" aria-labelledby="roadmapTitle">
+        <div class="about-section__heading">
+            <span class="about-kicker">Следующие шаги</span>
+            <h2 id="roadmapTitle">Планы развития</h2>
+        </div>
+        <div class="about-roadmap-grid">
+            <article><span>01</span><h3>Демо-режим</h3><p>Возможность посмотреть проект без регистрации.</p></article>
+            <article><span>02</span><h3>Расширение обмена данными</h3><p>Дополнительные форматы импорта и экспорта учебных данных.</p></article>
+            <article><span>03</span><h3>Умные подсказки</h3><p>Рекомендации по задачам и дедлайнам.</p></article>
+            <article><span>04</span><h3>Расширенная статистика</h3><p>Анализ учебной нагрузки и прогресса.</p></article>
+            <article><span>05</span><h3>Мобильное улучшение</h3><p>Дальнейшая оптимизация интерфейса под телефон.</p></article>
+        </div>
+    </section>
+
+    <footer class="about-footer">
+        <div>
+            <span class="about-footer__mark">SA</span>
+            <p><strong>Student Assistant</strong><small>Учебные дела в одном пространстве.</small></p>
+        </div>
+        <a href="{% if request.session.get('user_id') %}/dashboard{% else %}/{% endif %}">
+            {% if request.session.get('user_id') %}Вернуться в кабинет{% else %}Вернуться на главную{% endif %}
+            {{ icon('arrow') }}
+        </a>
+    </footer>
+</div>
+{% endblock %}

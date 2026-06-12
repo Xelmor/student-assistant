@@ -19,6 +19,25 @@ class SettingsTests(unittest.TestCase):
             settings = get_settings()
 
         self.assertEqual(settings.secret_key, DEVELOPMENT_SECRET_KEY)
+        self.assertIn('0.0.0.0', settings.allowed_hosts)
+        self.assertIn('localhost', settings.allowed_hosts)
+
+    def test_render_hostname_is_allowed_automatically_in_production(self):
+        with patch.dict(
+            os.environ,
+            {
+                'APP_ENV': 'production',
+                'SECRET_KEY': 'a-secure-production-secret-key-that-is-long-enough',
+                'COOKIE_SECURE': 'true',
+                'ALLOWED_HOSTS': '',
+                'PUBLIC_BASE_URL': '',
+                'RENDER_EXTERNAL_HOSTNAME': 'student-assistant.onrender.com',
+            },
+            clear=False,
+        ):
+            settings = get_settings()
+
+        self.assertEqual(settings.allowed_hosts, ('student-assistant.onrender.com',))
 
     def test_production_requires_strong_secret_key(self):
         with patch.dict(

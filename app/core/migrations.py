@@ -44,7 +44,7 @@ def _add_users_schedule_unit(connection: Connection) -> None:
 
 def _add_tasks_recurrence_fields(connection: Connection) -> None:
     statements = {
-        'completed_at': 'ALTER TABLE tasks ADD COLUMN completed_at DATETIME',
+        'completed_at': 'ALTER TABLE tasks ADD COLUMN completed_at TIMESTAMP',
         'recurrence_group_id': 'ALTER TABLE tasks ADD COLUMN recurrence_group_id INTEGER',
         "recurrence_type": "ALTER TABLE tasks ADD COLUMN recurrence_type VARCHAR(20) NOT NULL DEFAULT 'none'",
         'recurrence_interval_days': 'ALTER TABLE tasks ADD COLUMN recurrence_interval_days INTEGER',
@@ -69,33 +69,101 @@ def _add_academic_calendar_fields(connection: Connection) -> None:
     if 'users' in inspect(connection).get_table_names() and not _column_exists(connection, 'users', 'last_study_day'):
         connection.execute(text('ALTER TABLE users ADD COLUMN last_study_day DATE'))
 
-    connection.execute(
-        text(
-            """
-            CREATE TABLE IF NOT EXISTS academic_events (
-                id INTEGER PRIMARY KEY,
-                user_id INTEGER NOT NULL,
-                subject_id INTEGER,
-                title VARCHAR(150) NOT NULL,
-                event_type VARCHAR(20) NOT NULL DEFAULT 'exam',
-                event_date DATE NOT NULL,
-                start_time TIME,
-                end_time TIME,
-                room VARCHAR(50),
-                description TEXT,
-                created_at DATETIME,
-                FOREIGN KEY(user_id) REFERENCES users (id),
-                FOREIGN KEY(subject_id) REFERENCES subjects (id)
-            )
-            """
-        )
-    )
+    if 'academic_events' not in inspect(connection).get_table_names():
+        Base.metadata.tables['academic_events'].create(bind=connection, checkfirst=True)
 
     if not _index_exists(connection, 'academic_events', 'ix_academic_events_id'):
         connection.execute(text('CREATE INDEX ix_academic_events_id ON academic_events (id)'))
 
     if not _index_exists(connection, 'academic_events', 'ix_academic_events_user_date'):
         connection.execute(text('CREATE INDEX ix_academic_events_user_date ON academic_events (user_id, event_date)'))
+
+
+def _add_users_onboarding_fields(connection: Connection) -> None:
+    if 'users' not in inspect(connection).get_table_names():
+        return
+
+    if not _column_exists(connection, 'users', 'onboarding_completed'):
+        connection.execute(
+            text(
+                'ALTER TABLE users ADD COLUMN '
+                'onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE'
+            )
+        )
+    if not _column_exists(connection, 'users', 'onboarding_calendar_opened'):
+        connection.execute(
+            text(
+                'ALTER TABLE users ADD COLUMN '
+                'onboarding_calendar_opened BOOLEAN NOT NULL DEFAULT FALSE'
+            )
+        )
+
+    # Existing populated accounts should not suddenly receive first-run guidance.
+    connection.execute(
+        text(
+            """
+            UPDATE users
+            SET onboarding_completed = TRUE
+            WHERE onboarding_completed = FALSE
+              AND (
+                EXISTS (SELECT 1 FROM subjects WHERE subjects.user_id = users.id)
+                OR EXISTS (SELECT 1 FROM tasks WHERE tasks.user_id = users.id)
+                OR EXISTS (SELECT 1 FROM schedule_items WHERE schedule_items.user_id = users.id)
+                OR EXISTS (SELECT 1 FROM notes WHERE notes.user_id = users.id)
+                OR EXISTS (SELECT 1 FROM academic_events WHERE academic_events.user_id = users.id)
+              )
+            """
+        )
+    )
+
+
+def _add_users_onboarding_chat_fields(connection: Connection) -> None:
+    if 'users' not in inspect(connection).get_table_names():
+        return
+
+    if not _column_exists(connection, 'users', 'display_name'):
+        connection.execute(text('ALTER TABLE users ADD COLUMN display_name VARCHAR(40)'))
+    if not _column_exists(connection, 'users', 'onboarding_chat_completed'):
+        connection.execute(
+            text(
+                'ALTER TABLE users ADD COLUMN '
+                'onboarding_chat_completed BOOLEAN NOT NULL DEFAULT FALSE'
+            )
+        )
+
+    connection.execute(
+        text(
+            """
+            UPDATE users
+            SET display_name = username
+            WHERE display_name IS NULL
+            """
+        )
+    )
+    connection.execute(
+        text(
+            """
+            UPDATE users
+            SET onboarding_chat_completed = TRUE
+            WHERE onboarding_chat_completed = FALSE
+              AND (
+                onboarding_completed = TRUE
+                OR EXISTS (SELECT 1 FROM subjects WHERE subjects.user_id = users.id)
+                OR EXISTS (SELECT 1 FROM tasks WHERE tasks.user_id = users.id)
+                OR EXISTS (SELECT 1 FROM schedule_items WHERE schedule_items.user_id = users.id)
+                OR EXISTS (SELECT 1 FROM notes WHERE notes.user_id = users.id)
+                OR EXISTS (SELECT 1 FROM academic_events WHERE academic_events.user_id = users.id)
+              )
+            """
+        )
+    )
+
+
+def _add_users_password_hint(connection: Connection) -> None:
+    if 'users' not in inspect(connection).get_table_names():
+        return
+    if not _column_exists(connection, 'users', 'password_hint'):
+        connection.execute(text('ALTER TABLE users ADD COLUMN password_hint VARCHAR(120)'))
 
 
 MIGRATIONS = [
@@ -113,6 +181,21 @@ MIGRATIONS = [
         version='20260530_01_add_academic_calendar_fields',
         description='Add academic session events and last study day.',
         upgrade=_add_academic_calendar_fields,
+    ),
+    Migration(
+        version='20260612_01_add_users_onboarding_fields',
+        description='Add persistent first-run onboarding state.',
+        upgrade=_add_users_onboarding_fields,
+    ),
+    Migration(
+        version='20260612_02_add_users_onboarding_chat_fields',
+        description='Add persistent first-run chat and display name.',
+        upgrade=_add_users_onboarding_chat_fields,
+    ),
+    Migration(
+        version='20260612_03_add_users_password_hint',
+        description='Add optional password hints.',
+        upgrade=_add_users_password_hint,
     ),
 ]
 

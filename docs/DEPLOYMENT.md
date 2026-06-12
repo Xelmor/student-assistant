@@ -27,6 +27,7 @@ Notes:
 - `postgres://...` URLs are also supported and converted automatically.
 - Keep SQLite only for local development.
 - Set `ALLOWED_HOSTS` to the exact public hostname. Do not use `*`.
+- On Render, `RENDER_EXTERNAL_HOSTNAME` is detected automatically and added as an exact allowed host.
 - Set `PUBLIC_BASE_URL` to the public HTTPS origin used in password-reset emails.
 - Do not use `sqlite:///./data/student_assistant.db` on ephemeral hosting if you need persistent users.
 - The app should bind to the value from `PORT`. On Render this variable is usually provided by the platform, so do not couple the deployment flow to a hard-coded port like `10000`.

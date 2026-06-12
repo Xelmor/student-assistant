@@ -150,6 +150,7 @@ function initDashboardQuickTask() {
                 description: 'Новая задача появилась в списке.',
                 duration: 4200,
             });
+            markOnboardingStepComplete('task');
 
             if (pendingCount && typeof payload.pending_count === 'number') {
                 pendingCount.textContent = String(payload.pending_count);
@@ -194,5 +195,96 @@ function initDashboardQuickTask() {
     });
 }
 
+function markOnboardingStepComplete(stepKey) {
+    const card = document.getElementById('dashboardOnboarding');
+    const step = card?.querySelector(`[data-onboarding-step="${stepKey}"]`);
+    if (!card || !step || step.classList.contains('is-completed')) {
+        return;
+    }
+
+    step.classList.remove('is-active');
+    step.classList.add('is-completed');
+    const state = step.querySelector('.onboarding-step-state');
+    if (state) {
+        state.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12 4 4 8-9"></path></svg>';
+    }
+
+    const current = Number.parseInt(card.dataset.onboardingCompleted || '0', 10) + 1;
+    const total = Number.parseInt(card.dataset.onboardingTotal || '4', 10);
+    const percent = Math.round((current / total) * 100);
+    card.dataset.onboardingCompleted = String(current);
+    document.getElementById('onboardingCompletedCount').textContent = String(current);
+    document.getElementById('onboardingPercent').textContent = `${percent}%`;
+    document.getElementById('onboardingProgressBar')?.style.setProperty('--onboarding-progress', `${percent}%`);
+    card.querySelector('.onboarding-progress-track')?.setAttribute('aria-valuenow', String(current));
+
+    const nextStep = [...card.querySelectorAll('.onboarding-step:not(.is-completed)')][0];
+    nextStep?.classList.add('is-active');
+}
+
+function initDashboardOnboarding() {
+    const skipButton = document.getElementById('onboardingSkipButton');
+    const skipForm = document.getElementById('onboardingSkipForm');
+    const status = document.getElementById('onboardingStatus')?.dataset.status || '';
+
+    const statusToasts = {
+        completed: {
+            type: 'success',
+            title: 'Onboarding завершён',
+            description: 'Рабочее пространство готово к учёбе.',
+        },
+        skipped: {
+            type: 'info',
+            title: 'Настройка пропущена',
+            description: 'Все разделы останутся доступны в обычном режиме.',
+        },
+        incomplete: {
+            type: 'warning',
+            title: 'Заверши оставшиеся шаги',
+            description: 'После этого подсказки можно будет скрыть.',
+        },
+    };
+
+    if (statusToasts[status]) {
+        window.showToast?.({ ...statusToasts[status], duration: 4400 });
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('onboarding');
+        window.history.replaceState({}, '', `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
+    }
+
+    skipButton?.addEventListener('click', () => {
+        if (!skipForm) {
+            return;
+        }
+
+        const submitSkip = async () => {
+            const response = await fetch(skipForm.action, {
+                method: 'POST',
+                body: new FormData(skipForm),
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                redirect: 'follow',
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            window.location.assign(response.url);
+        };
+
+        const opened = window.requestConfirmation?.({
+            title: 'Пропустить настройку?',
+            description: 'Ты сможешь добавлять предметы, задачи и расписание позже.',
+            confirmLabel: 'Пропустить',
+            trigger: skipButton,
+            onConfirm: submitSkip,
+        });
+
+        if (!opened && window.confirm('Пропустить настройку?')) {
+            void submitSkip();
+        }
+    });
+}
+
 startDashboardClock();
 initDashboardQuickTask();
+initDashboardOnboarding();

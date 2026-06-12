@@ -10,18 +10,19 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Student Assistant">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="{% block meta_description %}Student Assistant — веб-приложение для организации учёбы.{% endblock %}">
     <title>{% block title %}Student Assistant{% endblock %}</title>
     <link rel="stylesheet" href="/static/vendor/bootstrap/bootstrap.min.css">
     <link rel="manifest" href="/manifest.webmanifest?v=20260610-purple-sa-v1">
     <link rel="icon" type="image/svg+xml" href="/static/pwa/icon-app.svg?v=20260610-purple-sa-v1">
     <link rel="apple-touch-icon" href="/static/pwa/icon-app.svg?v=20260610-purple-sa-v1">
     <script src="/static/js/user-preferences.js?v=20260611-dark-only-v1"></script>
-    <link rel="stylesheet" href="/static/css/style.css?v=20260611-dark-only-v1">
+    <link rel="stylesheet" href="/static/css/style.css?v=20260612-password-hint-v1">
 </head>
 <body class="{% block body_class %}{% endblock %}">
 <div class="page-shell">
     <div class="topbar-wrap">
-        <nav class="navbar navbar-expand-lg navbar-dark topbar{% if not request.session.get('user_id') and request.url.path == '/' %} public-topbar{% elif request.url.path == '/login' or request.url.path == '/register' or request.url.path == '/forgot-password' or request.url.path == '/reset-password' %} auth-topbar{% endif %}">
+        <nav class="navbar navbar-expand-lg navbar-dark topbar{% if not request.session.get('user_id') and (request.url.path == '/' or request.url.path == '/about') %} public-topbar{% elif request.url.path == '/login' or request.url.path == '/register' or request.url.path == '/forgot-password' or request.url.path == '/reset-password' %} auth-topbar{% endif %}">
             <div class="container">
                 <a class="navbar-brand" href="{% if request.session.get('user_id') %}/dashboard{% else %}/{% endif %}">
                     <span class="brand-mark">SA</span>
@@ -54,6 +55,14 @@
                         <li class="nav-item"><a class="nav-link" href="#interface">Интерфейс</a></li>
                         <li class="nav-item"><a class="nav-link" href="#study">Для учёбы</a></li>
                         <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/about">О проекте</a></li>
+                        {% elif request.url.path == '/about' %}
+                        <li class="nav-item"><a class="nav-link" href="/#hero">Главная</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/#features">Возможности</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/#interface">Интерфейс</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/#study">Для учёбы</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/#faq">FAQ</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="/about" aria-current="page">О проекте</a></li>
                         {% endif %}
                     </ul>
                     <div class="topbar-actions d-flex align-items-center gap-2">
@@ -274,10 +283,16 @@
 {% endif %}
 
 <section class="install-sheet" id="installSheet" hidden aria-live="polite">
-    <div class="install-sheet-card">
+    <div
+        class="install-sheet-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="installSheetTitle"
+        aria-describedby="installText"
+    >
         <button type="button" class="install-sheet-close" id="installClose" aria-label="Закрыть">×</button>
         <div class="install-sheet-badge">На экран домой</div>
-        <h2 class="install-sheet-title">Открой приложение сайта</h2>
+        <h2 class="install-sheet-title" id="installSheetTitle">Открой приложение сайта</h2>
         <p class="install-sheet-text" id="installText">
             Добавь сайт на главный экран, чтобы он запускался быстрее и выглядел как отдельное приложение.
         </p>
@@ -321,7 +336,7 @@
 <script src="/static/js/base.js?v=20260611-motion-v1"></script>
 <script src="/static/js/actions-feedback.js?v=20260611-preferences-v1"></script>
 <script src="/static/js/navbar-tools.js?v=20260611-preferences-v1"></script>
-<script src="/static/js/pwa.js?v=20260611-dark-only-v1"></script>
+<script src="/static/js/pwa.js?v=20260612-password-hint-v1"></script>
 {% block page_scripts %}{% endblock %}
 </body>
 </html>
