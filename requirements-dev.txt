@@ -1,0 +1,6 @@
+-r requirements.txt
+
+# Python Playwright matches the project's Python/FastAPI/Jinja stack and avoids
+# introducing a separate Node build toolchain only for browser tests.
+playwright>=1.52.0
+pytest-playwright>=0.7.0

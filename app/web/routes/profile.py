@@ -1,11 +1,26 @@
+from datetime import datetime
+import logging
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from ...core.config import settings
 from ...core.database import get_db
 from ...core.validation import normalize_bounded_text
 from ...models import User
+from ...services.telegram_bot import (
+    TelegramAPIError,
+    TelegramReply,
+    generate_link_code,
+    get_active_link_code,
+    send_telegram_message,
+    unlink_telegram_user,
+)
+from ...services.telegram_digest import build_morning_digest_message
+from ...services.telegram_notifications import VALID_DEADLINE_REMINDER_HOURS
 from .auth import normalize_account_identity, normalize_profile_metadata, normalize_username_lookup
 from ..dependencies import (
     SCHEDULE_UNIT_OPTIONS,
@@ -16,6 +31,21 @@ from ..dependencies import (
 )
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+TELEGRAM_DIGEST_TIMEZONES = (
+    'Europe/Moscow',
+    'Europe/Kaliningrad',
+    'Europe/Samara',
+    'Asia/Yekaterinburg',
+    'Asia/Omsk',
+    'Asia/Novosibirsk',
+    'Asia/Irkutsk',
+    'Asia/Yakutsk',
+    'Asia/Vladivostok',
+    'Asia/Magadan',
+    'Asia/Kamchatka',
+    'UTC',
+)
 
 def _build_profile_context(
     request: Request,
@@ -25,6 +55,7 @@ def _build_profile_context(
     success=None,
     data_success=None,
     data_error=None,
+    telegram_status=None,
 ):
     return {
         'user': user,
@@ -34,6 +65,17 @@ def _build_profile_context(
         'data_success': data_success,
         'data_error': data_error,
         'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
+        'telegram_status': telegram_status,
+        'telegram_link_code': get_active_link_code(user),
+        'telegram_link_code_ttl_minutes': settings.telegram_link_code_ttl_minutes,
+        'telegram_digest_timezones': TELEGRAM_DIGEST_TIMEZONES,
+        'telegram_digest_default_timezone': settings.timezone,
+        'telegram_bot_url': (
+            f'https://t.me/{settings.telegram_bot_username}'
+            if settings.telegram_bot_username
+            else None
+        ),
+        'telegram_deadline_reminder_hours_options': VALID_DEADLINE_REMINDER_HOURS,
     }
 
 
@@ -41,6 +83,7 @@ def _build_profile_context(
 def profile_page(request: Request, db: Session = Depends(get_db)):
     data_success = request.query_params.get('data_success')
     data_error = request.query_params.get('data_error')
+    telegram_status = request.query_params.get('telegram_status')
     user = require_user(request, db)
     if not user:
         return RedirectResponse('/login', status_code=302)
@@ -53,6 +96,7 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
             user,
             data_success=data_success,
             data_error=data_error,
+            telegram_status=telegram_status,
         ),
     )
 
@@ -125,6 +169,171 @@ def update_profile(
         request,
         'profile/profile.html',
         _build_profile_context(request, user, success='Профиль обновлен.'),
+    )
+
+
+@router.post('/profile/telegram/link-code')
+def create_telegram_link_code(
+    request: Request,
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+    if user.telegram_user_id is not None:
+        return RedirectResponse(
+            '/profile?telegram_status=already-linked#profile-telegram',
+            status_code=302,
+        )
+
+    try:
+        generate_link_code(db, user)
+    except RuntimeError:
+        return RedirectResponse(
+            '/profile?telegram_status=code-error#profile-telegram',
+            status_code=302,
+        )
+    return RedirectResponse(
+        '/profile?telegram_status=code-created#profile-telegram',
+        status_code=302,
+    )
+
+
+@router.post('/profile/telegram/unlink')
+def unlink_telegram(
+    request: Request,
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+
+    unlink_telegram_user(db, user)
+    return RedirectResponse('/profile#profile-telegram', status_code=302)
+
+
+@router.post('/profile/telegram/digest-settings')
+def update_telegram_digest_settings(
+    request: Request,
+    digest_enabled: str | None = Form(None),
+    digest_time: str = Form('08:00'),
+    digest_timezone: str = Form('Europe/Moscow'),
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+    if user.telegram_user_id is None or user.telegram_chat_id is None:
+        return RedirectResponse(
+            '/profile?telegram_status=digest-not-linked#profile-telegram',
+            status_code=302,
+        )
+
+    try:
+        parsed_time = datetime.strptime(digest_time, '%H:%M').time()
+        ZoneInfo(digest_timezone)
+    except (ValueError, ZoneInfoNotFoundError):
+        return RedirectResponse(
+            '/profile?telegram_status=digest-error#profile-telegram',
+            status_code=302,
+        )
+
+    user.telegram_morning_digest_enabled = digest_enabled is not None
+    user.telegram_morning_digest_time = parsed_time
+    user.telegram_morning_digest_timezone = digest_timezone
+    db.commit()
+    return RedirectResponse(
+        '/profile?telegram_status=digest-saved#profile-telegram',
+        status_code=302,
+    )
+
+
+@router.post('/profile/telegram/notification-settings')
+def update_telegram_notification_settings(
+    request: Request,
+    digest_enabled: str | None = Form(None),
+    digest_time: str = Form('08:00'),
+    digest_timezone: str = Form('Europe/Moscow'),
+    deadline_enabled: str | None = Form(None),
+    deadline_hours: int = Form(24),
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+    if user.telegram_user_id is None or user.telegram_chat_id is None:
+        return RedirectResponse(
+            '/profile?telegram_status=notifications-not-linked#profile-telegram',
+            status_code=302,
+        )
+
+    try:
+        parsed_time = datetime.strptime(digest_time, '%H:%M').time()
+        ZoneInfo(digest_timezone)
+    except (ValueError, ZoneInfoNotFoundError):
+        return RedirectResponse(
+            '/profile?telegram_status=notifications-error#profile-telegram',
+            status_code=302,
+        )
+    if deadline_hours not in VALID_DEADLINE_REMINDER_HOURS:
+        return RedirectResponse(
+            '/profile?telegram_status=notifications-error#profile-telegram',
+            status_code=302,
+        )
+
+    user.telegram_morning_digest_enabled = digest_enabled is not None
+    user.telegram_morning_digest_time = parsed_time
+    user.telegram_morning_digest_timezone = digest_timezone
+    user.telegram_deadline_reminders_enabled = deadline_enabled is not None
+    user.telegram_deadline_reminder_hours = deadline_hours
+    db.commit()
+    return RedirectResponse(
+        '/profile?telegram_status=notifications-saved#profile-telegram',
+        status_code=302,
+    )
+
+
+@router.post('/profile/telegram/digest-test')
+def send_telegram_digest_test(
+    request: Request,
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    user = require_user(request, db)
+    if not user:
+        return RedirectResponse('/login', status_code=302)
+    if user.telegram_user_id is None or user.telegram_chat_id is None:
+        return RedirectResponse(
+            '/profile?telegram_status=digest-not-linked#profile-telegram',
+            status_code=302,
+        )
+
+    try:
+        send_telegram_message(
+            TelegramReply(
+                chat_id=user.telegram_chat_id,
+                text=build_morning_digest_message(db, user),
+            )
+        )
+    except TelegramAPIError:
+        return RedirectResponse(
+            '/profile?telegram_status=digest-test-error#profile-telegram',
+            status_code=302,
+        )
+    except Exception:
+        logger.exception('Telegram digest test send failed for user id %s.', user.id)
+        return RedirectResponse(
+            '/profile?telegram_status=digest-test-error#profile-telegram',
+            status_code=302,
+        )
+
+    return RedirectResponse(
+        '/profile?telegram_status=digest-test-sent#profile-telegram',
+        status_code=302,
     )
 
 

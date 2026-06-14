@@ -33,6 +33,17 @@ def _index_exists(connection: Connection, table_name: str, index_name: str) -> b
     return index_name in indexes
 
 
+def _unique_index_exists(connection: Connection, table_name: str, index_name: str) -> bool:
+    inspector = inspect(connection)
+    if table_name not in inspector.get_table_names():
+        return False
+    indexes = {
+        index['name']: bool(index.get('unique'))
+        for index in inspector.get_indexes(table_name)
+    }
+    return indexes.get(index_name, False)
+
+
 def _add_users_schedule_unit(connection: Connection) -> None:
     if _column_exists(connection, 'users', 'schedule_unit'):
         return
@@ -166,6 +177,126 @@ def _add_users_password_hint(connection: Connection) -> None:
         connection.execute(text('ALTER TABLE users ADD COLUMN password_hint VARCHAR(120)'))
 
 
+def _add_users_telegram_fields(connection: Connection) -> None:
+    if 'users' not in inspect(connection).get_table_names():
+        return
+
+    statements = {
+        'telegram_user_id': 'ALTER TABLE users ADD COLUMN telegram_user_id BIGINT',
+        'telegram_chat_id': 'ALTER TABLE users ADD COLUMN telegram_chat_id BIGINT',
+        'telegram_username': 'ALTER TABLE users ADD COLUMN telegram_username VARCHAR(64)',
+        'telegram_link_code': 'ALTER TABLE users ADD COLUMN telegram_link_code VARCHAR(12)',
+        'telegram_link_code_expires_at': (
+            'ALTER TABLE users ADD COLUMN telegram_link_code_expires_at TIMESTAMP'
+        ),
+        'telegram_linked_at': 'ALTER TABLE users ADD COLUMN telegram_linked_at TIMESTAMP',
+    }
+    for column_name, statement in statements.items():
+        if not _column_exists(connection, 'users', column_name):
+            connection.execute(text(statement))
+
+    _ensure_users_telegram_unique_indexes(connection)
+
+
+def _ensure_users_telegram_unique_indexes(connection: Connection) -> None:
+    if 'users' not in inspect(connection).get_table_names():
+        return
+
+    index_specs = (
+        (
+            'ix_users_telegram_user_id',
+            'telegram_user_id',
+            """
+            UPDATE users
+            SET telegram_user_id = NULL,
+                telegram_chat_id = NULL,
+                telegram_username = NULL,
+                telegram_linked_at = NULL
+            WHERE telegram_user_id IS NOT NULL
+              AND id NOT IN (
+                  SELECT MIN(id)
+                  FROM users
+                  WHERE telegram_user_id IS NOT NULL
+                  GROUP BY telegram_user_id
+              )
+            """,
+        ),
+        (
+            'ix_users_telegram_link_code',
+            'telegram_link_code',
+            """
+            UPDATE users
+            SET telegram_link_code = NULL,
+                telegram_link_code_expires_at = NULL
+            WHERE telegram_link_code IS NOT NULL
+              AND id NOT IN (
+                  SELECT MIN(id)
+                  FROM users
+                  WHERE telegram_link_code IS NOT NULL
+                  GROUP BY telegram_link_code
+              )
+            """,
+        ),
+    )
+
+    for index_name, column_name, deduplicate_statement in index_specs:
+        if _unique_index_exists(connection, 'users', index_name):
+            continue
+        connection.execute(text(deduplicate_statement))
+        if _index_exists(connection, 'users', index_name):
+            connection.execute(text(f'DROP INDEX IF EXISTS {index_name}'))
+        connection.execute(
+            text(f'CREATE UNIQUE INDEX {index_name} ON users ({column_name})')
+        )
+
+
+def _add_users_telegram_digest_fields(connection: Connection) -> None:
+    if 'users' not in inspect(connection).get_table_names():
+        return
+
+    statements = {
+        'telegram_morning_digest_enabled': (
+            'ALTER TABLE users ADD COLUMN '
+            'telegram_morning_digest_enabled BOOLEAN NOT NULL DEFAULT FALSE'
+        ),
+        'telegram_morning_digest_time': (
+            "ALTER TABLE users ADD COLUMN "
+            "telegram_morning_digest_time TIME NOT NULL DEFAULT '08:00:00'"
+        ),
+        'telegram_morning_digest_timezone': (
+            'ALTER TABLE users ADD COLUMN telegram_morning_digest_timezone VARCHAR(64)'
+        ),
+        'telegram_morning_digest_last_sent_date': (
+            'ALTER TABLE users ADD COLUMN telegram_morning_digest_last_sent_date DATE'
+        ),
+    }
+    for column_name, statement in statements.items():
+        if not _column_exists(connection, 'users', column_name):
+            connection.execute(text(statement))
+
+
+def _add_telegram_deadline_reminder_settings(connection: Connection) -> None:
+    if 'users' in inspect(connection).get_table_names():
+        statements = {
+            'telegram_deadline_reminders_enabled': (
+                'ALTER TABLE users ADD COLUMN '
+                'telegram_deadline_reminders_enabled BOOLEAN NOT NULL DEFAULT FALSE'
+            ),
+            'telegram_deadline_reminder_hours': (
+                'ALTER TABLE users ADD COLUMN '
+                'telegram_deadline_reminder_hours INTEGER NOT NULL DEFAULT 24'
+            ),
+        }
+        for column_name, statement in statements.items():
+            if not _column_exists(connection, 'users', column_name):
+                connection.execute(text(statement))
+
+    Base.metadata.tables['telegram_deadline_reminder_logs'].create(
+        bind=connection,
+        checkfirst=True,
+    )
+
+
 MIGRATIONS = [
     Migration(
         version='20260430_01_add_users_schedule_unit',
@@ -196,6 +327,26 @@ MIGRATIONS = [
         version='20260612_03_add_users_password_hint',
         description='Add optional password hints.',
         upgrade=_add_users_password_hint,
+    ),
+    Migration(
+        version='20260612_04_add_users_telegram_fields',
+        description='Add Telegram companion account linking fields.',
+        upgrade=_add_users_telegram_fields,
+    ),
+    Migration(
+        version='20260612_05_ensure_users_telegram_unique_indexes',
+        description='Ensure Telegram account and link code indexes are unique.',
+        upgrade=_ensure_users_telegram_unique_indexes,
+    ),
+    Migration(
+        version='20260614_01_add_users_telegram_digest_fields',
+        description='Add opt-in Telegram morning digest settings.',
+        upgrade=_add_users_telegram_digest_fields,
+    ),
+    Migration(
+        version='20260614_02_add_telegram_deadline_reminders',
+        description='Add Telegram deadline reminder settings and delivery log.',
+        upgrade=_add_telegram_deadline_reminder_settings,
     ),
 ]
 

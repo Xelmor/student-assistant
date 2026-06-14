@@ -60,6 +60,50 @@
     const restartMode = chat.dataset.restart === 'true';
     let busy = false;
     let currentStepIndex = 0;
+    const accentChoices = [
+        {
+            value: 'purple',
+            label: 'Фиолетовый',
+            description: 'Фирменный',
+            color: '#8b5cf6',
+            hover: '#7c3aed',
+        },
+        {
+            value: 'blue',
+            label: 'Синий',
+            description: 'Спокойный',
+            color: '#3b82f6',
+            hover: '#2563eb',
+        },
+        {
+            value: 'cyan',
+            label: 'Голубой',
+            description: 'Свежий',
+            color: '#06b6d4',
+            hover: '#0891b2',
+        },
+        {
+            value: 'green',
+            label: 'Зелёный',
+            description: 'Собранный',
+            color: '#10b981',
+            hover: '#059669',
+        },
+        {
+            value: 'orange',
+            label: 'Оранжевый',
+            description: 'Тёплый',
+            color: '#f59e0b',
+            hover: '#d97706',
+        },
+        {
+            value: 'pink',
+            label: 'Розовый',
+            description: 'Яркий',
+            color: '#ec4899',
+            hover: '#db2777',
+        },
+    ];
 
     const state = {
         username: chat.dataset.username || '',
@@ -124,7 +168,10 @@
 
     const setComposer = (...nodes) => {
         composer.replaceChildren(...nodes);
-        requestAnimationFrame(() => composer.querySelector('input, button')?.focus());
+        requestAnimationFrame(() => {
+            composer.querySelector('.is-selected, input, button')?.focus();
+            scrollMessages();
+        });
     };
 
     const createButton = (label, className = 'onboarding-chat__primary') => {
@@ -237,6 +284,111 @@
         return wrap;
     };
 
+    const createAccentPalette = () => {
+        const panel = document.createElement('section');
+        panel.className = 'onboarding-chat__palette';
+        panel.setAttribute('aria-label', 'Выбор цвета интерфейса');
+
+        const heading = document.createElement('div');
+        heading.className = 'onboarding-chat__palette-heading';
+        const headingCopy = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = 'Палитра акцента';
+        const description = document.createElement('span');
+        description.textContent = 'Все доступные цвета интерфейса';
+        const count = document.createElement('small');
+        count.textContent = `${accentChoices.length} вариантов`;
+        headingCopy.append(title, description);
+        heading.append(headingCopy, count);
+
+        const grid = document.createElement('div');
+        grid.className = 'onboarding-chat__color-grid';
+        grid.setAttribute('role', 'radiogroup');
+        grid.setAttribute('aria-label', 'Цвет акцента');
+
+        let selectedChoice = accentChoices.find((choice) => choice.value === state.accent)
+            || accentChoices[0];
+
+        const selectChoice = (button, choice) => {
+            selectedChoice = choice;
+            state.accent = choice.value;
+            grid.querySelectorAll('.onboarding-chat__color-option').forEach((item) => {
+                const selected = item === button;
+                item.classList.toggle('is-selected', selected);
+                item.setAttribute('aria-checked', String(selected));
+                item.setAttribute('tabindex', selected ? '0' : '-1');
+            });
+            window.StudentAssistantPreferences?.saveSetting('accent', choice.value);
+        };
+
+        accentChoices.forEach((choice) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'onboarding-chat__color-option';
+            button.dataset.value = choice.value;
+            button.setAttribute('role', 'radio');
+            button.setAttribute('aria-label', choice.label);
+            button.style.setProperty('--choice-color', choice.color);
+            button.style.setProperty('--choice-hover', choice.hover);
+
+            const visual = document.createElement('span');
+            visual.className = 'onboarding-chat__color-visual';
+            visual.appendChild(document.createElement('i'));
+
+            const copy = document.createElement('span');
+            copy.className = 'onboarding-chat__color-copy';
+            const label = document.createElement('strong');
+            label.textContent = choice.label;
+            const note = document.createElement('small');
+            note.textContent = choice.description;
+            copy.append(label, note);
+
+            const check = document.createElement('span');
+            check.className = 'onboarding-chat__color-check';
+            check.textContent = '✓';
+            check.setAttribute('aria-hidden', 'true');
+
+            button.append(visual, copy, check);
+            const selected = choice.value === selectedChoice.value;
+            button.classList.toggle('is-selected', selected);
+            button.setAttribute('aria-checked', String(selected));
+            button.setAttribute('tabindex', selected ? '0' : '-1');
+            button.addEventListener('click', () => selectChoice(button, choice));
+            button.addEventListener('keydown', (event) => {
+                if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+                    return;
+                }
+                event.preventDefault();
+                const buttons = [...grid.querySelectorAll('.onboarding-chat__color-option')];
+                const currentIndex = buttons.indexOf(button);
+                const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1;
+                const nextButton = buttons[(currentIndex + direction + buttons.length) % buttons.length];
+                const nextChoice = accentChoices.find(
+                    (item) => item.value === nextButton.dataset.value,
+                );
+                if (nextChoice) {
+                    selectChoice(nextButton, nextChoice);
+                    nextButton.focus();
+                }
+            });
+            grid.appendChild(button);
+        });
+
+        const actions = document.createElement('div');
+        actions.className = 'onboarding-chat__palette-actions';
+        const hint = document.createElement('span');
+        hint.textContent = 'Предпросмотр применяется сразу';
+        const submit = createButton('Продолжить');
+        submit.addEventListener('click', () => {
+            void answerAndContinue(selectedChoice.label, () => {
+                state.accent = selectedChoice.value;
+            });
+        });
+        actions.append(hint, submit);
+        panel.append(heading, grid, actions);
+        return panel;
+    };
+
     const answerAndContinue = async (answer, applyAnswer) => {
         if (busy) return;
         busy = true;
@@ -344,23 +496,10 @@
                 key: 'accent',
                 title: 'Цвет интерфейса',
                 messages: () => [[
-                    'Выбери цвет интерфейса. Его можно будет поменять позже в настройках.',
+                    'Выбери акцент интерфейса. Я сразу покажу, как он выглядит.',
                 ]],
                 render: () => {
-                    const choices = [
-                        { value: 'purple', label: 'Фиолетовый', color: '#8b5cf6' },
-                        { value: 'blue', label: 'Синий', color: '#3b82f6' },
-                        { value: 'cyan', label: 'Голубой', color: '#06b6d4' },
-                        { value: 'green', label: 'Зелёный', color: '#10b981' },
-                        { value: 'orange', label: 'Оранжевый', color: '#f59e0b' },
-                        { value: 'pink', label: 'Розовый', color: '#ec4899' },
-                    ];
-                    setComposer(createChoices(choices, state.accent, async (choice) => {
-                        window.StudentAssistantPreferences?.saveSetting('accent', choice.value);
-                        await answerAndContinue(choice.label, () => {
-                            state.accent = choice.value;
-                        });
-                    }, true));
+                    setComposer(createAccentPalette());
                 },
             },
             {
@@ -424,6 +563,7 @@
         if (!nextStep) return;
 
         busy = true;
+        chat.dataset.step = nextStep.key;
         composer.classList.add('is-waiting');
         await showTyping();
         updateProgress(nextStepIndex);
@@ -528,6 +668,7 @@
     };
 
     updateProgress(0);
+    chat.dataset.step = 'intro';
     chat.hidden = false;
     document.body.classList.add('onboarding-chat-open');
     startButton.addEventListener('click', () => goToStep(1));

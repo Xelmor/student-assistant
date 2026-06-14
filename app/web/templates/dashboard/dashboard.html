@@ -117,11 +117,11 @@
 
 <span id="onboardingStatus" data-status="{{ onboarding_status or '' }}" hidden></span>
 
-<section class="dashboard-overview-grid">
+<section class="dashboard-overview-grid" data-testid="dashboard-page">
     <article class="dashboard-card dashboard-hero-card">
         <div class="dashboard-hero-copy">
             <span class="dashboard-eyebrow">Твой центр продуктивности</span>
-            <h1>Добрый день,<br><strong>{{ user.display_name or user.username }}</strong></h1>
+            <h1>Добрый день,<br><strong data-testid="current-user-name">{{ user.display_name or user.username }}</strong></h1>
             <p>Фокус, план и дисциплина помогают двигаться к большим результатам каждый день.</p>
             <div class="dashboard-focus-chip">
                 <span aria-hidden="true">✦</span>
@@ -462,5 +462,5 @@
 {% endblock %}
 {% block page_scripts %}
 <script src="/static/js/dashboard.js?v=20260612-onboarding-chat-v1"></script>
-<script src="/static/js/onboarding-chat.js?v=20260612-smart-onboarding-v1"></script>
+<script src="/static/js/onboarding-chat.js?v=20260612-onboarding-palette-v1"></script>
 {% endblock %}

@@ -7,6 +7,11 @@ __pycache__/
 .pytest_cache/
 pytest-cache-files-*
 tests/.tmp/
+test_e2e.db
+playwright-report/
+test-results/
+traces/
+screenshots/
 .env
 *.db
 .idea/

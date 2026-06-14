@@ -28,3 +28,8 @@ class Task(Base):
     user = relationship('User', back_populates='tasks')
     subject = relationship('Subject', back_populates='tasks')
     schedule_item = relationship('ScheduleItem', back_populates='tasks')
+    telegram_deadline_reminder_logs = relationship(
+        'TelegramDeadlineReminderLog',
+        back_populates='task',
+        cascade='all, delete-orphan',
+    )

@@ -23,6 +23,10 @@
     <path d="M20 7v5h-5"></path><path d="M18.5 15a8 8 0 1 1-.7-7.8L20 9"></path>
     {% elif name == 'database' %}
     <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5"></path><path d="M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"></path>
+    {% elif name == 'telegram' %}
+    <path d="m21 4-3.2 16-5.7-4.1-3 2.9.4-5.3L18.2 7 7.5 12.8 3 11.3Z"></path>
+    {% elif name == 'copy' %}
+    <rect x="8" y="8" width="11" height="11" rx="2"></rect><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"></path>
     {% elif name == 'download' %}
     <path d="M12 3v12m-4-4 4 4 4-4"></path><path d="M5 19h14"></path>
     {% elif name == 'upload' %}
@@ -74,6 +78,7 @@
                 <a href="#profile-main" class="is-active">{{ icon('user') }} Основные данные</a>
                 <a href="#profile-appearance">{{ icon('palette') }} Внешний вид</a>
                 <a href="#profile-time">{{ icon('clock') }} Регион и время</a>
+                <a href="#profile-telegram">{{ icon('telegram') }} Telegram-бот</a>
                 <a href="#profile-security">{{ icon('shield') }} Аккаунт</a>
                 <a href="#profile-data">{{ icon('database') }} Резервная копия</a>
             </nav>
@@ -208,6 +213,235 @@
                 </section>
             </div>
 
+            <section
+                class="profile-simple-card profile-telegram-card"
+                id="profile-telegram"
+                data-telegram-status="{{ telegram_status or '' }}"
+            >
+                <div class="profile-simple-card-heading">
+                    <span class="profile-simple-card-icon profile-telegram-icon">{{ icon('telegram') }}</span>
+                    <div>
+                        <h2>Telegram-бот</h2>
+                        <p>Расписание и ближайшие задачи прямо в Telegram.</p>
+                    </div>
+                </div>
+
+                {% if user.telegram_user_id %}
+                <div class="profile-telegram-connected">
+                    <div class="profile-telegram-state">
+                        <span class="profile-telegram-state-icon">{{ icon('check') }}</span>
+                        <div>
+                            <span class="profile-telegram-kicker">Подключено</span>
+                            <strong>
+                                {% if user.telegram_username %}
+                                @{{ user.telegram_username }}
+                                {% else %}
+                                Telegram ID {{ user.telegram_user_id }}
+                                {% endif %}
+                            </strong>
+                            <p>Бот видит только данные этого аккаунта Student Assistant.</p>
+                        </div>
+                    </div>
+                    <div class="profile-telegram-connected-actions">
+                        {% if telegram_bot_url %}
+                        <a href="{{ telegram_bot_url }}" target="_blank" rel="noopener noreferrer">Открыть бота</a>
+                        {% endif %}
+                        <form
+                            method="post"
+                            action="/profile/telegram/unlink"
+                            class="profile-telegram-unlink"
+                            data-confirm-title="Отключить Telegram?"
+                            data-confirm-description="Бот больше не сможет показывать расписание и задачи этого аккаунта."
+                            data-confirm-label="Отключить"
+                        >
+                            {{ csrf_input(request) }}
+                            <button type="submit">Отключить Telegram</button>
+                        </form>
+                    </div>
+                </div>
+
+                <form method="post" action="/profile/telegram/notification-settings" class="profile-telegram-notifications-form">
+                    {{ csrf_input(request) }}
+                    <div class="profile-telegram-settings-grid">
+                        <section class="profile-telegram-setting-panel">
+                            <div class="profile-telegram-setting-heading">
+                                <span>🌅</span>
+                                <div>
+                                    <h3>Утренняя сводка</h3>
+                                    <p>Краткий план на день: пары, задачи и дедлайны.</p>
+                                </div>
+                            </div>
+                            <label class="profile-telegram-switch">
+                                <span>Получать утреннюю сводку</span>
+                                <input
+                                    type="checkbox"
+                                    name="digest_enabled"
+                                    {% if user.telegram_morning_digest_enabled %}checked{% endif %}
+                                >
+                                <i aria-hidden="true"></i>
+                            </label>
+                            <label class="profile-telegram-control">
+                                <span>Время отправки</span>
+                                <input
+                                    type="time"
+                                    name="digest_time"
+                                    value="{{ user.telegram_morning_digest_time.strftime('%H:%M') if user.telegram_morning_digest_time else '08:00' }}"
+                                    required
+                                >
+                            </label>
+                            <label class="profile-telegram-control">
+                                <span>Часовой пояс</span>
+                                <select name="digest_timezone">
+                                    {% set current_digest_timezone = user.telegram_morning_digest_timezone or telegram_digest_default_timezone %}
+                                    {% if current_digest_timezone not in telegram_digest_timezones %}
+                                    <option value="{{ current_digest_timezone }}" selected>{{ current_digest_timezone }}</option>
+                                    {% endif %}
+                                    {% for timezone_name in telegram_digest_timezones %}
+                                    <option
+                                        value="{{ timezone_name }}"
+                                        {% if timezone_name == current_digest_timezone %}selected{% endif %}
+                                    >{{ timezone_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                        </section>
+
+                        <section class="profile-telegram-setting-panel">
+                            <div class="profile-telegram-setting-heading">
+                                <span>⏰</span>
+                                <div>
+                                    <h3>Напоминания о дедлайнах</h3>
+                                    <p>Бот заранее предупредит, если у задачи скоро дедлайн.</p>
+                                </div>
+                            </div>
+                            <label class="profile-telegram-switch">
+                                <span>Уведомлять о дедлайнах</span>
+                                <input
+                                    type="checkbox"
+                                    name="deadline_enabled"
+                                    {% if user.telegram_deadline_reminders_enabled %}checked{% endif %}
+                                >
+                                <i aria-hidden="true"></i>
+                            </label>
+                            <fieldset class="profile-telegram-hours">
+                                <legend>За сколько напоминать?</legend>
+                                <div>
+                                    {% for hours in telegram_deadline_reminder_hours_options %}
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="deadline_hours"
+                                            value="{{ hours }}"
+                                            {% if (user.telegram_deadline_reminder_hours or 24) == hours %}checked{% endif %}
+                                        >
+                                        <span>{{ hours }} {% if hours == 2 %}часа{% else %}часов{% endif %}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </fieldset>
+                        </section>
+                    </div>
+                    <div class="profile-telegram-settings-footer">
+                        <p>Уведомления работают только при подключённом Telegram.</p>
+                        <button type="submit">Сохранить настройки</button>
+                    </div>
+                </form>
+
+                <form method="post" action="/profile/telegram/digest-test" class="profile-telegram-test-form">
+                    {{ csrf_input(request) }}
+                    <button type="submit">Отправить тестовую сводку</button>
+                </form>
+                {% else %}
+                <div class="profile-telegram-connect">
+                    <div class="profile-telegram-copy">
+                        <span class="profile-telegram-kicker">Telegram не подключён</span>
+                        <h3>Свяжи аккаунты одноразовым кодом</h3>
+                        <p>Код действует {{ telegram_link_code_ttl_minutes }} минут и исчезнет сразу после подключения.</p>
+                    </div>
+
+                    {% if telegram_link_code %}
+                    <div class="profile-telegram-code-wrap">
+                        <span>Команда для бота</span>
+                        <div class="profile-telegram-code">
+                            <code id="telegramLinkCommand">/link {{ telegram_link_code }}</code>
+                            <button type="button" id="telegramCopyCode" aria-label="Скопировать команду">
+                                {{ icon('copy') }} <span>Копировать</span>
+                            </button>
+                        </div>
+                        <p>Открой Telegram-бота Student Assistant и отправь эту команду в личном чате.</p>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="/profile/telegram/link-code" class="profile-telegram-generate">
+                        {{ csrf_input(request) }}
+                        <button type="submit" class="profile-primary-button">
+                            {{ icon('telegram') }}
+                            {% if telegram_link_code %}Создать новый код{% else %}Подключить Telegram{% endif %}
+                        </button>
+                    </form>
+                </div>
+
+                <div class="profile-telegram-notifications-form is-disabled" aria-disabled="true">
+                    <div class="profile-telegram-settings-grid">
+                        <section class="profile-telegram-setting-panel">
+                            <div class="profile-telegram-setting-heading">
+                                <span>🌅</span>
+                                <div>
+                                    <h3>Утренняя сводка</h3>
+                                    <p>Пары, задачи и дедлайны на текущий день.</p>
+                                </div>
+                            </div>
+                            <label class="profile-telegram-switch">
+                                <span>Получать утреннюю сводку</span>
+                                <input type="checkbox" disabled>
+                                <i aria-hidden="true"></i>
+                            </label>
+                            <label class="profile-telegram-control">
+                                <span>Время отправки</span>
+                                <input type="time" value="08:00" disabled>
+                            </label>
+                        </section>
+                        <section class="profile-telegram-setting-panel">
+                            <div class="profile-telegram-setting-heading">
+                                <span>⏰</span>
+                                <div>
+                                    <h3>Напоминания о дедлайнах</h3>
+                                    <p>Предупреждение перед ближайшим дедлайном.</p>
+                                </div>
+                            </div>
+                            <label class="profile-telegram-switch">
+                                <span>Уведомлять о дедлайнах</span>
+                                <input type="checkbox" disabled>
+                                <i aria-hidden="true"></i>
+                            </label>
+                            <fieldset class="profile-telegram-hours" disabled>
+                                <legend>За сколько напоминать?</legend>
+                                <div>
+                                    {% for hours in telegram_deadline_reminder_hours_options %}
+                                    <label>
+                                        <input type="radio" {% if hours == 24 %}checked{% endif %}>
+                                        <span>{{ hours }} {% if hours == 2 %}часа{% else %}часов{% endif %}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </fieldset>
+                        </section>
+                    </div>
+                    <div class="profile-telegram-settings-footer">
+                        <p>Сначала подключи Telegram, чтобы включить уведомления.</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="profile-telegram-commands" aria-label="Команды Telegram-бота">
+                    <span><code>/today</code> планы на сегодня</span>
+                    <span><code>/tasks</code> ближайшие задачи</span>
+                    <span><code>/notifications</code> все уведомления</span>
+                    <span><code>/digest</code> утренняя сводка</span>
+                    <span><code>/site</code> открыть сайт</span>
+                </div>
+            </section>
+
             <section class="profile-simple-card" id="profile-security">
                 <div class="profile-simple-card-heading">
                     <span class="profile-simple-card-icon">{{ icon('shield') }}</span>
@@ -293,4 +527,8 @@
         </main>
     </div>
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="/static/js/profile-telegram.js?v=20260614-notifications-v1"></script>
 {% endblock %}

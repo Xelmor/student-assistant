@@ -39,14 +39,14 @@
             <div class="alert alert-danger auth-alert">{{ error }}</div>
             {% endif %}
 
-            <form method="post" action="/register" class="auth-form auth-register-form">
+            <form method="post" action="/register" class="auth-form auth-register-form" data-testid="register-form">
                 {{ csrf_input(request) }}
                 <div class="auth-form-grid">
                     <label class="auth-field">
                         <span>Имя пользователя</span>
                         <span class="auth-input-shell">
                             <i>{{ icon('user') }}</i>
-                            <input type="text" name="username" value="{{ username }}" placeholder="Например, Xelmor" maxlength="50" required autocomplete="username" autofocus>
+                            <input type="text" name="username" value="{{ username }}" placeholder="Например, Xelmor" maxlength="50" required autocomplete="username" autofocus data-testid="register-username-input">
                         </span>
                     </label>
 
@@ -54,7 +54,7 @@
                         <span>Email</span>
                         <span class="auth-input-shell">
                             <i>{{ icon('mail') }}</i>
-                            <input type="email" name="email" value="{{ email }}" placeholder="student@example.com" maxlength="120" required autocomplete="email">
+                            <input type="email" name="email" value="{{ email }}" placeholder="student@example.com" maxlength="120" required autocomplete="email" data-testid="register-email-input">
                         </span>
                     </label>
 
@@ -62,7 +62,7 @@
                         <span>Пароль</span>
                         <span class="auth-input-shell has-toggle">
                             <i>{{ icon('lock') }}</i>
-                            <input type="password" id="register-password" name="password" placeholder="От 8 до 128 символов" minlength="8" maxlength="128" required autocomplete="new-password">
+                            <input type="password" id="register-password" name="password" placeholder="От 8 до 128 символов" minlength="8" maxlength="128" required autocomplete="new-password" data-testid="register-password-input">
                             <button
                                 type="button"
                                 class="auth-password-toggle"
@@ -93,7 +93,7 @@
 
                 </div>
 
-                <button type="submit" class="auth-submit-button">Зарегистрироваться</button>
+                <button type="submit" class="auth-submit-button" data-testid="register-submit">Зарегистрироваться</button>
             </form>
 
             <div class="auth-switch-link">

@@ -39,13 +39,13 @@
             <div class="alert alert-danger auth-alert">{{ error }}</div>
             {% endif %}
 
-            <form method="post" action="/login" class="auth-form">
+            <form method="post" action="/login" class="auth-form" data-testid="login-form">
                 {{ csrf_input(request) }}
                 <label class="auth-field">
                     <span>Логин</span>
                     <span class="auth-input-shell">
                         <i>{{ icon('user') }}</i>
-                        <input type="text" id="login-username" name="username" value="{{ username }}" placeholder="username или email" required autocomplete="username" autofocus>
+                        <input type="text" id="login-username" name="username" value="{{ username }}" placeholder="username или email" required autocomplete="username" autofocus data-testid="login-input">
                     </span>
                 </label>
 
@@ -53,7 +53,7 @@
                     <span>Пароль</span>
                     <span class="auth-input-shell has-toggle">
                         <i>{{ icon('lock') }}</i>
-                        <input type="password" id="login-password" name="password" placeholder="Введите пароль" maxlength="128" required autocomplete="current-password">
+                        <input type="password" id="login-password" name="password" placeholder="Введите пароль" maxlength="128" required autocomplete="current-password" data-testid="login-password-input">
                         <button
                             type="button"
                             class="auth-password-toggle"
@@ -83,7 +83,7 @@
                     <a href="/forgot-password">Забыли пароль?</a>
                 </div>
 
-                <button type="submit" class="auth-submit-button">Войти</button>
+                <button type="submit" class="auth-submit-button" data-testid="login-submit">Войти</button>
             </form>
 
             <div class="auth-switch-link">

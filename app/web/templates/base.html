@@ -17,12 +17,12 @@
     <link rel="icon" type="image/svg+xml" href="/static/pwa/icon-app.svg?v=20260610-purple-sa-v1">
     <link rel="apple-touch-icon" href="/static/pwa/icon-app.svg?v=20260610-purple-sa-v1">
     <script src="/static/js/user-preferences.js?v=20260611-dark-only-v1"></script>
-    <link rel="stylesheet" href="/static/css/style.css?v=20260612-password-hint-v1">
+    <link rel="stylesheet" href="/static/css/style.css?v=20260614-notifications-v1">
 </head>
 <body class="{% block body_class %}{% endblock %}">
 <div class="page-shell">
     <div class="topbar-wrap">
-        <nav class="navbar navbar-expand-lg navbar-dark topbar{% if not request.session.get('user_id') and (request.url.path == '/' or request.url.path == '/about') %} public-topbar{% elif request.url.path == '/login' or request.url.path == '/register' or request.url.path == '/forgot-password' or request.url.path == '/reset-password' %} auth-topbar{% endif %}">
+        <nav class="navbar navbar-expand-lg navbar-dark topbar{% if not request.session.get('user_id') and (request.url.path == '/' or request.url.path == '/about') %} public-topbar{% elif request.url.path == '/login' or request.url.path == '/register' or request.url.path == '/forgot-password' or request.url.path == '/reset-password' %} auth-topbar{% endif %}" data-testid="navbar">
             <div class="container">
                 <a class="navbar-brand" href="{% if request.session.get('user_id') %}/dashboard{% else %}/{% endif %}">
                     <span class="brand-mark">SA</span>
@@ -84,6 +84,7 @@
                                             type="button"
                                             class="dashboard-profile-link{% if request.url.path == '/profile' or request.url.path == '/local-profile' %} is-active{% endif %}"
                                             id="profileMenuToggle"
+                                            data-testid="profile-menu-toggle"
                                             aria-label="Открыть меню пользователя {{ user.username if user is defined else request.session.get('username', '') }}"
                                             aria-haspopup="menu"
                                             aria-controls="profileMenuPanel"
@@ -113,7 +114,7 @@
                                                 <div class="profile-menu-divider" aria-hidden="true"></div>
                                                 <form method="post" action="/logout" class="profile-menu-logout">
                                                     {{ csrf_input(request) }}
-                                                    <button type="submit" class="profile-menu-link" role="menuitem">
+                                                    <button type="submit" class="profile-menu-link" role="menuitem" data-testid="logout-button">
                                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5m4-4 4-3-4-3m4 3H9"></path></svg>
                                                         Выйти
                                                     </button>
@@ -130,7 +131,7 @@
                                 </a>
                                 <form method="post" action="/logout" class="m-0">
                                     {{ csrf_input(request) }}
-                                    <button type="submit" class="btn btn-outline-light btn-sm">Выйти</button>
+                                    <button type="submit" class="btn btn-outline-light btn-sm" data-testid="logout-button">Выйти</button>
                                 </form>
                             {% endif %}
                         {% else %}
@@ -322,7 +323,7 @@
         <p id="confirmDialogDescription">Это действие нельзя отменить.</p>
         <div class="confirm-dialog__actions">
             <button type="button" class="confirm-dialog__button confirm-dialog__button--cancel" id="confirmDialogCancel">Отмена</button>
-            <button type="button" class="confirm-dialog__button confirm-dialog__button--confirm" id="confirmDialogConfirm">Удалить</button>
+            <button type="button" class="confirm-dialog__button confirm-dialog__button--confirm" id="confirmDialogConfirm" data-testid="confirm-dialog-submit">Удалить</button>
         </div>
     </div>
 </section>
@@ -334,9 +335,9 @@
 
 <script src="/static/vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="/static/js/base.js?v=20260611-motion-v1"></script>
-<script src="/static/js/actions-feedback.js?v=20260611-preferences-v1"></script>
+<script src="/static/js/actions-feedback.js?v=20260612-telegram-v1"></script>
 <script src="/static/js/navbar-tools.js?v=20260611-preferences-v1"></script>
-<script src="/static/js/pwa.js?v=20260612-password-hint-v1"></script>
+<script src="/static/js/pwa.js?v=20260612-telegram-v1"></script>
 {% block page_scripts %}{% endblock %}
 </body>
 </html>

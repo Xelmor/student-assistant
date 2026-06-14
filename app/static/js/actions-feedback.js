@@ -77,6 +77,13 @@
             successTitle: 'Событие удалено',
             successDescription: 'Событие удалено из календаря.',
         },
+        {
+            pattern: /^\/profile\/telegram\/unlink\/?$/,
+            title: 'Отключить Telegram?',
+            description: 'Бот больше не сможет показывать расписание и задачи этого аккаунта.',
+            successTitle: 'Telegram отключён',
+            successDescription: 'Бот больше не связан с этим аккаунтом.',
+        },
     ];
 
     const getPathname = (form) => {

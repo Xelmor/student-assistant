@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from secrets import token_urlsafe
 from urllib.parse import urlparse
@@ -59,6 +59,16 @@ def normalize_public_base_url(raw_value: str) -> str:
     return value
 
 
+def normalize_telegram_webhook_path(raw_value: str) -> str:
+    value = raw_value.strip() or '/telegram/webhook'
+    if not value.startswith('/'):
+        value = f'/{value}'
+    value = value.rstrip('/')
+    if not value or '?' in value or '#' in value or '..' in value:
+        raise RuntimeError('TELEGRAM_WEBHOOK_PATH must be a safe URL path.')
+    return value
+
+
 def normalize_database_url(url: str) -> str:
     normalized = url.strip()
     if normalized.startswith('postgres://'):
@@ -94,6 +104,7 @@ def prepare_database_url(url: str, base_dir: Path) -> str:
 @dataclass(frozen=True)
 class Settings:
     app_env: str
+    testing: bool
     secret_key: str
     cookie_secure: bool
     session_max_age_seconds: int
@@ -114,6 +125,19 @@ class Settings:
     smtp_starttls: bool
     smtp_ssl: bool
     password_reset_token_ttl_seconds: int
+    telegram_bot_token: str = field(repr=False)
+    telegram_bot_api_base_url: str
+    telegram_link_code_ttl_minutes: int
+    telegram_use_webhook: bool
+    telegram_webhook_base_url: str
+    telegram_webhook_path: str
+    telegram_webhook_secret: str = field(repr=False)
+    telegram_bot_host: str
+    telegram_bot_port: int
+    telegram_bot_log_level: str
+    telegram_bot_username: str
+    telegram_digest_check_interval_seconds: int
+    disable_telegram: bool
     base_dir: Path
 
 
@@ -122,9 +146,16 @@ def get_settings() -> Settings:
 
     base_dir = Path(__file__).resolve().parent.parent
     app_env = (getenv('APP_ENV') or 'development').strip().lower()
+    testing = env_flag('TESTING') or app_env == 'test'
+    disable_telegram = env_flag('DISABLE_TELEGRAM') or testing
     secret_key = (getenv('SECRET_KEY') or '').strip()
     cookie_secure = env_flag('COOKIE_SECURE')
     session_max_age_seconds = int(getenv('SESSION_MAX_AGE_SECONDS', '43200'))
+    telegram_link_code_ttl_minutes = int(getenv('TELEGRAM_LINK_CODE_TTL_MINUTES', '10'))
+    telegram_bot_port = int(getenv('TELEGRAM_BOT_PORT', '8001'))
+    telegram_digest_check_interval_seconds = int(
+        getenv('TELEGRAM_DIGEST_CHECK_INTERVAL_SECONDS', '60')
+    )
 
     if len(secret_key) < 32 or secret_key.lower() in INSECURE_SECRET_KEYS:
         if app_env == 'production':
@@ -137,6 +168,14 @@ def get_settings() -> Settings:
         raise RuntimeError('COOKIE_SECURE must be true when APP_ENV=production.')
     if not 300 <= session_max_age_seconds <= 30 * 24 * 60 * 60:
         raise RuntimeError('SESSION_MAX_AGE_SECONDS must be between 300 and 2592000.')
+    if not 1 <= telegram_link_code_ttl_minutes <= 24 * 60:
+        raise RuntimeError('TELEGRAM_LINK_CODE_TTL_MINUTES must be between 1 and 1440.')
+    if not 1 <= telegram_bot_port <= 65535:
+        raise RuntimeError('TELEGRAM_BOT_PORT must be between 1 and 65535.')
+    if not 10 <= telegram_digest_check_interval_seconds <= 3600:
+        raise RuntimeError(
+            'TELEGRAM_DIGEST_CHECK_INTERVAL_SECONDS must be between 10 and 3600.'
+        )
 
     database_url = prepare_database_url(
         getenv('DATABASE_URL', f'sqlite:///{DEFAULT_SQLITE_PATH}'),
@@ -168,6 +207,7 @@ def get_settings() -> Settings:
 
     return Settings(
         app_env=app_env,
+        testing=testing,
         secret_key=secret_key,
         cookie_secure=cookie_secure,
         session_max_age_seconds=session_max_age_seconds,
@@ -179,15 +219,39 @@ def get_settings() -> Settings:
         port=int(getenv('PORT', '8000')),
         reload=env_flag('RELOAD'),
         allow_local_private_data=env_flag('ALLOW_LOCAL_PRIVATE_DATA'),
-        smtp_host=(getenv('SMTP_HOST') or '').strip(),
+        smtp_host='' if testing else (getenv('SMTP_HOST') or '').strip(),
         smtp_port=int(getenv('SMTP_PORT', '587')),
-        smtp_username=(getenv('SMTP_USERNAME') or '').strip(),
-        smtp_password=(getenv('SMTP_PASSWORD') or '').strip(),
-        smtp_from_email=(getenv('SMTP_FROM_EMAIL') or '').strip(),
+        smtp_username='' if testing else (getenv('SMTP_USERNAME') or '').strip(),
+        smtp_password='' if testing else (getenv('SMTP_PASSWORD') or '').strip(),
+        smtp_from_email='' if testing else (getenv('SMTP_FROM_EMAIL') or '').strip(),
         smtp_from_name=(getenv('SMTP_FROM_NAME') or 'Student Assistant').strip(),
         smtp_starttls=env_flag('SMTP_STARTTLS', 'true'),
         smtp_ssl=env_flag('SMTP_SSL'),
         password_reset_token_ttl_seconds=int(getenv('PASSWORD_RESET_TOKEN_TTL_SECONDS', '3600')),
+        telegram_bot_token='' if disable_telegram else (
+            (getenv('TELEGRAM_BOT_TOKEN') or '').strip()
+            or (getenv('TELEGRAM_BOT_API_TOKEN') or '').strip()
+        ),
+        telegram_bot_api_base_url=(getenv('TELEGRAM_BOT_API_BASE_URL') or '').strip().rstrip('/'),
+        telegram_link_code_ttl_minutes=telegram_link_code_ttl_minutes,
+        telegram_use_webhook=env_flag('TELEGRAM_USE_WEBHOOK'),
+        telegram_webhook_base_url=(
+            getenv('TELEGRAM_WEBHOOK_BASE_URL') or ''
+        ).strip().rstrip('/'),
+        telegram_webhook_path=normalize_telegram_webhook_path(
+            getenv('TELEGRAM_WEBHOOK_PATH', '/telegram/webhook')
+        ),
+        telegram_webhook_secret=(getenv('TELEGRAM_WEBHOOK_SECRET') or '').strip(),
+        telegram_bot_host=(getenv('TELEGRAM_BOT_HOST') or '127.0.0.1').strip() or '127.0.0.1',
+        telegram_bot_port=telegram_bot_port,
+        telegram_bot_log_level=(
+            getenv('TELEGRAM_BOT_LOG_LEVEL') or 'INFO'
+        ).strip().upper() or 'INFO',
+        telegram_bot_username=(
+            getenv('TELEGRAM_BOT_USERNAME') or 'student_assistant_max_bot'
+        ).strip().lstrip('@'),
+        telegram_digest_check_interval_seconds=telegram_digest_check_interval_seconds,
+        disable_telegram=disable_telegram,
         base_dir=base_dir,
     )
 

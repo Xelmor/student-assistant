@@ -80,6 +80,14 @@ class MigrationTests(unittest.TestCase):
             academic_event_columns = {
                 column['name'] for column in inspector.get_columns('academic_events')
             }
+            reminder_log_columns = {
+                column['name']
+                for column in inspector.get_columns('telegram_deadline_reminder_logs')
+            }
+            user_indexes = {
+                index['name']: bool(index.get('unique'))
+                for index in inspector.get_indexes('users')
+            }
 
             self.assertIn('schedule_unit', user_columns)
             self.assertIn('last_study_day', user_columns)
@@ -88,6 +96,29 @@ class MigrationTests(unittest.TestCase):
             self.assertIn('onboarding_chat_completed', user_columns)
             self.assertIn('display_name', user_columns)
             self.assertIn('password_hint', user_columns)
+            self.assertIn('telegram_user_id', user_columns)
+            self.assertIn('telegram_chat_id', user_columns)
+            self.assertIn('telegram_username', user_columns)
+            self.assertIn('telegram_link_code', user_columns)
+            self.assertIn('telegram_link_code_expires_at', user_columns)
+            self.assertIn('telegram_linked_at', user_columns)
+            self.assertIn('telegram_morning_digest_enabled', user_columns)
+            self.assertIn('telegram_morning_digest_time', user_columns)
+            self.assertIn('telegram_morning_digest_timezone', user_columns)
+            self.assertIn('telegram_morning_digest_last_sent_date', user_columns)
+            self.assertIn('telegram_deadline_reminders_enabled', user_columns)
+            self.assertIn('telegram_deadline_reminder_hours', user_columns)
+            self.assertEqual(
+                reminder_log_columns,
+                {
+                    'id',
+                    'user_id',
+                    'task_id',
+                    'reminder_hours',
+                    'sent_at',
+                    'reminder_date_key',
+                },
+            )
             self.assertIn('completed_at', task_columns)
             self.assertIn('recurrence_group_id', task_columns)
             self.assertIn('recurrence_type', task_columns)
@@ -96,6 +127,8 @@ class MigrationTests(unittest.TestCase):
             self.assertIn('schedule_item_id', task_columns)
             self.assertIn('event_date', academic_event_columns)
             self.assertIn('event_type', academic_event_columns)
+            self.assertTrue(user_indexes['ix_users_telegram_user_id'])
+            self.assertTrue(user_indexes['ix_users_telegram_link_code'])
 
             with engine.begin() as connection:
                 versions = set(
@@ -123,6 +156,10 @@ class MigrationTests(unittest.TestCase):
                     '20260612_01_add_users_onboarding_fields',
                     '20260612_02_add_users_onboarding_chat_fields',
                     '20260612_03_add_users_password_hint',
+                    '20260612_04_add_users_telegram_fields',
+                    '20260612_05_ensure_users_telegram_unique_indexes',
+                    '20260614_01_add_users_telegram_digest_fields',
+                    '20260614_02_add_telegram_deadline_reminders',
                 },
             )
             self.assertTrue(onboarding_completed)

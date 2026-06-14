@@ -105,3 +105,28 @@ class SettingsTests(unittest.TestCase):
         ):
             with self.assertRaises(RuntimeError):
                 get_settings()
+
+    def test_test_mode_disables_external_delivery_credentials(self):
+        with patch.dict(
+            os.environ,
+            {
+                'APP_ENV': 'test',
+                'TESTING': 'true',
+                'DISABLE_TELEGRAM': 'true',
+                'TELEGRAM_BOT_TOKEN': 'must-not-be-used',
+                'SMTP_HOST': 'smtp.example.com',
+                'SMTP_USERNAME': 'mailer',
+                'SMTP_PASSWORD': 'must-not-be-used',
+                'SMTP_FROM_EMAIL': 'student@example.com',
+            },
+            clear=False,
+        ):
+            settings = get_settings()
+
+        self.assertTrue(settings.testing)
+        self.assertTrue(settings.disable_telegram)
+        self.assertEqual(settings.telegram_bot_token, '')
+        self.assertEqual(settings.smtp_host, '')
+        self.assertEqual(settings.smtp_username, '')
+        self.assertEqual(settings.smtp_password, '')
+        self.assertEqual(settings.smtp_from_email, '')
