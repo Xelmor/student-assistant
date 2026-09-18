@@ -14,7 +14,7 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js?v=20260612-telegram-v1').catch(() => {});
+      navigator.serviceWorker.register('/service-worker.js?v=20260917-core-v2').catch(() => {});
     });
   }
 

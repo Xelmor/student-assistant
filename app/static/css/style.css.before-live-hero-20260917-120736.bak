@@ -6,7 +6,7 @@
 @import url("/static/css/responsive.css?v=20260604-calendar-override");
 @import url("/static/css/mobile.css?v=20260420-mobilequick");
 @import url("/static/css/landing.css?v=20260420-mobilequick");
-@import url("/static/css/pages/dashboard-theme.css?v=20260917-live-hero-v3");
+@import url("/static/css/pages/dashboard-theme.css?v=20260917-core-v2");
 @import url("/static/css/pages/onboarding.css?v=20260612-onboarding-v1");
 @import url("/static/css/pages/onboarding-chat.css?v=20260612-onboarding-palette-v1");
 @import url("/static/css/pages/tasks-theme.css?v=20260607-dark-tasks");

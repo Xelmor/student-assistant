@@ -166,7 +166,7 @@ def build_today_reminders(now, active_schedule_item, next_schedule_item, deadlin
         reminders.append({
             'title': f'Сейчас идет {active_schedule_item.subject.name}',
             'time_label': f'До {active_schedule_item.end_time.strftime("%H:%M")}',
-            'meta': f'{active_schedule_item.lesson_type or schedule_terms.singular.capitalize()}{f" · {active_schedule_item.room}" if active_schedule_item.room else ""}',
+            'meta': f'{active_schedule_item.lesson_type or schedule_terms["singular"].capitalize()}{f" · {active_schedule_item.room}" if active_schedule_item.room else ""}',
             'tone': 'live',
             'url': '/schedule',
         })
@@ -174,7 +174,7 @@ def build_today_reminders(now, active_schedule_item, next_schedule_item, deadlin
         reminders.append({
             'title': f'Следующее занятие: {next_schedule_item.subject.name}',
             'time_label': next_schedule_item.start_time.strftime('%H:%M'),
-            'meta': f'{next_schedule_item.lesson_type or schedule_terms.singular.capitalize()}{f" · {next_schedule_item.room}" if next_schedule_item.room else ""}',
+            'meta': f'{next_schedule_item.lesson_type or schedule_terms["singular"].capitalize()}{f" · {next_schedule_item.room}" if next_schedule_item.room else ""}',
             'tone': 'upcoming',
             'url': '/schedule',
         })

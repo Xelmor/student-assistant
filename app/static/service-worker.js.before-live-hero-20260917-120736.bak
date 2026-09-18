@@ -1,4 +1,4 @@
-const CACHE_NAME = 'student-assistant-v54-live-hero-v3';
+const CACHE_NAME = 'student-assistant-v54-core-v2';
 const APP_SHELL = [
   '/static/vendor/bootstrap/bootstrap.min.css',
   '/static/vendor/bootstrap/bootstrap.bundle.min.js',
@@ -7,7 +7,7 @@ const APP_SHELL = [
   '/static/css/core/responsive.css',
   '/static/css/core/mobile.css',
   '/static/css/pages/dashboard.css',
-  '/static/css/pages/dashboard-theme.css?v=20260917-live-hero-v3',
+  '/static/css/pages/dashboard-theme.css?v=20260917-core-v2',
   '/static/css/pages/onboarding.css?v=20260612-onboarding-v1',
   '/static/css/pages/onboarding-chat.css?v=20260612-onboarding-palette-v1',
   '/static/css/pages/tasks-theme.css?v=20260607-dark-tasks',
@@ -39,7 +39,7 @@ const APP_SHELL = [
   '/static/js/auth-password-hint.js?v=20260612-password-hint-v1',
   '/static/js/password-recovery.js?v=20260611-password-recovery-v1',
   '/static/js/error-page.js?v=20260612-error-pages-v1',
-  '/static/js/dashboard.js?v=20260917-live-hero-v3',
+  '/static/js/dashboard.js?v=20260917-core-v2',
   '/static/js/onboarding-chat.js?v=20260612-onboarding-palette-v1',
   '/static/js/tasks.js?v=20260611-motion-v1',
   '/static/js/subjects.js?v=20260611-motion-v1',

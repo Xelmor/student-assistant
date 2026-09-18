@@ -118,114 +118,42 @@
 <span id="onboardingStatus" data-status="{{ onboarding_status or '' }}" hidden></span>
 
 <section class="dashboard-overview-grid" data-testid="dashboard-page">
-    <article class="dashboard-card dashboard-hero-card dashboard-live-hero-v3" id="dashboardLiveHero">
-        <div class="sa-live-hero-layout">
-            <div class="dashboard-hero-copy">
-                <span class="dashboard-eyebrow">Твой центр продуктивности</span>
-                <h1>Добрый день,<br><strong data-testid="current-user-name">{{ user.display_name or user.username }}</strong></h1>
-                <p>Фокус, план и дисциплина помогают двигаться к большим результатам каждый день.</p>
-                <div class="dashboard-focus-chip">
-                    <span aria-hidden="true">✦</span>
-                    <span>{{ motivation_quote }}</span>
-                </div>
+    <article class="dashboard-card dashboard-hero-card dashboard-core-hero">
+        <div class="dashboard-hero-copy">
+            <span class="dashboard-eyebrow">Твой центр продуктивности</span>
+            <h1>Добрый день,<br><strong data-testid="current-user-name">{{ user.display_name or user.username }}</strong></h1>
+            <p>Фокус, план и дисциплина помогают двигаться к большим результатам каждый день.</p>
+            <div class="dashboard-focus-chip">
+                <span aria-hidden="true">✦</span>
+                <span>{{ motivation_quote }}</span>
             </div>
-
-            <div class="sa-live-hero-stage" aria-label="Сводка на сегодня">
-                <div class="sa-live-hero-grid" aria-hidden="true"></div>
-                <div class="sa-live-hero-aurora sa-live-hero-aurora-a" data-hero-depth="0.12" aria-hidden="true"></div>
-                <div class="sa-live-hero-aurora sa-live-hero-aurora-b" data-hero-depth="0.18" aria-hidden="true"></div>
-                <span class="sa-live-hero-particle particle-a" data-hero-depth="0.22" aria-hidden="true"></span>
-                <span class="sa-live-hero-particle particle-b" data-hero-depth="0.16" aria-hidden="true"></span>
-                <span class="sa-live-hero-particle particle-c" data-hero-depth="0.28" aria-hidden="true"></span>
-                <span class="sa-live-hero-particle particle-d" data-hero-depth="0.20" aria-hidden="true"></span>
-
-                <div class="sa-live-hero-board-wrap">
-                    <section class="sa-live-hero-board" data-hero-depth="0.42">
-                        <header class="sa-live-hero-board-top">
-                            <span class="sa-live-hero-status">
-                                <i aria-hidden="true"></i>
-                                Сегодня
-                            </span>
-                            <time class="sa-live-hero-clock" id="dashboardHeroClock">{{ now.strftime('%H:%M') }}</time>
-                        </header>
-
-                        <div class="sa-live-hero-date">{{ now.strftime('%d.%m.%Y') }}</div>
-
-                        <div class="sa-live-hero-next">
-                            {% if active_schedule_item %}
-                                <span class="sa-live-hero-next-kicker is-live">Сейчас идёт</span>
-                                <strong>{{ active_schedule_item.subject.name }}</strong>
-                                <p>
-                                    {{ active_schedule_item.start_time.strftime('%H:%M') }}–{{ active_schedule_item.end_time.strftime('%H:%M') }}
-                                    {% if active_schedule_item.room %}<span>·</span>{{ active_schedule_item.room }}{% endif %}
-                                </p>
-                            {% elif next_schedule_item %}
-                                <span class="sa-live-hero-next-kicker">Следующая пара</span>
-                                <strong>{{ next_schedule_item.subject.name }}</strong>
-                                <p>
-                                    {{ next_schedule_item.start_time.strftime('%H:%M') }}–{{ next_schedule_item.end_time.strftime('%H:%M') }}
-                                    {% if next_schedule_item.room %}<span>·</span>{{ next_schedule_item.room }}{% endif %}
-                                </p>
-                            {% elif urgent_tasks %}
-                                <span class="sa-live-hero-next-kicker">Ближайшая задача</span>
-                                <strong>{{ urgent_tasks[0].title }}</strong>
-                                <p>
-                                    {% if urgent_tasks[0].subject %}{{ urgent_tasks[0].subject.name }}{% else %}Без предмета{% endif %}
-                                    {% if urgent_tasks[0].deadline %}<span>·</span>до {{ urgent_tasks[0].deadline.strftime('%d.%m %H:%M') }}{% endif %}
-                                </p>
-                            {% else %}
-                                <span class="sa-live-hero-next-kicker">Свободное окно</span>
-                                <strong>На сегодня всё спокойно</strong>
-                                <p>Можно разобрать заметки или запланировать следующий шаг.</p>
-                            {% endif %}
-                        </div>
-
-                        <div class="sa-live-hero-progress" aria-hidden="true">
-                            <span class="is-active"></span>
-                            <span class="is-active"></span>
-                            <span class="{% if pending_count or today_schedule %}is-active{% endif %}"></span>
-                            <span></span>
-                        </div>
-
-                        <div class="sa-live-hero-stats">
-                            <a href="/tasks" class="sa-live-hero-stat">
-                                <small>Задачи</small>
-                                <strong>{{ pending_count }}</strong>
-                                <span>{% if pending_count == 1 %}активная{% else %}активных{% endif %}</span>
-                            </a>
-                            <a href="/schedule" class="sa-live-hero-stat">
-                                <small>Сегодня</small>
-                                <strong>{{ today_schedule|length }}</strong>
-                                <span>{% if today_schedule|length == 1 %}занятие{% else %}занятия{% endif %}</span>
-                            </a>
-                            <a href="/profile" class="sa-live-hero-stat sa-live-hero-stat-rhythm">
-                                <small>Ритм</small>
-                                {% if streak.days > 0 %}
-                                    <strong>{{ streak.days }}</strong>
-                                    <span>{% if streak.days == 1 %}день подряд{% else %}дней подряд{% endif %}</span>
-                                {% else %}
-                                    <strong class="is-word">Старт</strong>
-                                    <span>закрой задачу</span>
-                                {% endif %}
-                            </a>
-                        </div>
-
-                        <footer class="sa-live-hero-board-footer">
-                            <span>STUDENT ASSISTANT</span>
-                            <a href="/calendar">Открыть день <b aria-hidden="true">→</b></a>
-                        </footer>
-                    </section>
-                </div>
-
-                <div class="sa-live-hero-caption" aria-hidden="true">
-                    <i></i>
-                    <span>Учебный день в фокусе</span>
-                </div>
-            </div>
+        </div>
+        <div class="dashboard-core" id="dashboardCore" aria-label="Student Assistant Core: задачи, занятия и серия выполненных задач">
+            <span class="dashboard-core-particle" style="--particle-x: 12%; --particle-y: 20%; --particle-delay: -1s" aria-hidden="true"></span>
+            <span class="dashboard-core-particle" style="--particle-x: 81%; --particle-y: 17%; --particle-delay: -5s" aria-hidden="true"></span>
+            <span class="dashboard-core-particle" style="--particle-x: 91%; --particle-y: 44%; --particle-delay: -3s" aria-hidden="true"></span>
+            <span class="dashboard-core-particle" style="--particle-x: 14%; --particle-y: 80%; --particle-delay: -7s" aria-hidden="true"></span>
+            <span class="dashboard-core-particle" style="--particle-x: 65%; --particle-y: 88%; --particle-delay: -2s" aria-hidden="true"></span>
+            <svg class="dashboard-core-lines core-parallax" data-depth="0.2" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M50 50 L20 55 M50 50 L50 20 M50 50 L80 69"></path>
+            </svg>
+            <div class="dashboard-core-orb core-parallax" data-depth="0.4" aria-hidden="true"><span>STUDENT<br>ASSISTANT</span></div>
+            <a class="dashboard-core-metric dashboard-core-tasks core-parallax" data-depth="0.75" href="/tasks" aria-label="Активных задач: {{ pending_count }}">
+                <span class="dashboard-core-dot" aria-hidden="true"></span>
+                <span><strong id="dashboardCorePendingCount">{{ pending_count }}</strong> <span id="dashboardCorePendingLabel">{% if pending_count % 10 == 1 and pending_count % 100 != 11 %}задача{% elif pending_count % 10 in [2, 3, 4] and pending_count % 100 not in [12, 13, 14] %}задачи{% else %}задач{% endif %}</span></span>
+            </a>
+            <a class="dashboard-core-metric dashboard-core-lessons core-parallax" data-depth="0.65" href="/schedule" aria-label="Занятий сегодня: {{ today_schedule|length }}">
+                <span class="dashboard-core-dot" aria-hidden="true"></span>
+                <span><strong>{{ today_schedule|length }}</strong> {% if today_schedule|length % 10 == 1 and today_schedule|length % 100 != 11 %}занятие{% elif today_schedule|length % 10 in [2, 3, 4] and today_schedule|length % 100 not in [12, 13, 14] %}занятия{% else %}занятий{% endif %}</span>
+            </a>
+            <a class="dashboard-core-metric dashboard-core-streak core-parallax" data-depth="0.85" href="/profile" aria-label="Серия: {{ streak.days }} дней подряд">
+                <span class="dashboard-core-dot" aria-hidden="true"></span>
+                <span><strong>{{ streak.days }}</strong> {% if streak.days % 10 == 1 and streak.days % 100 != 11 %}день{% elif streak.days % 10 in [2, 3, 4] and streak.days % 100 not in [12, 13, 14] %}дня{% else %}дней{% endif %} подряд</span>
+            </a>
         </div>
     </article>
 
-<article class="dashboard-card dashboard-calendar-card">
+    <article class="dashboard-card dashboard-calendar-card">
         <header class="dashboard-card-heading">
             <div>
                 <span class="dashboard-card-kicker">Календарь</span>
@@ -556,6 +484,6 @@
 </section>
 {% endblock %}
 {% block page_scripts %}
-<script src="/static/js/dashboard.js?v=20260917-live-hero-v3"></script>
+<script src="/static/js/dashboard.js?v=20260917-core-v2"></script>
 <script src="/static/js/onboarding-chat.js?v=20260612-onboarding-palette-v1"></script>
 {% endblock %}
