@@ -250,6 +250,32 @@ def _ensure_users_telegram_unique_indexes(connection: Connection) -> None:
         )
 
 
+
+def _add_users_local_profile_fields(connection: Connection) -> None:
+    if 'users' not in inspect(connection).get_table_names():
+        return
+
+    if not _column_exists(connection, 'users', 'is_local_profile'):
+        connection.execute(
+            text(
+                'ALTER TABLE users ADD COLUMN '
+                'is_local_profile BOOLEAN NOT NULL DEFAULT FALSE'
+            )
+        )
+    if not _column_exists(connection, 'users', 'local_access_token_hash'):
+        connection.execute(
+            text('ALTER TABLE users ADD COLUMN local_access_token_hash VARCHAR(64)')
+        )
+    if not _unique_index_exists(connection, 'users', 'ix_users_local_access_token_hash'):
+        if _index_exists(connection, 'users', 'ix_users_local_access_token_hash'):
+            connection.execute(text('DROP INDEX IF EXISTS ix_users_local_access_token_hash'))
+        connection.execute(
+            text(
+                'CREATE UNIQUE INDEX ix_users_local_access_token_hash '
+                'ON users (local_access_token_hash)'
+            )
+        )
+
 def _add_users_telegram_digest_fields(connection: Connection) -> None:
     if 'users' not in inspect(connection).get_table_names():
         return
@@ -337,6 +363,11 @@ MIGRATIONS = [
         version='20260612_05_ensure_users_telegram_unique_indexes',
         description='Ensure Telegram account and link code indexes are unique.',
         upgrade=_ensure_users_telegram_unique_indexes,
+    ),
+    Migration(
+        version='20260920_01_add_users_local_profile_fields',
+        description='Add passwordless device profile access fields.',
+        upgrade=_add_users_local_profile_fields,
     ),
     Migration(
         version='20260614_01_add_users_telegram_digest_fields',

@@ -66,7 +66,7 @@
                 пространстве.
             </p>
             <div class="about-hero__actions">
-                <a class="about-button about-button--primary" href="{% if request.session.get('user_id') %}/dashboard{% else %}/register{% endif %}">
+                <a class="about-button about-button--primary" href="{% if request.session.get('user_id') %}/dashboard{% else %}/#start{% endif %}">
                     {% if request.session.get('user_id') %}Открыть кабинет{% else %}Начать пользоваться{% endif %}
                     {{ icon('arrow') }}
                 </a>
@@ -224,7 +224,7 @@
             <article class="about-architecture-card">
                 <span class="about-card-icon is-purple">{{ icon('server') }}</span>
                 <h3>Backend</h3>
-                <p>Маршруты FastAPI, авторизация, данные пользователя и бизнес-логика.</p>
+                <p>Маршруты FastAPI, профиль устройства, данные пользователя и бизнес-логика.</p>
             </article>
             <article class="about-architecture-card">
                 <span class="about-card-icon is-blue">{{ icon('code') }}</span>
@@ -249,10 +249,10 @@
             <span class="about-card-icon is-purple about-security__icon">{{ icon('shield') }}</span>
             <span class="about-kicker">Базовые меры</span>
             <h2 id="securityTitle">Безопасность</h2>
-            <p>В проекте предусмотрены базовые меры безопасности: защита приватных страниц, безопасная работа с паролями, проверка форм, подтверждение удаления данных и аккуратная обработка ошибок.</p>
+            <p>Новые профили создаются без email и пароля. Для доступа с этого устройства используется случайный токен в защищённой cookie; формы дополнительно защищены CSRF-проверкой.</p>
         </div>
         <div class="about-security__list">
-            <span>{{ icon('lock') }}Авторизация</span>
+            <span>{{ icon('lock') }}Профиль устройства</span>
             <span>{{ icon('check') }}Безопасные формы</span>
             <span>{{ icon('check') }}Подтверждение удаления</span>
             <span>{{ icon('check') }}Страницы ошибок</span>
@@ -285,7 +285,7 @@
             <h2 id="roadmapTitle">Планы развития</h2>
         </div>
         <div class="about-roadmap-grid">
-            <article><span>01</span><h3>Демо-режим</h3><p>Возможность посмотреть проект без регистрации.</p></article>
+            <article><span>01</span><h3>Синхронизация</h3><p>Опциональный перенос профиля между устройствами без обязательной почты.</p></article>
             <article><span>02</span><h3>Расширение обмена данными</h3><p>Дополнительные форматы импорта и экспорта учебных данных.</p></article>
             <article><span>03</span><h3>Умные подсказки</h3><p>Рекомендации по задачам и дедлайнам.</p></article>
             <article><span>04</span><h3>Расширенная статистика</h3><p>Анализ учебной нагрузки и прогресса.</p></article>

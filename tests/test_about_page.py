@@ -51,22 +51,16 @@ def test_landing_links_to_about_page():
 
     assert response.status_code == 200
     assert 'href="/about">О проекте</a>' in response.text
-    assert response.text.index('href="#faq">FAQ</a>') < response.text.index(
-        'href="/about">О проекте</a>'
-    )
+    assert 'href="/#start"' in response.text
 
 
-def test_about_page_keeps_full_public_navigation():
+def test_about_page_keeps_compact_public_navigation():
     with TestClient(app) as client:
         response = client.get('/about')
 
     assert response.status_code == 200
     for href, label in (
-        ('/#hero', 'Главная'),
-        ('/#features', 'Возможности'),
-        ('/#interface', 'Интерфейс'),
-        ('/#study', 'Для учёбы'),
-        ('/#faq', 'FAQ'),
+        ('/', 'Главная'),
         ('/about', 'О проекте'),
     ):
         assert f'href="{href}"' in response.text

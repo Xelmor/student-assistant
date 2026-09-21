@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% from 'auth/_auth_macros.html' import icon, showcase %}
+{% block title %}Вход — Student Assistant{% endblock %}
+{% block theme_color %}#050816{% endblock %}
+{% block body_class %}auth-page auth-login-page{% endblock %}
+
+{% block content %}
+<div class="auth-space">
+    <span class="auth-orb is-large"></span>
+    <span class="auth-orb is-small"></span>
+    <span class="auth-star is-one"></span>
+    <span class="auth-star is-two"></span>
+    <span class="auth-star is-three"></span>
+    <span class="auth-orbit is-one"></span>
+    <span class="auth-orbit is-two"></span>
+
+    <div class="auth-layout">
+        {{ showcase(
+            'С возвращением',
+            'Добро пожаловать',
+            'в',
+            'Student Assistant',
+            'Единое пространство для учёбы, планирования и достижения академических целей.'
+        ) }}
+
+        <section class="auth-form-card">
+            <div class="auth-card-glow" aria-hidden="true"></div>
+            <div class="auth-lock-visual" aria-hidden="true">
+                <span>{{ icon('lock') }}</span>
+                <i></i><i></i>
+            </div>
+            <div class="auth-form-heading">
+                <span>Безопасный доступ</span>
+                <h2>Вход в аккаунт</h2>
+                <p>Продолжи работу со своим учебным пространством.</p>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-danger auth-alert">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" action="/login" class="auth-form" data-testid="login-form">
+                {{ csrf_input(request) }}
+                <label class="auth-field">
+                    <span>Логин</span>
+                    <span class="auth-input-shell">
+                        <i>{{ icon('user') }}</i>
+                        <input type="text" id="login-username" name="username" value="{{ username }}" placeholder="username или email" required autocomplete="username" autofocus data-testid="login-input">
+                    </span>
+                </label>
+
+                <label class="auth-field">
+                    <span>Пароль</span>
+                    <span class="auth-input-shell has-toggle">
+                        <i>{{ icon('lock') }}</i>
+                        <input type="password" id="login-password" name="password" placeholder="Введите пароль" maxlength="128" required autocomplete="current-password" data-testid="login-password-input">
+                        <button
+                            type="button"
+                            class="auth-password-toggle"
+                            data-password-toggle
+                            data-password-target="login-password"
+                            aria-label="Показать пароль"
+                        >Показать</button>
+                    </span>
+                </label>
+
+                <div class="auth-password-assist">
+                    <button
+                        type="button"
+                        class="auth-hint-button"
+                        data-password-hint-request
+                        aria-controls="passwordHintResult"
+                        aria-expanded="false"
+                    >
+                        {{ icon('hint') }}
+                        <span>Показать подсказку к паролю</span>
+                    </button>
+                    <p class="auth-hint-result" id="passwordHintResult" data-password-hint-result hidden aria-live="polite"></p>
+                </div>
+
+                <div class="auth-form-meta">
+                    <span class="auth-secure-note">{{ icon('lock') }} Защищённая сессия</span>
+                    <a href="/forgot-password">Забыли пароль?</a>
+                </div>
+
+                <button type="submit" class="auth-submit-button" data-testid="login-submit">Войти</button>
+            </form>
+
+            <div class="auth-switch-link">
+                Ещё нет аккаунта? <a href="/register">Зарегистрируйтесь</a>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="/static/js/auth-password-hint.js?v=20260612-password-hint-v1"></script>
+{% endblock %}

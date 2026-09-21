@@ -16,6 +16,7 @@ class AppSmokeTests(unittest.TestCase):
             '/',
             '/login',
             '/register',
+            '/start',
             '/password-hint',
             '/about',
             '/dashboard',
@@ -96,6 +97,7 @@ class AppSmokeTests(unittest.TestCase):
             'password-recovery.css',
             'error-pages.css',
             'about.css',
+            'entry.css',
         }
 
         self.assertTrue(expected_core_css.issubset({path.name for path in (css_dir / 'core').iterdir()}))
@@ -112,7 +114,7 @@ class AppSmokeTests(unittest.TestCase):
         text = (self._template_dir() / 'base.html').read_text(encoding='utf-8')
         self.assertIn('/static/vendor/bootstrap/bootstrap.min.css', text)
         self.assertIn('/static/vendor/bootstrap/bootstrap.bundle.min.js', text)
-        self.assertIn('/static/css/style.css?v=20260614-notifications-v1', text)
+        self.assertIn('/static/css/style.css?v=20260920-entry-v1', text)
         self.assertIn('/static/js/base.js?v=20260611-motion-v1', text)
         self.assertIn('/static/js/user-preferences.js?v=20260611-dark-only-v1', text)
         self.assertIn('/static/js/actions-feedback.js?v=20260612-telegram-v1', text)

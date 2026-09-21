@@ -1,0 +1,534 @@
+{% extends 'base.html' %}
+{% block title %}Настройки профиля{% endblock %}
+{% block theme_color %}#070b1a{% endblock %}
+{% block body_class %}dashboard-page profile-page profile-settings-page{% endblock %}
+
+{% macro icon(name) -%}
+<svg viewBox="0 0 24 24" aria-hidden="true">
+    {% if name == 'user' %}
+    <circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.6-4 3-6 7-6s6.4 2 7 6"></path>
+    {% elif name == 'check' %}
+    <path d="m5 12 4 4L19 6"></path>
+    {% elif name == 'palette' %}
+    <path d="M12 3a9 9 0 1 0 0 18h1.5a2 2 0 0 0 0-4H12a2 2 0 0 1 0-4h3a6 6 0 0 0-3-10Z"></path><circle cx="7.5" cy="10" r=".8"></circle><circle cx="10" cy="6.8" r=".8"></circle><circle cx="14.2" cy="7" r=".8"></circle>
+    {% elif name == 'clock' %}
+    <circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>
+    {% elif name == 'shield' %}
+    <path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6Z"></path><path d="m9 12 2 2 4-5"></path>
+    {% elif name == 'lock' %}
+    <rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+    {% elif name == 'logout' %}
+    <path d="M10 5H5v14h5m4-4 4-3-4-3m4 3H9"></path>
+    {% elif name == 'refresh' %}
+    <path d="M20 7v5h-5"></path><path d="M18.5 15a8 8 0 1 1-.7-7.8L20 9"></path>
+    {% elif name == 'database' %}
+    <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5"></path><path d="M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"></path>
+    {% elif name == 'telegram' %}
+    <path d="m21 4-3.2 16-5.7-4.1-3 2.9.4-5.3L18.2 7 7.5 12.8 3 11.3Z"></path>
+    {% elif name == 'copy' %}
+    <rect x="8" y="8" width="11" height="11" rx="2"></rect><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"></path>
+    {% elif name == 'download' %}
+    <path d="M12 3v12m-4-4 4 4 4-4"></path><path d="M5 19h14"></path>
+    {% elif name == 'upload' %}
+    <path d="M12 16V4m-4 4 4-4 4 4"></path><path d="M5 20h14"></path>
+    {% elif name == 'arrow' %}
+    <path d="M5 12h14m-5-5 5 5-5 5"></path>
+    {% elif name == 'chevron' %}
+    <path d="m7 10 5 5 5-5"></path>
+    {% endif %}
+</svg>
+{%- endmacro %}
+
+{% block content %}
+<div class="profile-simple" id="profile-settings">
+    <header class="profile-simple-header">
+        <div class="profile-simple-title">
+            <span class="profile-simple-title-icon">{{ icon('user') }}</span>
+            <div>
+                <span class="profile-eyebrow">Личный кабинет</span>
+                <h1>Настройки профиля</h1>
+                <p>Данные аккаунта и основные параметры интерфейса в одном месте.</p>
+            </div>
+        </div>
+        <a href="/dashboard" class="profile-simple-back">Вернуться на главную {{ icon('arrow') }}</a>
+    </header>
+
+    <div class="profile-simple-layout">
+        <aside class="profile-simple-sidebar">
+            <section class="profile-simple-person">
+                <span class="profile-simple-person-label">Профиль</span>
+                <div class="profile-simple-avatar" data-user-avatar>{{ (user.display_name or user.username)[0]|upper }}</div>
+                <h2>{{ user.display_name or user.username }}</h2>
+                <p>{{ user.email }}</p>
+                <span class="profile-simple-status"><i></i> Аккаунт активен</span>
+
+                <div class="profile-simple-meta">
+                    <div>
+                        <span>Группа</span>
+                        <strong>{{ user.group_name or 'Не указана' }}</strong>
+                    </div>
+                    <div>
+                        <span>Курс</span>
+                        <strong>{{ user.course or '—' }}</strong>
+                    </div>
+                </div>
+            </section>
+
+            <nav class="profile-simple-nav" aria-label="Разделы настроек профиля">
+                <a href="#profile-main" class="is-active">{{ icon('user') }} Основные данные</a>
+                <a href="#profile-appearance">{{ icon('palette') }} Внешний вид</a>
+                <a href="#profile-time">{{ icon('clock') }} Регион и время</a>
+                <a href="#profile-telegram">{{ icon('telegram') }} Telegram-бот</a>
+                <a href="#profile-security">{{ icon('shield') }} Аккаунт</a>
+                <a href="#profile-data">{{ icon('database') }} Резервная копия</a>
+            </nav>
+
+            {% if local_private_data_available %}
+            <a href="/local-profile" class="profile-simple-private">
+                {{ icon('database') }}
+                <span><strong>Личные данные</strong><small>Локальный защищённый раздел</small></span>
+                {{ icon('arrow') }}
+            </a>
+            {% endif %}
+        </aside>
+
+        <main class="profile-simple-content">
+            <section class="profile-simple-card" id="profile-main">
+                <div class="profile-simple-card-heading">
+                    <span class="profile-simple-card-icon">{{ icon('user') }}</span>
+                    <div>
+                        <h2>Основные данные</h2>
+                        <p>Имя, email и информация об учёбе.</p>
+                    </div>
+                </div>
+
+                <div class="profile-simple-avatar-row">
+                    <div class="profile-settings-avatar" data-user-avatar>{{ (user.display_name or user.username)[0]|upper }}</div>
+                    <div>
+                        <strong>Аватар профиля</strong>
+                        <p>Градиент сохраняется локально в этом браузере.</p>
+                    </div>
+                    <details class="profile-avatar-picker">
+                        <summary>Изменить</summary>
+                        <div class="profile-avatar-options" aria-label="Выбор аватара">
+                            {% for avatar in ['violet', 'blue', 'pink', 'green', 'orange', 'cyan'] %}
+                            <button type="button" class="profile-avatar-option" data-avatar-option="{{ avatar }}" aria-label="Выбрать аватар {{ loop.index }}" aria-pressed="false">{{ (user.display_name or user.username)[0]|upper }}</button>
+                            {% endfor %}
+                        </div>
+                    </details>
+                </div>
+
+                {% if error %}
+                <div class="alert alert-danger profile-alert">{{ error }}</div>
+                {% endif %}
+                {% if success %}
+                <div class="alert alert-success profile-alert">{{ success }}</div>
+                {% endif %}
+
+                <form method="post" action="/profile" class="profile-account-form profile-simple-form">
+                    {{ csrf_input(request) }}
+                    <label class="profile-field">
+                        <span>Отображаемое имя</span>
+                        <input type="text" name="display_name" value="{{ user.display_name or '' }}" maxlength="40" placeholder="Как к тебе обращаться">
+                    </label>
+                    <label class="profile-field">
+                        <span>Логин</span>
+                        <input type="text" name="username" value="{{ user.username }}" maxlength="50" required autocomplete="username">
+                    </label>
+                    <label class="profile-field">
+                        <span>Email</span>
+                        <input type="email" name="email" value="{{ user.email }}" maxlength="120" required autocomplete="email">
+                    </label>
+                    <label class="profile-field">
+                        <span>Группа</span>
+                        <input type="text" name="group_name" value="{{ user.group_name or '' }}" maxlength="50" placeholder="Например, ИКБО-42-24">
+                    </label>
+                    <label class="profile-field">
+                        <span>Курс</span>
+                        <input type="number" name="course" min="1" max="12" value="{{ user.course or '' }}" placeholder="Например, 2">
+                    </label>
+                    <label class="profile-field is-wide">
+                        <span>Формат расписания</span>
+                        <select name="schedule_unit">
+                            {% for unit_key, unit in schedule_unit_options.items() %}
+                            <option value="{{ unit_key }}" {% if (user.schedule_unit or 'class') == unit_key %}selected{% endif %}>{{ unit.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <div class="profile-form-actions">
+                        <button type="submit" class="profile-primary-button">{{ icon('check') }} Сохранить изменения</button>
+                        <button type="reset" class="profile-secondary-button">Отменить изменения</button>
+                    </div>
+                </form>
+            </section>
+
+            <div class="profile-simple-settings-row">
+                <section class="profile-simple-card profile-simple-compact" id="profile-appearance">
+                    <div class="profile-simple-card-heading">
+                        <span class="profile-simple-card-icon">{{ icon('palette') }}</span>
+                        <div>
+                            <h2>Внешний вид</h2>
+                            <p>Цвет акцента интерфейса.</p>
+                        </div>
+                    </div>
+                    <div class="profile-simple-accent">
+                        <span class="profile-settings-label">Цвет акцента</span>
+                        <div class="profile-accent-options" aria-label="Выбор цвета акцента">
+                            {% for accent, label in [('purple', 'Фиолетовый'), ('blue', 'Синий'), ('pink', 'Розовый'), ('green', 'Зелёный'), ('orange', 'Оранжевый'), ('cyan', 'Голубой')] %}
+                            <button type="button" class="profile-accent-option" data-accent-option="{{ accent }}" aria-label="{{ label }}" title="{{ label }}" aria-pressed="false"></button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="profile-simple-card profile-simple-compact" id="profile-time">
+                    <div class="profile-simple-card-heading">
+                        <span class="profile-simple-card-icon">{{ icon('clock') }}</span>
+                        <div>
+                            <h2>Регион и время</h2>
+                            <p>Часовой пояс и формат часов.</p>
+                        </div>
+                    </div>
+                    <form class="profile-setting-stack" id="profileTimeForm">
+                        <label class="profile-field">
+                            <span>Часовой пояс</span>
+                            <select id="profileTimezoneSelect">
+                                <option value="system" data-system-timezone>Системный</option>
+                                <option value="Europe/Moscow">Europe/Moscow</option>
+                                <option value="Europe/Vienna">Europe/Vienna</option>
+                                <option value="Europe/London">Europe/London</option>
+                                <option value="Asia/Shanghai">Asia/Shanghai</option>
+                                <option value="UTC">UTC</option>
+                            </select>
+                        </label>
+                        <label class="profile-field">
+                            <span>Формат времени</span>
+                            <select id="profileTimeFormatSelect">
+                                <option value="24">24-часовой</option>
+                                <option value="12">12-часовой</option>
+                            </select>
+                        </label>
+                        <button type="submit" class="profile-secondary-button profile-time-save">{{ icon('check') }} Сохранить время</button>
+                    </form>
+                </section>
+            </div>
+
+            <section
+                class="profile-simple-card profile-telegram-card"
+                id="profile-telegram"
+                data-telegram-status="{{ telegram_status or '' }}"
+            >
+                <div class="profile-simple-card-heading">
+                    <span class="profile-simple-card-icon profile-telegram-icon">{{ icon('telegram') }}</span>
+                    <div>
+                        <h2>Telegram-бот</h2>
+                        <p>Расписание и ближайшие задачи прямо в Telegram.</p>
+                    </div>
+                </div>
+
+                {% if user.telegram_user_id %}
+                <div class="profile-telegram-connected">
+                    <div class="profile-telegram-state">
+                        <span class="profile-telegram-state-icon">{{ icon('check') }}</span>
+                        <div>
+                            <span class="profile-telegram-kicker">Подключено</span>
+                            <strong>
+                                {% if user.telegram_username %}
+                                @{{ user.telegram_username }}
+                                {% else %}
+                                Telegram ID {{ user.telegram_user_id }}
+                                {% endif %}
+                            </strong>
+                            <p>Бот видит только данные этого аккаунта Student Assistant.</p>
+                        </div>
+                    </div>
+                    <div class="profile-telegram-connected-actions">
+                        {% if telegram_bot_url %}
+                        <a href="{{ telegram_bot_url }}" target="_blank" rel="noopener noreferrer">Открыть бота</a>
+                        {% endif %}
+                        <form
+                            method="post"
+                            action="/profile/telegram/unlink"
+                            class="profile-telegram-unlink"
+                            data-confirm-title="Отключить Telegram?"
+                            data-confirm-description="Бот больше не сможет показывать расписание и задачи этого аккаунта."
+                            data-confirm-label="Отключить"
+                        >
+                            {{ csrf_input(request) }}
+                            <button type="submit">Отключить Telegram</button>
+                        </form>
+                    </div>
+                </div>
+
+                <form method="post" action="/profile/telegram/notification-settings" class="profile-telegram-notifications-form">
+                    {{ csrf_input(request) }}
+                    <div class="profile-telegram-settings-grid">
+                        <section class="profile-telegram-setting-panel">
+                            <div class="profile-telegram-setting-heading">
+                                <span>🌅</span>
+                                <div>
+                                    <h3>Утренняя сводка</h3>
+                                    <p>Краткий план на день: пары, задачи и дедлайны.</p>
+                                </div>
+                            </div>
+                            <label class="profile-telegram-switch">
+                                <span>Получать утреннюю сводку</span>
+                                <input
+                                    type="checkbox"
+                                    name="digest_enabled"
+                                    {% if user.telegram_morning_digest_enabled %}checked{% endif %}
+                                >
+                                <i aria-hidden="true"></i>
+                            </label>
+                            <label class="profile-telegram-control">
+                                <span>Время отправки</span>
+                                <input
+                                    type="time"
+                                    name="digest_time"
+                                    value="{{ user.telegram_morning_digest_time.strftime('%H:%M') if user.telegram_morning_digest_time else '08:00' }}"
+                                    required
+                                >
+                            </label>
+                            <label class="profile-telegram-control">
+                                <span>Часовой пояс</span>
+                                <select name="digest_timezone">
+                                    {% set current_digest_timezone = user.telegram_morning_digest_timezone or telegram_digest_default_timezone %}
+                                    {% if current_digest_timezone not in telegram_digest_timezones %}
+                                    <option value="{{ current_digest_timezone }}" selected>{{ current_digest_timezone }}</option>
+                                    {% endif %}
+                                    {% for timezone_name in telegram_digest_timezones %}
+                                    <option
+                                        value="{{ timezone_name }}"
+                                        {% if timezone_name == current_digest_timezone %}selected{% endif %}
+                                    >{{ timezone_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                        </section>
+
+                        <section class="profile-telegram-setting-panel">
+                            <div class="profile-telegram-setting-heading">
+                                <span>⏰</span>
+                                <div>
+                                    <h3>Напоминания о дедлайнах</h3>
+                                    <p>Бот заранее предупредит, если у задачи скоро дедлайн.</p>
+                                </div>
+                            </div>
+                            <label class="profile-telegram-switch">
+                                <span>Уведомлять о дедлайнах</span>
+                                <input
+                                    type="checkbox"
+                                    name="deadline_enabled"
+                                    {% if user.telegram_deadline_reminders_enabled %}checked{% endif %}
+                                >
+                                <i aria-hidden="true"></i>
+                            </label>
+                            <fieldset class="profile-telegram-hours">
+                                <legend>За сколько напоминать?</legend>
+                                <div>
+                                    {% for hours in telegram_deadline_reminder_hours_options %}
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="deadline_hours"
+                                            value="{{ hours }}"
+                                            {% if (user.telegram_deadline_reminder_hours or 24) == hours %}checked{% endif %}
+                                        >
+                                        <span>{{ hours }} {% if hours == 2 %}часа{% else %}часов{% endif %}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </fieldset>
+                        </section>
+                    </div>
+                    <div class="profile-telegram-settings-footer">
+                        <p>Уведомления работают только при подключённом Telegram.</p>
+                        <button type="submit">Сохранить настройки</button>
+                    </div>
+                </form>
+
+                <form method="post" action="/profile/telegram/digest-test" class="profile-telegram-test-form">
+                    {{ csrf_input(request) }}
+                    <button type="submit">Отправить тестовую сводку</button>
+                </form>
+                {% else %}
+                <div class="profile-telegram-connect">
+                    <div class="profile-telegram-copy">
+                        <span class="profile-telegram-kicker">Telegram не подключён</span>
+                        <h3>Свяжи аккаунты одноразовым кодом</h3>
+                        <p>Код действует {{ telegram_link_code_ttl_minutes }} минут и исчезнет сразу после подключения.</p>
+                    </div>
+
+                    {% if telegram_link_code %}
+                    <div class="profile-telegram-code-wrap">
+                        <span>Команда для бота</span>
+                        <div class="profile-telegram-code">
+                            <code id="telegramLinkCommand">/link {{ telegram_link_code }}</code>
+                            <button type="button" id="telegramCopyCode" aria-label="Скопировать команду">
+                                {{ icon('copy') }} <span>Копировать</span>
+                            </button>
+                        </div>
+                        <p>Открой Telegram-бота Student Assistant и отправь эту команду в личном чате.</p>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="/profile/telegram/link-code" class="profile-telegram-generate">
+                        {{ csrf_input(request) }}
+                        <button type="submit" class="profile-primary-button">
+                            {{ icon('telegram') }}
+                            {% if telegram_link_code %}Создать новый код{% else %}Подключить Telegram{% endif %}
+                        </button>
+                    </form>
+                </div>
+
+                <div class="profile-telegram-notifications-form is-disabled" aria-disabled="true">
+                    <div class="profile-telegram-settings-grid">
+                        <section class="profile-telegram-setting-panel">
+                            <div class="profile-telegram-setting-heading">
+                                <span>🌅</span>
+                                <div>
+                                    <h3>Утренняя сводка</h3>
+                                    <p>Пары, задачи и дедлайны на текущий день.</p>
+                                </div>
+                            </div>
+                            <label class="profile-telegram-switch">
+                                <span>Получать утреннюю сводку</span>
+                                <input type="checkbox" disabled>
+                                <i aria-hidden="true"></i>
+                            </label>
+                            <label class="profile-telegram-control">
+                                <span>Время отправки</span>
+                                <input type="time" value="08:00" disabled>
+                            </label>
+                        </section>
+                        <section class="profile-telegram-setting-panel">
+                            <div class="profile-telegram-setting-heading">
+                                <span>⏰</span>
+                                <div>
+                                    <h3>Напоминания о дедлайнах</h3>
+                                    <p>Предупреждение перед ближайшим дедлайном.</p>
+                                </div>
+                            </div>
+                            <label class="profile-telegram-switch">
+                                <span>Уведомлять о дедлайнах</span>
+                                <input type="checkbox" disabled>
+                                <i aria-hidden="true"></i>
+                            </label>
+                            <fieldset class="profile-telegram-hours" disabled>
+                                <legend>За сколько напоминать?</legend>
+                                <div>
+                                    {% for hours in telegram_deadline_reminder_hours_options %}
+                                    <label>
+                                        <input type="radio" {% if hours == 24 %}checked{% endif %}>
+                                        <span>{{ hours }} {% if hours == 2 %}часа{% else %}часов{% endif %}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </fieldset>
+                        </section>
+                    </div>
+                    <div class="profile-telegram-settings-footer">
+                        <p>Сначала подключи Telegram, чтобы включить уведомления.</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="profile-telegram-commands" aria-label="Команды Telegram-бота">
+                    <span><code>/today</code> планы на сегодня</span>
+                    <span><code>/tasks</code> ближайшие задачи</span>
+                    <span><code>/notifications</code> все уведомления</span>
+                    <span><code>/digest</code> утренняя сводка</span>
+                    <span><code>/site</code> открыть сайт</span>
+                </div>
+            </section>
+
+            <section class="profile-simple-card" id="profile-security">
+                <div class="profile-simple-card-heading">
+                    <span class="profile-simple-card-icon">{{ icon('shield') }}</span>
+                    <div>
+                        <h2>Аккаунт и безопасность</h2>
+                        <p>Пароль, текущая сессия и локальные настройки.</p>
+                    </div>
+                </div>
+
+                <div class="profile-simple-actions">
+                    <a href="/forgot-password" class="profile-simple-action">
+                        <span>{{ icon('lock') }}</span>
+                        <span><strong>Изменить пароль</strong><small>Обновить данные для входа</small></span>
+                        {{ icon('arrow') }}
+                    </a>
+                    <form method="post" action="/logout">
+                        {{ csrf_input(request) }}
+                        <button type="submit" class="profile-simple-action">
+                            <span>{{ icon('logout') }}</span>
+                            <span><strong>Выйти из аккаунта</strong><small>Завершить текущую сессию</small></span>
+                            {{ icon('arrow') }}
+                        </button>
+                    </form>
+                </div>
+
+                <div class="profile-simple-local-actions">
+                    <form method="post" action="/onboarding/chat/restart" class="profile-onboarding-restart">
+                        {{ csrf_input(request) }}
+                        <button type="submit">{{ icon('refresh') }} Пройти настройку заново</button>
+                    </form>
+                    <button type="button" id="profileResetSettings">{{ icon('refresh') }} Сбросить интерфейс</button>
+                    <button type="button" class="is-danger" id="profileDeleteLocalSettings">{{ icon('database') }} Удалить локальные настройки</button>
+                </div>
+            </section>
+
+            <details class="profile-simple-card profile-simple-data" id="profile-data" {% if data_error or data_success %}open{% endif %}>
+                <summary>
+                    <span class="profile-simple-card-icon">{{ icon('database') }}</span>
+                    <span>
+                        <strong>Резервная копия данных</strong>
+                        <small>Экспорт и восстановление JSON или CSV</small>
+                    </span>
+                    <i>{{ icon('chevron') }}</i>
+                </summary>
+
+                <div class="profile-simple-data-body">
+                    {% if data_error %}
+                    <div class="alert alert-danger profile-alert">{{ data_error }}</div>
+                    {% endif %}
+                    {% if data_success %}
+                    <div class="alert alert-success profile-alert">{{ data_success }}</div>
+                    {% endif %}
+
+                    <div class="profile-simple-export">
+                        <div>
+                            <h3>Скачать данные</h3>
+                            <p>JSON подходит для восстановления, CSV — для просмотра.</p>
+                        </div>
+                        <div class="profile-data-actions">
+                            <a href="/data/export/json" class="profile-primary-button" download>{{ icon('download') }} JSON</a>
+                            <a href="/data/export/csv" class="profile-secondary-button" download>CSV</a>
+                        </div>
+                    </div>
+
+                    <form method="post" action="/data/import" enctype="multipart/form-data" class="profile-simple-import">
+                        {{ csrf_input(request) }}
+                        <label class="profile-file-field">
+                            <span>{{ icon('upload') }}</span>
+                            <span><b>Выбрать JSON-файл</b><small>Формат .json</small></span>
+                            <input type="file" name="import_file" accept=".json,application/json" required>
+                        </label>
+                        <label class="profile-field">
+                            <span>Режим импорта</span>
+                            <select name="import_mode">
+                                <option value="merge">Добавить к текущим данным</option>
+                                <option value="replace">Полностью заменить мои данные</option>
+                            </select>
+                        </label>
+                        <button type="submit" class="profile-secondary-button">{{ icon('upload') }} Импортировать</button>
+                    </form>
+                </div>
+            </details>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="/static/js/profile-telegram.js?v=20260614-notifications-v1"></script>
+{% endblock %}

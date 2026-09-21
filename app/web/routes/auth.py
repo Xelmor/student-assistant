@@ -11,7 +11,13 @@ from sqlalchemy.orm import Session
 from ...core.database import get_db
 from ...core.config import settings
 from ...core.rate_limit import auth_rate_limiter, enforce_rate_limit, rate_limit_key
-from ...core.security import get_current_user, hash_password, verify_password
+from ...core.security import (
+    LOCAL_PROFILE_COOKIE,
+    get_current_user,
+    hash_local_profile_token,
+    hash_password,
+    verify_password,
+)
 from ...core.validation import normalize_bounded_text
 from ...models import User
 from ...services.password_reset_service import (
@@ -130,8 +136,105 @@ def home(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(request, 'auth/index.html', {})
 
 
+@router.post('/start')
+def start_local_profile(
+    request: Request,
+    display_name: str = Form(...),
+    group_name: str = Form(''),
+    course: str = Form(''),
+    schedule_unit: str = Form('pair'),
+    _: None = Depends(validate_csrf),
+    db: Session = Depends(get_db),
+):
+    """Create a passwordless profile tied to this browser/device."""
+    enforce_rate_limit(
+        request,
+        scope='local-profile-start',
+        limit=12,
+        window_seconds=60 * 60,
+    )
+
+    current_user = get_current_user(request, db)
+    if current_user:
+        return RedirectResponse('/dashboard', status_code=302)
+
+    try:
+        normalized_display_name = normalize_bounded_text(
+            display_name,
+            label='Имя',
+            max_length=40,
+            required=True,
+        ) or ''
+        normalized_group_name = normalize_bounded_text(
+            group_name,
+            label='Группа',
+            max_length=50,
+        )
+        normalized_course = None
+        if course.strip():
+            normalized_course = int(course)
+            if not 1 <= normalized_course <= 12:
+                raise ValueError('Курс должен быть числом от 1 до 12.')
+    except (TypeError, ValueError) as error:
+        message = str(error) if str(error) else 'Проверь введённые данные.'
+        return templates.TemplateResponse(
+            request,
+            'auth/index.html',
+            {
+                'start_error': message,
+                'start_values': {
+                    'display_name': display_name.strip(),
+                    'group_name': group_name.strip(),
+                    'course': course.strip(),
+                    'schedule_unit': schedule_unit,
+                },
+                'open_start': True,
+            },
+            status_code=400,
+        )
+
+    if schedule_unit not in {'pair', 'class', 'lesson'}:
+        schedule_unit = 'pair'
+
+    raw_token = secrets.token_urlsafe(32)
+    identity = secrets.token_hex(8)
+    user = User(
+        username=f'local_{identity}',
+        email=f'local-{identity}@student-assistant.invalid',
+        password_hash=hash_password(secrets.token_urlsafe(48)),
+        password_hint=None,
+        is_local_profile=True,
+        local_access_token_hash=hash_local_profile_token(raw_token),
+        display_name=normalized_display_name,
+        group_name=normalized_group_name,
+        course=normalized_course,
+        schedule_unit=schedule_unit,
+        onboarding_chat_completed=True,
+        onboarding_completed=False,
+        onboarding_calendar_opened=False,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    establish_user_session(request, user)
+
+    response = RedirectResponse('/dashboard?welcome=1', status_code=302)
+    response.set_cookie(
+        LOCAL_PROFILE_COOKIE,
+        raw_token,
+        max_age=365 * 24 * 60 * 60,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite='lax',
+        path='/',
+    )
+    return response
+
+
 @router.get('/register', response_class=HTMLResponse)
 def register_page(request: Request):
+    if not settings.testing:
+        return RedirectResponse('/#start', status_code=302)
     return templates.TemplateResponse(
         request,
         'auth/register.html',
@@ -151,6 +254,8 @@ def register(
     _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
+    if not settings.testing:
+        return RedirectResponse('/#start', status_code=302)
     enforce_rate_limit(
         request,
         scope='register',

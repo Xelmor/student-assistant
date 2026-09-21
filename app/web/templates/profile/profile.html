@@ -47,7 +47,7 @@
             <div>
                 <span class="profile-eyebrow">Личный кабинет</span>
                 <h1>Настройки профиля</h1>
-                <p>Данные аккаунта и основные параметры интерфейса в одном месте.</p>
+                <p>{% if user.is_local_profile %}Профиль этого устройства и основные параметры интерфейса.{% else %}Данные аккаунта и основные параметры интерфейса в одном месте.{% endif %}</p>
             </div>
         </div>
         <a href="/dashboard" class="profile-simple-back">Вернуться на главную {{ icon('arrow') }}</a>
@@ -59,8 +59,8 @@
                 <span class="profile-simple-person-label">Профиль</span>
                 <div class="profile-simple-avatar" data-user-avatar>{{ (user.display_name or user.username)[0]|upper }}</div>
                 <h2>{{ user.display_name or user.username }}</h2>
-                <p>{{ user.email }}</p>
-                <span class="profile-simple-status"><i></i> Аккаунт активен</span>
+                <p>{% if user.is_local_profile %}Без email и пароля{% else %}{{ user.email }}{% endif %}</p>
+                <span class="profile-simple-status"><i></i> {% if user.is_local_profile %}Профиль этого устройства{% else %}Аккаунт активен{% endif %}</span>
 
                 <div class="profile-simple-meta">
                     <div>
@@ -98,7 +98,7 @@
                     <span class="profile-simple-card-icon">{{ icon('user') }}</span>
                     <div>
                         <h2>Основные данные</h2>
-                        <p>Имя, email и информация об учёбе.</p>
+                        <p>{% if user.is_local_profile %}Имя и информация об учёбе.{% else %}Имя, email и информация об учёбе.{% endif %}</p>
                     </div>
                 </div>
 
@@ -131,6 +131,7 @@
                         <span>Отображаемое имя</span>
                         <input type="text" name="display_name" value="{{ user.display_name or '' }}" maxlength="40" placeholder="Как к тебе обращаться">
                     </label>
+                    {% if not user.is_local_profile %}
                     <label class="profile-field">
                         <span>Логин</span>
                         <input type="text" name="username" value="{{ user.username }}" maxlength="50" required autocomplete="username">
@@ -139,6 +140,7 @@
                         <span>Email</span>
                         <input type="email" name="email" value="{{ user.email }}" maxlength="120" required autocomplete="email">
                     </label>
+                    {% endif %}
                     <label class="profile-field">
                         <span>Группа</span>
                         <input type="text" name="group_name" value="{{ user.group_name or '' }}" maxlength="50" placeholder="Например, ИКБО-42-24">
@@ -446,11 +448,12 @@
                 <div class="profile-simple-card-heading">
                     <span class="profile-simple-card-icon">{{ icon('shield') }}</span>
                     <div>
-                        <h2>Аккаунт и безопасность</h2>
-                        <p>Пароль, текущая сессия и локальные настройки.</p>
+                        <h2>{% if user.is_local_profile %}Доступ с этого устройства{% else %}Аккаунт и безопасность{% endif %}</h2>
+                        <p>{% if user.is_local_profile %}Student Assistant запоминает этот профиль в защищённой cookie. Email и пароль не используются.{% else %}Пароль, текущая сессия и локальные настройки.{% endif %}</p>
                     </div>
                 </div>
 
+                {% if not user.is_local_profile %}
                 <div class="profile-simple-actions">
                     <a href="/forgot-password" class="profile-simple-action">
                         <span>{{ icon('lock') }}</span>
@@ -466,6 +469,12 @@
                         </button>
                     </form>
                 </div>
+                {% else %}
+                <div class="profile-simple-device-note">
+                    <span>{{ icon('shield') }}</span>
+                    <div><strong>Профиль привязан к браузеру</strong><small>Перед очисткой cookies сохрани резервную копию данных ниже.</small></div>
+                </div>
+                {% endif %}
 
                 <div class="profile-simple-local-actions">
                     <form method="post" action="/onboarding/chat/restart" class="profile-onboarding-restart">

@@ -15,6 +15,8 @@ class User(Base):
     email = Column(String(120), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     password_hint = Column(String(120), nullable=True)
+    is_local_profile = Column(Boolean, nullable=False, default=False)
+    local_access_token_hash = Column(String(64), unique=True, nullable=True, index=True)
     display_name = Column(String(40), nullable=True)
     group_name = Column(String(50), nullable=True)
     course = Column(Integer, nullable=True)

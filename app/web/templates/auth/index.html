@@ -1,284 +1,472 @@
 {% extends 'base.html' %}
-{% block title %}Student Assistant{% endblock %}
-{% block theme_color %}#070b1a{% endblock %}
-{% block body_class %}public-landing-page{% endblock %}
-
-{% macro icon(name) -%}
-<svg viewBox="0 0 24 24" aria-hidden="true">
-    {% if name == 'bolt' %}
-    <path d="m13 2-8 12h6l-1 8 9-13h-6Z"></path>
-    {% elif name == 'arrow' %}
-    <path d="M5 12h14m-5-5 5 5-5 5"></path>
-    {% elif name == 'book' %}
-    <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22Z"></path><path d="M4 5.5v13A3.5 3.5 0 0 1 7.5 15H20"></path>
-    {% elif name == 'task' %}
-    <rect x="4" y="3" width="16" height="18" rx="3"></rect><path d="m8 9 1.5 1.5L13 7m-5 8 1.5 1.5L13 13m2-4h2m-2 6h2"></path>
-    {% elif name == 'note' %}
-    <path d="M6 3h9l3 3v15H6Z"></path><path d="M14 3v4h4M9 12h6M9 16h4"></path>
-    {% elif name == 'calendar' %}
-    <rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M7 3v4m10-4v4M3 10h18"></path>
-    {% elif name == 'clock' %}
-    <circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>
-    {% elif name == 'chart' %}
-    <path d="M4 19V9m5 10V5m5 14v-7m5 7V3"></path>
-    {% endif %}
-</svg>
-{%- endmacro %}
+{% block title %}Student Assistant — учёба без хаоса{% endblock %}
+{% block theme_color %}#060817{% endblock %}
+{% block body_class %}public-landing-page entry-page entry-v3-page{% endblock %}
+{% block meta_description %}Student Assistant — расписание, задачи, дедлайны и заметки без email и пароля.{% endblock %}
 
 {% block content %}
-<section class="neon-landing">
-    <section class="neon-hero" id="hero">
-        <div class="neon-hero-copy">
-            <span class="neon-kicker">Student OS</span>
-            <h1>
-                <span>Student</span>
-                <strong>Assistant</strong>
-            </h1>
-            <p>Цифровое пространство для учёбы, которое выглядит как дорогой продукт, а не как очередной список задач.</p>
+<section class="entry-v3" id="entryExperience"
+         data-open-start="{{ 'true' if open_start|default(false) else 'false' }}"
+         data-start-error="{{ start_error|default('', true) }}">
+    <div class="entry-v3-bg" aria-hidden="true">
+        <span class="entry-v3-orb entry-v3-orb-a"></span>
+        <span class="entry-v3-orb entry-v3-orb-b"></span>
+        <span class="entry-v3-orb entry-v3-orb-c"></span>
+        <span class="entry-v3-grid"></span>
+        <span class="entry-v3-noise"></span>
+        <span class="entry-v3-particles" id="entryParticles"></span>
+        <span class="entry-v3-spotlight" id="entrySpotlight"></span>
+    </div>
 
-            <div class="neon-hero-actions">
-                <a href="/register" class="neon-primary-button">
-                    Начать бесплатно
-                    {{ icon('bolt') }}
-                </a>
-                <a href="#features" class="neon-secondary-button">
-                    Узнать больше
-                    {{ icon('arrow') }}
-                </a>
+    <section class="entry-v3-hero" id="hero">
+        <div class="entry-v3-hero-inner">
+            <div class="entry-v3-copy">
+                <div class="entry-v3-kicker">STUDENT ASSISTANT <i></i> 2026</div>
+                <h1>
+                    <span class="entry-line"><span>Учёба.</span></span>
+                    <span class="entry-line entry-line-purple"><span>Собранная</span></span>
+                    <span class="entry-line entry-line-blue"><span>в одном месте.</span></span>
+                </h1>
+                <p class="entry-v3-lead">Расписание, задачи, дедлайны и заметки<br>в одном спокойном пространстве,<br>которое помогает не теряться в учёбе.</p>
+
+                <div class="entry-v3-actions">
+                    <a class="entry-v3-primary" href="#start" data-entry-open>
+                        <span>Начать</span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"></path></svg>
+                    </a>
+                    <a class="entry-v3-ghost" href="#product-demo">Посмотреть возможности</a>
+                </div>
+
+                <div class="entry-v3-benefits" aria-label="Преимущества Student Assistant">
+                    <div><i class="benefit-bolt" aria-hidden="true"></i><span>Больше<br>свободного времени</span></div>
+                    <div><i class="benefit-star" aria-hidden="true"></i><span>Ничего<br>не забудешь</span></div>
+                    <div><i class="benefit-chart" aria-hidden="true"><b></b><b></b><b></b></i><span>Всё под<br>контролем</span></div>
+                </div>
+
+                <div class="entry-v3-social">
+                    <div class="entry-v3-avatars" aria-hidden="true">
+                        <span>АМ</span><span>ИК</span><span>СВ</span><span>ДА</span><strong>+500</strong>
+                    </div>
+                    <p>Уже 500+ студентов<br><small>организуют свою учёбу с нами</small></p>
+                </div>
             </div>
 
-            <div class="neon-social-proof" aria-label="Сообщество Student Assistant">
-                <div class="neon-avatar-stack" aria-hidden="true">
-                    <span>А</span>
-                    <span>М</span>
-                    <span>К</span>
-                    <span>Д</span>
-                    <span>С</span>
+            <div class="entry-v3-product-stage" id="entryProductStage">
+                <div class="entry-v3-orbits" aria-hidden="true"><i></i><i></i><i></i></div>
+                <div class="entry-v3-note entry-v3-note-top" aria-hidden="true"><i></i><span>Больше, чем<br>просто планнер</span></div>
+
+                <div class="entry-v3-product-frame" id="entryProductFrame">
+                    <header class="entry-v3-product-topbar">
+                        <div class="entry-v3-product-brand"><span>SA</span><b>Student Assistant</b></div>
+                        <div class="entry-v3-product-search"><i aria-hidden="true"></i><span>Поиск задач, пар, заметок...</span></div>
+                        <div class="entry-v3-product-account">
+                            <i class="entry-v3-bell" aria-hidden="true"></i>
+                            <span>МА</span><b>Максим</b><em>⌄</em>
+                        </div>
+                    </header>
+
+                    <div class="entry-v3-product-body">
+                        <aside class="entry-v3-mini-sidebar">
+                            <span class="is-active"><i>⌂</i><b>Главная</b></span>
+                            <span><i>□</i><b>Расписание</b></span>
+                            <span><i>✓</i><b>Задачи</b></span>
+                            <span><i>▱</i><b>Заметки</b></span>
+                            <span><i>✧</i><b>Достижения</b></span>
+                            <span><i>▥</i><b>Аналитика</b></span>
+                            <span><i>⚙</i><b>Настройки</b></span>
+                            <small>“Маленькие шаги —<br>большие результаты”</small>
+                        </aside>
+
+                        <main class="entry-v3-mini-main">
+                            <div class="entry-v3-overview">
+                                <article class="entry-v3-next-card demo-piece demo-piece-1">
+                                    <div>
+                                        <span>Следующая пара</span>
+                                        <h3>Базы данных</h3>
+                                        <p>◷ &nbsp;10:40 – 12:20</p>
+                                        <p>♧ &nbsp;Ауд. 301</p>
+                                    </div>
+                                    <strong>Через 1 ч 15 мин</strong>
+                                </article>
+
+                                <article class="entry-v3-calendar demo-piece demo-piece-2">
+                                    <header><div><b>Сегодня</b><span>20 сентября, сб</span></div><i>→</i></header>
+                                    <div class="entry-v3-calendar-days"><small>Пн</small><small>Вт</small><small>Ср</small><small>Чт</small><small>Пт</small><small>Сб</small><small>Вс</small></div>
+                                    <div class="entry-v3-calendar-dates"><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span class="is-today">20</span><span>21</span></div>
+                                </article>
+                            </div>
+
+                            <div class="entry-v3-metrics">
+                                <article class="demo-piece demo-piece-3"><span>Задачи</span><b>3</b><small>активные</small><i>✓</i></article>
+                                <article class="demo-piece demo-piece-4"><span>Пары</span><b>4</b><small>сегодня</small><i>□</i></article>
+                                <article class="demo-piece demo-piece-5"><span>Дедлайны</span><b>2</b><small>на этой неделе</small><i>⌛</i></article>
+                                <article class="demo-piece demo-piece-6"><span>Серия</span><b>7</b><small>дней</small><i class="is-fire">◆</i></article>
+                            </div>
+
+                            <div class="entry-v3-details">
+                                <section class="entry-v3-task-list demo-piece demo-piece-7">
+                                    <header><b>Мои задачи</b><a href="#product-demo">Смотреть все →</a></header>
+                                    <div><i></i><span>Практика №3 (ИИ)</span><em>Сегодня</em></div>
+                                    <div><i></i><span>Английский — эссе</span><em>Завтра</em></div>
+                                    <div><i></i><span>Подготовка к коллоквиуму</span><em class="is-high">Высокий</em></div>
+                                    <div><i></i><span>Купить подарок</span><em>Личное</em></div>
+                                    <div><i></i><span>Прочитать статью (NLP)</span><em>Низкий</em></div>
+                                    <footer>＋ &nbsp;Добавить задачу</footer>
+                                </section>
+
+                                <section class="entry-v3-today-list demo-piece demo-piece-8">
+                                    <header><b>Расписание на сегодня</b><a href="#product-demo">Смотреть все →</a></header>
+                                    <div><time>08:50</time><span><b>Математический анализ</b><small>Ауд. 204</small></span></div>
+                                    <div class="is-current"><time>10:40</time><span><b>Базы данных</b><small>Ауд. 301</small></span></div>
+                                    <div><time>12:30</time><span><b>Английский язык</b><small>Ауд. 105</small></span></div>
+                                    <div><time>14:20</time><span><b>Теория принятия решений</b><small>Ауд. 403</small></span></div>
+                                </section>
+                            </div>
+                        </main>
+                    </div>
+
+                    <div class="entry-v3-scan" aria-hidden="true"></div>
                 </div>
-                <p>Присоединяйся к <strong>12,500+</strong> студентам</p>
+
+                <div class="entry-v3-float entry-v3-float-top demo-float" aria-hidden="true"><i>✓</i><span><b>Задача выполнена!</b><small>Конспект лекции</small></span><em>сейчас</em></div>
+                <div class="entry-v3-float entry-v3-float-bottom demo-float" aria-hidden="true"><i>✓</i><span><b>Задача выполнена!</b><small>Практика №3</small></span><em>сейчас</em></div>
+                <div class="entry-v3-float-date demo-float" aria-hidden="true"><b>20</b><span>Сентябрь<small>4 события</small></span></div>
+                <div class="entry-v3-note entry-v3-note-bottom" aria-hidden="true"><span>Двигаемся к целям<br>вместе</span><i></i></div>
             </div>
         </div>
+    </section>
 
-        <section class="neon-product-preview" id="interface" aria-label="Пример интерфейса Student Assistant">
-            <span class="neon-particle is-one"></span>
-            <span class="neon-particle is-two"></span>
-            <span class="neon-particle is-three"></span>
-            <span class="neon-particle is-four"></span>
-            <span class="neon-preview-glow"></span>
+    <section class="entry-v3-strip" aria-label="Ключевые возможности">
+        <div><strong>01</strong><span>Расписание</span></div>
+        <div><strong>02</strong><span>Задачи и дедлайны</span></div>
+        <div><strong>03</strong><span>Календарь</span></div>
+        <div><strong>04</strong><span>Telegram</span></div>
+    </section>
 
-            <article class="neon-preview-card neon-today-card">
-                <header>
-                    <div>
-                        <h2>Сегодня</h2>
-                        <p>Суббота, 8 июня</p>
+    <section class="entry-v3-section entry-v3-section-tasks entry-tasks-v2" id="product-demo" data-tasks-demo>
+        <div class="entry-v3-section-copy entry-tasks-v2__copy">
+            <span class="entry-v3-section-kicker entry-tasks-v2__kicker">ЗАДАЧИ</span>
+            <h2 class="entry-tasks-v2__title">
+                <span class="entry-tasks-v2__title-line"><span>Не держи всё</span></span>
+                <span class="entry-tasks-v2__title-line"><span>в голове.</span></span>
+            </h2>
+            <p>Создавай задачи, ставь дедлайны и отмечай выполненное — всё в одном месте.</p>
+            <ul class="entry-tasks-v2__features" aria-label="Преимущества задач">
+                <li><i aria-hidden="true">≡</i><span><b>ПРИОРИТЕТЫ</b><small>Выделяй важное</small></span></li>
+                <li><i aria-hidden="true">▦</i><span><b>ДЕДЛАЙНЫ</b><small>Не пропускай сроки</small></span></li>
+                <li><i aria-hidden="true">✓</i><span><b>ВЫПОЛНЕНИЕ</b><small>Закрывай задачи быстрее</small></span></li>
+            </ul>
+        </div>
+
+        <div class="entry-tasks-v2__stage" aria-label="Демонстрация списка задач Student Assistant">
+            <div class="entry-tasks-v2__halo" aria-hidden="true"></div>
+            <div class="entry-tasks-v2__note entry-tasks-v2__note--list" aria-hidden="true">
+                <span>Сразу в списке</span>
+                <svg viewBox="0 0 150 66"><path d="M7 12c37-2 61 30 111 33"></path><path d="m108 37 10 8-12 4"></path></svg>
+            </div>
+            <div class="entry-tasks-v2__note entry-tasks-v2__note--form" aria-hidden="true">
+                <span>Быстрое добавление</span>
+                <svg viewBox="0 0 150 66"><path d="M8 57c41-1 60-34 111-40"></path><path d="m108 12 11 5-9 8"></path></svg>
+            </div>
+            <div class="entry-tasks-v2__note entry-tasks-v2__note--toast" aria-hidden="true">
+                <span>Одним кликом готово</span>
+                <svg viewBox="0 0 150 66"><path d="M143 57c-42-1-61-32-110-39"></path><path d="m43 13-10 5 8 8"></path></svg>
+            </div>
+            <div class="entry-tasks-v2__panel">
+                <header class="entry-tasks-v2__header">
+                    <div class="entry-tasks-v2__heading">
+                        <span class="entry-tasks-v2__mark" aria-hidden="true">✓</span>
+                        <div><h3>Мои задачи</h3><small>4 активные</small></div>
                     </div>
-                    <span class="neon-card-logo">SA</span>
+                    <button class="entry-tasks-v2__add" type="button" disabled>+ Новая задача</button>
                 </header>
 
-                <div class="neon-schedule-list">
-                    <div>
-                        <span class="is-purple">{{ icon('book') }}</span>
-                        <p><strong>Математика</strong><small>Лекция · 09:30 – 11:00</small></p>
-                        <i>{{ icon('arrow') }}</i>
-                    </div>
-                    <div>
-                        <span class="is-blue">{{ icon('book') }}</span>
-                        <p><strong>История</strong><small>Семинар · 12:10 – 13:40</small></p>
-                        <i>{{ icon('arrow') }}</i>
-                    </div>
+                <div class="entry-tasks-v2__list">
+                    <article class="entry-tasks-v2__task entry-tasks-v2__task--new" aria-label="Новая демонстрационная задача">
+                        <span class="entry-tasks-v2__check" aria-hidden="true"><i>✓</i></span>
+                        <div class="entry-tasks-v2__task-copy">
+                            <strong>Подготовиться к коллоквиуму</strong>
+                            <span><small>Базы данных</small><time>Сегодня 20:00</time></span>
+                        </div>
+                        <em class="entry-tasks-v2__priority is-high">Высокий</em>
+                    </article>
+                    <article class="entry-tasks-v2__task" style="--task-index:0">
+                        <span class="entry-tasks-v2__check" aria-hidden="true"><i>✓</i></span>
+                        <div class="entry-tasks-v2__task-copy">
+                            <strong>Практика №3</strong>
+                            <span><small>Базы данных</small><time>Сегодня 18:00</time></span>
+                        </div>
+                        <em class="entry-tasks-v2__priority is-high">Высокий</em>
+                    </article>
+                    <article class="entry-tasks-v2__task" style="--task-index:1">
+                        <span class="entry-tasks-v2__check" aria-hidden="true"><i>✓</i></span>
+                        <div class="entry-tasks-v2__task-copy">
+                            <strong>Эссе по английскому</strong>
+                            <span><small>Английский язык</small><time>Завтра</time></span>
+                        </div>
+                        <em class="entry-tasks-v2__priority is-medium">Средний</em>
+                    </article>
+                    <article class="entry-tasks-v2__task" style="--task-index:2">
+                        <span class="entry-tasks-v2__check" aria-hidden="true"><i>✓</i></span>
+                        <div class="entry-tasks-v2__task-copy">
+                            <strong>Конспект лекции</strong>
+                            <span><small>ИИ</small><time>Пятница</time></span>
+                        </div>
+                        <em class="entry-tasks-v2__priority is-low">Низкий</em>
+                    </article>
+                    <article class="entry-tasks-v2__task" style="--task-index:3">
+                        <span class="entry-tasks-v2__check" aria-hidden="true"><i>✓</i></span>
+                        <div class="entry-tasks-v2__task-copy">
+                            <strong>Лабораторная работа</strong>
+                            <span><small>Алгоритмы</small><time>24 сентября</time></span>
+                        </div>
+                        <em class="entry-tasks-v2__priority is-medium">Средний</em>
+                    </article>
                 </div>
 
-                <section class="neon-deadline">
-                    <span>Ближайший дедлайн</span>
-                    <div>
-                        <i>{{ icon('task') }}</i>
-                        <p><strong>Эссе по философии</strong><small>До 10 июня, 23:59</small></p>
-                    </div>
-                </section>
+                <span class="entry-tasks-v2__cursor" aria-hidden="true"></span>
+            </div>
 
-                <section class="neon-daily-progress">
-                    <div><span>Задачи на сегодня</span><b>3 из 7 выполнено</b></div>
-                    <div class="neon-progress-track"><i></i></div>
-                </section>
-            </article>
-
-            <article class="neon-preview-card neon-welcome-card">
-                <header>
-                    <span class="neon-card-logo">SA</span>
-                    <div>
-                        <h2>Привет, Xelmor! 👋</h2>
-                        <p>Готов к продуктивному дню?</p>
+            <div class="entry-tasks-v2__form-float" aria-hidden="true">
+                <div class="entry-tasks-v2__form">
+                    <header><b>Новая задача</b><small>Быстрое добавление</small></header>
+                    <div class="entry-tasks-v2__form-field entry-tasks-v2__form-title">
+                        <span>Название</span><strong>Подготовиться к коллоквиуму</strong>
                     </div>
+                    <div class="entry-tasks-v2__form-grid">
+                        <div class="entry-tasks-v2__form-field entry-tasks-v2__form-subject"><span>Предмет</span><strong>Базы данных</strong></div>
+                        <div class="entry-tasks-v2__form-field entry-tasks-v2__form-deadline"><span>Дедлайн</span><strong>Сегодня, 20:00</strong></div>
+                    </div>
+                    <div class="entry-tasks-v2__form-priority"><i aria-hidden="true"></i><span>Высокий</span></div>
+                    <footer>
+                        <button type="button" disabled>Отмена</button>
+                        <button class="entry-tasks-v2__form-add" type="button" disabled>Добавить</button>
+                    </footer>
+                    <span class="entry-tasks-v2__form-cursor" aria-hidden="true"></span>
+                </div>
+            </div>
+
+            <div class="entry-tasks-v2__toast" role="status" aria-live="polite">
+                <i aria-hidden="true">✓</i>
+                <span><b>Задача выполнена!</b><small>Подготовиться к коллоквиуму</small></span>
+            </div>
+        </div>
+    </section>
+
+    <section class="entry-v3-section entry-v3-section-schedule entry-schedule-v2" data-schedule-demo>
+        <i class="entry-schedule-v2__orbit entry-schedule-v2__orbit--outer" aria-hidden="true"></i>
+        <div class="entry-v3-schedule-demo entry-schedule-v2__board">
+            <div class="entry-schedule-v2__note entry-schedule-v2__note--week" aria-hidden="true">
+                <span>Вся неделя перед глазами</span>
+                <svg viewBox="0 0 170 72"><path d="M8 14c42-3 73 24 126 35"></path><path d="m123 40 11 9-14 3"></path></svg>
+            </div>
+            <div class="entry-schedule-v2__note entry-schedule-v2__note--next" aria-hidden="true">
+                <span>Следующая пара</span>
+                <svg viewBox="0 0 170 72"><path d="M161 12c-39 0-67 29-123 39"></path><path d="m49 42-11 9 14 3"></path></svg>
+            </div>
+            <div class="entry-schedule-v2__note entry-schedule-v2__note--free" aria-hidden="true">
+                <span>Свободное окно</span>
+                <svg viewBox="0 0 170 72"><path d="M10 61c42-1 68-33 124-42"></path><path d="m123 13 11 6-11 8"></path></svg>
+            </div>
+            <div class="entry-schedule-v2__note entry-schedule-v2__note--space" aria-hidden="true">
+                <span>Видишь, где свободно</span>
+                <svg viewBox="0 0 170 72"><path d="M12 60c34-2 55-28 112-40"></path><path d="m113 14 11 6-10 8"></path></svg>
+            </div>
+            <div class="entry-v3-week-head"><span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span></div>
+            <div class="entry-v3-week-grid">
+                <i class="entry-schedule-v2__active-day" aria-hidden="true"></i>
+                <i class="entry-v3-now-line"></i>
+                <article class="entry-schedule-v2__lesson--next" style="--col:1;--row:2;--span:2;--schedule-index:0"><small>10:40</small><b>Базы данных</b><span>Практика</span><em>Ауд. 204 · Практика</em></article>
+                <article class="blue" style="--col:2;--row:4;--span:2;--schedule-index:1"><small>14:10</small><b>Английский</b><span>Ауд. 305</span><em>Ауд. 305 · Практика</em></article>
+                <article class="violet" style="--col:3;--row:1;--span:2;--schedule-index:2"><small>09:00</small><b>ИИ</b><span>Лекция</span><em>Ауд. 401 · Лекция</em></article>
+                <article class="soft" style="--col:4;--row:3;--span:2;--schedule-index:3"><small>12:20</small><b>Системный анализ</b><span>Практика</span><em>Ауд. 308 · Практика</em></article>
+                <article class="blue" style="--col:5;--row:2;--span:3;--schedule-index:4"><small>10:40</small><b>DevOps</b><span>Лабораторная</span><em>Ауд. 212 · Лабораторная</em></article>
+            </div>
+            <aside class="entry-schedule-v2__today" aria-label="Сводка на сегодня">
+                <span>СЕГОДНЯ</span>
+                <div class="entry-schedule-v2__today-counts"><b>3 пары</b><small>1 свободное окно</small></div>
+                <dl>
+                    <div><dt>Следующая:</dt><dd>12:40 — Системный анализ</dd></div>
+                    <div><dt>До пары:</dt><dd>16 мин</dd></div>
+                </dl>
+            </aside>
+        </div>
+
+        <div class="entry-v3-section-copy entry-schedule-v2__copy">
+            <span class="entry-v3-section-kicker">РАСПИСАНИЕ</span>
+            <h2>
+                <span class="entry-schedule-v2__title-line"><span>Видно всю неделю.</span></span>
+                <span class="entry-schedule-v2__title-line"><span>Понятно, что дальше.</span></span>
+            </h2>
+            <p>Пары, аудитории, время и учебные события собраны в одном календарном ритме.</p>
+            <div class="entry-v3-inline-stat entry-schedule-v2__next-time">
+                <b>12:40</b>
+                <div>
+                    <span>Следующая пара через 16 минут</span>
+                    <i class="entry-schedule-v2__progress" aria-hidden="true"><i></i></i>
+                </div>
+            </div>
+            <div class="entry-schedule-v2__day-timeline" aria-label="Расписание текущего дня">
+                <div class="entry-schedule-v2__timeline-times" aria-hidden="true"><span>09:00</span><span>10:40</span><span>12:40</span><span>14:10</span><span>16:00</span></div>
+                <div class="entry-schedule-v2__timeline-track" aria-hidden="true"><i></i><b><span>сейчас</span></b></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="entry-v3-section entry-v3-section-telegram entry-telegram-v2" data-telegram-demo>
+        <div class="entry-v3-section-copy entry-telegram-v2__copy observe-reveal">
+            <span class="entry-v3-section-kicker">TELEGRAM</span>
+            <h2>Напоминания<br>приходят<br>туда, где ты<br>уже есть.</h2>
+            <p>Подключи бота и получай сводки по задачам, занятиям и ближайшим дедлайнам.</p>
+            <div class="entry-v3-feature-pills"><span>/today</span><span>/tomorrow</span><span>/done</span></div>
+            <p class="entry-telegram-v2__aside-note">Без лишнего приложения — всё прямо в Telegram.</p>
+        </div>
+
+        <div class="entry-telegram-v2__stage">
+            <i class="entry-telegram-v2__orbit" aria-hidden="true"></i>
+
+            <div class="entry-telegram-v2__note entry-telegram-v2__note--chat" aria-hidden="true">
+                <span>Всё прямо в Telegram</span>
+                <svg viewBox="0 0 180 76"><path d="M8 15c44-2 79 27 137 39"></path><path d="m134 45 11 9-14 3"></path></svg>
+            </div>
+            <div class="entry-telegram-v2__note entry-telegram-v2__note--remind" aria-hidden="true">
+                <span>Сам напомнит</span>
+                <svg viewBox="0 0 180 76"><path d="M169 13c-43 1-75 28-135 42"></path><path d="m46 46-12 9 14 2"></path></svg>
+            </div>
+            <div class="entry-telegram-v2__note entry-telegram-v2__note--done" aria-hidden="true">
+                <span>Закрыл за секунду</span>
+                <svg viewBox="0 0 180 76"><path d="M11 64c43-2 72-31 131-44"></path><path d="m130 14 12 6-11 8"></path></svg>
+            </div>
+
+            <div class="entry-telegram-v2__float entry-telegram-v2__float--tomorrow" aria-hidden="true"><span>Завтра</span><b>4 пары</b></div>
+            <div class="entry-telegram-v2__float entry-telegram-v2__float--deadline" aria-hidden="true"><i>!</i><span><small>Дедлайн через 3 часа</small><b>Практика №3</b></span></div>
+            <div class="entry-telegram-v2__float entry-telegram-v2__float--closed" aria-hidden="true"><i>✓</i><b>Задача закрыта</b></div>
+
+            <article class="entry-telegram-v2__mockup">
+                <header class="entry-telegram-v2__header">
+                    <span class="entry-telegram-v2__avatar">SA</span>
+                    <div><b>Student Assistant</b><small><i></i> бот · онлайн</small></div>
+                    <span class="entry-telegram-v2__menu" aria-hidden="true">•••</span>
                 </header>
 
-                <section class="neon-focus-card">
-                    <span>Фокус дня</span>
-                    <strong>Математика</strong>
-                    <small>Лекция через 1ч 15м</small>
-                </section>
+                <div class="entry-telegram-v2__chat">
+                    <div class="entry-telegram-v2__bubble entry-telegram-v2__bubble--user entry-telegram-v2__today-command"><span>/today</span></div>
 
-                <section class="neon-quick-actions">
-                    <h3>Быстрые действия</h3>
-                    <div>
-                        <span>{{ icon('task') }}<small>Задачи</small></span>
-                        <span>{{ icon('calendar') }}<small>Расписание</small></span>
-                        <span>{{ icon('note') }}<small>Заметки</small></span>
-                        <span>{{ icon('clock') }}<small>Календарь</small></span>
+                    <div class="entry-telegram-v2__typing" aria-label="Бот печатает"><i></i><i></i><i></i></div>
+
+                    <div class="entry-telegram-v2__bubble entry-telegram-v2__bubble--bot entry-telegram-v2__schedule-message">
+                        <span class="entry-telegram-v2__bubble-label">Сегодня</span>
+                        <div class="entry-telegram-v2__lesson"><time>10:40</time><b>Базы данных</b></div>
+                        <div class="entry-telegram-v2__lesson"><time>12:20</time><b>Английский</b></div>
+                        <div class="entry-telegram-v2__lesson"><time>14:10</time><b>ИИ</b></div>
                     </div>
-                </section>
 
-                <section class="neon-mini-stats">
-                    <div class="neon-mini-stats-head">
-                        <span>Статистика</span>
-                        {{ icon('arrow') }}
+                    <div class="entry-telegram-v2__deadline-card">
+                        <i aria-hidden="true">!</i>
+                        <span><small>Дедлайн через 3 часа</small><b>Практика №3</b></span>
                     </div>
-                    <div class="neon-stat-row">
-                        <p><small>Задач выполнено</small><strong>12</strong><em>+20%</em></p>
-                        <svg viewBox="0 0 120 30" aria-hidden="true"><path d="M2 23 18 15 31 18 48 7 63 20 78 14 94 17 118 5"></path></svg>
-                    </div>
-                    <div class="neon-stat-row">
-                        <p><small>Учебных часов</small><strong>28</strong><em>+16%</em></p>
-                        <svg viewBox="0 0 120 30" aria-hidden="true"><path d="M2 22 18 20 31 8 47 15 62 13 78 23 95 12 118 17"></path></svg>
-                    </div>
-                </section>
-            </article>
-        </section>
-    </section>
 
-    <section class="neon-feature-grid" id="features">
-        <article class="neon-feature-card" id="subjects-preview">
-            <div class="neon-feature-topline">
-                <span>01</span>
-                <strong>Учебный контур</strong>
-            </div>
-            <div class="neon-feature-icon is-subjects" aria-hidden="true">
-                <i></i><i></i><i></i>
-                {{ icon('book') }}
-            </div>
-            <h2>Предметы</h2>
-            <p>Структурируй дисциплины, преподавателей, аудитории и личные заметки по каждому курсу.</p>
-            <div class="neon-feature-metrics">
-                <div><strong>06</strong><span>активных курсов<br>в этом семестре</span></div>
-                <div><strong>Чистая<br>иерархия</strong><span>без перегруза</span></div>
-            </div>
-            <footer>
-                <span>Математика</span><span>История</span><span>Биология</span><span>+3</span>
-            </footer>
-        </article>
+                    <div class="entry-telegram-v2__bubble entry-telegram-v2__bubble--user entry-telegram-v2__done-command">/done Практика №3</div>
+                    <div class="entry-telegram-v2__bubble entry-telegram-v2__bubble--bot entry-telegram-v2__done-confirm"><i>✓</i> Готово. Задача закрыта.</div>
 
-        <article class="neon-feature-card" id="tasks-preview">
-            <div class="neon-feature-topline">
-                <span>02</span>
-                <strong>Контроль сроков</strong>
-            </div>
-            <div class="neon-feature-icon is-tasks" aria-hidden="true">
-                <i></i><i></i><i></i>
-                {{ icon('task') }}
-            </div>
-            <h2>Задачи</h2>
-            <p>Держи дедлайны в фокусе и получай спокойные напоминания там, где ты реально бываешь каждый день.</p>
-            <div class="neon-feature-metrics">
-                <div><strong>24/7</strong><span>контроль сроков<br>без перегруза</span></div>
-                <div><strong>Умные<br>напоминания</strong><span>без паники</span></div>
-            </div>
-            <footer>
-                <span>Дедлайны</span><span>Статусы</span><span>Приоритеты</span>
-            </footer>
-        </article>
-
-        <article class="neon-feature-card" id="notes-preview">
-            <div class="neon-feature-topline">
-                <span>03</span>
-                <strong>Личный архив</strong>
-            </div>
-            <div class="neon-feature-icon is-notes" aria-hidden="true">
-                <i></i><i></i><i></i>
-                {{ icon('note') }}
-            </div>
-            <h2>Заметки</h2>
-            <p>Сохраняй идеи, конспекты и быстрые мысли в одном визуально аккуратном контуре.</p>
-            <div class="neon-feature-metrics">
-                <div><strong>∞</strong><span>идеи, конспекты<br>и черновики</span></div>
-                <div><strong>Быстрый<br>поиск</strong><span>по всему архиву</span></div>
-            </div>
-            <footer>
-                <span>Конспекты</span><span>Черновики</span><span>Идеи</span><span>+2</span>
-            </footer>
-        </article>
-    </section>
-
-    <section class="neon-study-section" id="study">
-        <div class="neon-section-heading">
-            <span class="neon-kicker">Для реальной учёбы</span>
-            <h2>Один спокойный контур на весь семестр</h2>
-            <p>Student Assistant соединяет расписание, дедлайны и материалы так, чтобы меньше держать в голове и больше времени оставлять на саму учёбу.</p>
-        </div>
-
-        <div class="neon-study-grid">
-            <article>
-                <span class="neon-study-icon is-purple">{{ icon('calendar') }}</span>
-                <div>
-                    <small>01 · Планирование</small>
-                    <h3>Неделя перед глазами</h3>
-                    <p>Пары, экзамены и свободные окна собраны в единой временной картине.</p>
+                    <div class="entry-telegram-v2__sync"><i>✓</i><span>Синхронизировано со Student Assistant</span></div>
                 </div>
-            </article>
-            <article>
-                <span class="neon-study-icon is-pink">{{ icon('task') }}</span>
-                <div>
-                    <small>02 · Контроль</small>
-                    <h3>Дедлайны без паники</h3>
-                    <p>Важные задачи остаются в фокусе, а выполненные не создают визуальный шум.</p>
-                </div>
-            </article>
-            <article>
-                <span class="neon-study-icon is-blue">{{ icon('note') }}</span>
-                <div>
-                    <small>03 · Материалы</small>
-                    <h3>Знания не теряются</h3>
-                    <p>Конспекты и быстрые мысли всегда находятся рядом с нужным предметом.</p>
-                </div>
+
+                <footer class="entry-telegram-v2__input"><span>Сообщение</span><i>➤</i></footer>
             </article>
         </div>
     </section>
 
-    <section class="neon-faq-section" id="faq">
-        <div class="neon-section-heading">
-            <span class="neon-kicker">FAQ</span>
-            <h2>Коротко о главном</h2>
-            <p>Ответы на вопросы, которые обычно появляются перед началом работы.</p>
-        </div>
-
-        <div class="neon-faq-list">
-            <details open>
-                <summary>Можно начать пользоваться бесплатно?<span>+</span></summary>
-                <p>Да. Нажми «Начать бесплатно», создай аккаунт и сразу добавляй предметы, пары, задачи и заметки.</p>
-            </details>
-            <details>
-                <summary>Данные расписания и задач связаны между собой?<span>+</span></summary>
-                <p>Да. В кабинете задачи можно планировать рядом с расписанием, а события и дедлайны видеть в календаре.</p>
-            </details>
-            <details>
-                <summary>Можно сохранить резервную копию?<span>+</span></summary>
-                <p>В профиле доступны экспорт JSON и CSV, а также восстановление данных из JSON-бэкапа.</p>
-            </details>
-            <details>
-                <summary>Лендинг открывает закрытые разделы без входа?<span>+</span></summary>
-                <p>Нет. Навигация сверху прокручивает только публичную страницу, а вход в кабинет выполняется отдельной кнопкой.</p>
-            </details>
-        </div>
+    <section class="entry-v3-final observe-reveal">
+        <div class="entry-v3-final-mark">SA</div>
+        <span class="entry-v3-section-kicker">ГОТОВ К СТАРТУ</span>
+        <h2>Открой своё пространство<br>для учёбы.</h2>
+        <p>Имя, пара деталей — и Student Assistant готов к работе.</p>
+        <a class="entry-v3-primary entry-v3-primary-large" href="#start" data-entry-open>
+            <span>Начать сейчас</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"></path></svg>
+        </a>
     </section>
 
-    <footer class="neon-landing-footer">
-        <div>
-            <span class="neon-landing-footer__mark">SA</span>
-            <p><strong>Student Assistant</strong><small>Учебные дела в одном пространстве.</small></p>
-        </div>
-        <nav aria-label="Дополнительная навигация">
-            <a href="/about">О проекте</a>
-            <a href="/login">Войти</a>
-            <a href="/register">Регистрация</a>
-        </nav>
+    <footer class="entry-v3-footer">
+        <span>Student Assistant · 2026</span>
+        <span>Учёба без лишнего хаоса.</span>
     </footer>
+
+    <aside class="entry-v3-setup" id="entrySetup" aria-hidden="true">
+        <button type="button" class="entry-v3-setup-backdrop" data-entry-close aria-label="Закрыть настройку"></button>
+        <section class="entry-v3-setup-panel" role="dialog" aria-modal="true" aria-labelledby="entrySetupTitle">
+            <button type="button" class="entry-v3-setup-close" data-entry-close aria-label="Закрыть">×</button>
+            <div class="entry-v3-setup-brand"><span>SA</span><div><b>Student Assistant</b><small>Первый запуск</small></div></div>
+            <div class="entry-v3-progress"><i id="entrySetupProgress"></i></div>
+
+            <form method="post" action="/start" id="entryStartForm" novalidate>
+                {{ csrf_input(request) }}
+                <section class="entry-v3-step is-active" data-entry-step="1">
+                    <span class="entry-v3-step-index">01 / 02</span>
+                    <h2 id="entrySetupTitle">Как тебя называть?</h2>
+                    <p>Только имя для интерфейса. Email и пароль не нужны.</p>
+                    <label class="entry-v3-field">
+                        <span>Имя</span>
+                        <input type="text" name="display_name" id="entryDisplayName"
+                               value="{{ (start_values|default({})).get('display_name', '') }}"
+                               maxlength="40" autocomplete="name" placeholder="Например, Максим" required>
+                        <small class="entry-v3-field-error" id="entryNameError"></small>
+                    </label>
+                    <button type="button" class="entry-v3-next" id="entryNextStep">Продолжить <span>→</span></button>
+                </section>
+
+                <section class="entry-v3-step" data-entry-step="2" aria-hidden="true">
+                    <span class="entry-v3-step-index">02 / 02</span>
+                    <h2>Пара деталей — и готово.</h2>
+                    <p>Это можно изменить позже в профиле.</p>
+                    {% if start_error|default(false) %}<div class="entry-v3-server-error" role="alert">{{ start_error }}</div>{% endif %}
+                    <div class="entry-v3-field-grid">
+                        <label class="entry-v3-field"><span>Группа <em>необязательно</em></span><input type="text" name="group_name" value="{{ (start_values|default({})).get('group_name', '') }}" maxlength="50" placeholder="ИКБО-42-24"></label>
+                        <label class="entry-v3-field"><span>Курс <em>необязательно</em></span><input type="number" name="course" value="{{ (start_values|default({})).get('course', '') }}" min="1" max="12" inputmode="numeric" placeholder="2"></label>
+                    </div>
+                    {% set selected_unit = (start_values|default({})).get('schedule_unit', 'pair') %}
+                    <fieldset class="entry-v3-unit-field">
+                        <legend>Как называем расписание?</legend>
+                        <div class="entry-v3-unit-options">
+                            <button type="button" data-unit="pair" class="{% if selected_unit == 'pair' %}is-selected{% endif %}">Пары</button>
+                            <button type="button" data-unit="class" class="{% if selected_unit == 'class' %}is-selected{% endif %}">Занятия</button>
+                            <button type="button" data-unit="lesson" class="{% if selected_unit == 'lesson' %}is-selected{% endif %}">Уроки</button>
+                        </div>
+                        <input type="hidden" name="schedule_unit" id="entryScheduleUnit" value="{{ selected_unit }}">
+                    </fieldset>
+                    <div class="entry-v3-step-actions">
+                        <button type="button" class="entry-v3-back" id="entryBackStep">Назад</button>
+                        <button type="submit" class="entry-v3-create" id="entryCreateProfile">Открыть пространство <span>→</span></button>
+                    </div>
+                </section>
+            </form>
+        </section>
+    </aside>
+
+    <div class="entry-v3-launch" id="entryLaunch" aria-hidden="true">
+        <div class="entry-v3-launch-mark"><span>SA</span><i></i></div>
+        <p>Добро пожаловать, <strong id="entryLaunchName">студент</strong>.</p>
+        <small>Собираем твоё пространство…</small>
+        <div class="entry-v3-launch-line"><i></i></div>
+    </div>
+
+    <noscript>
+        <section class="entry-v3-noscript">
+            <h2>Быстрый старт</h2>
+            <form method="post" action="/start">
+                {{ csrf_input(request) }}
+                <input type="text" name="display_name" maxlength="40" placeholder="Имя" required>
+                <input type="text" name="group_name" maxlength="50" placeholder="Группа (необязательно)">
+                <input type="number" name="course" min="1" max="12" placeholder="Курс">
+                <input type="hidden" name="schedule_unit" value="pair">
+                <button type="submit">Начать</button>
+            </form>
+        </section>
+    </noscript>
 </section>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="/static/js/entry.js?v=20260921-telegram-v4"></script>
 {% endblock %}

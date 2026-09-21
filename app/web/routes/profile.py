@@ -104,8 +104,8 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
 @router.post('/profile', response_class=HTMLResponse)
 def update_profile(
     request: Request,
-    username: str = Form(...),
-    email: str = Form(...),
+    username: str = Form(''),
+    email: str = Form(''),
     display_name: str = Form(''),
     group_name: str = Form(''),
     course: int | None = Form(None),
@@ -118,13 +118,17 @@ def update_profile(
         return RedirectResponse('/login', status_code=302)
 
     try:
-        normalized_username, normalized_email = normalize_account_identity(username, email)
         normalized_display_name = normalize_bounded_text(
             display_name,
             label='Имя',
             max_length=40,
         )
         normalized_group_name, normalized_course = normalize_profile_metadata(group_name, course)
+        if user.is_local_profile:
+            normalized_username = user.username
+            normalized_email = user.email
+        else:
+            normalized_username, normalized_email = normalize_account_identity(username, email)
     except ValueError as error:
         return templates.TemplateResponse(
             request,

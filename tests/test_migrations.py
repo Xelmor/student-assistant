@@ -108,6 +108,8 @@ class MigrationTests(unittest.TestCase):
             self.assertIn('telegram_morning_digest_last_sent_date', user_columns)
             self.assertIn('telegram_deadline_reminders_enabled', user_columns)
             self.assertIn('telegram_deadline_reminder_hours', user_columns)
+            self.assertIn('is_local_profile', user_columns)
+            self.assertIn('local_access_token_hash', user_columns)
             self.assertEqual(
                 reminder_log_columns,
                 {
@@ -129,6 +131,7 @@ class MigrationTests(unittest.TestCase):
             self.assertIn('event_type', academic_event_columns)
             self.assertTrue(user_indexes['ix_users_telegram_user_id'])
             self.assertTrue(user_indexes['ix_users_telegram_link_code'])
+            self.assertTrue(user_indexes['ix_users_local_access_token_hash'])
 
             with engine.begin() as connection:
                 versions = set(
@@ -158,6 +161,7 @@ class MigrationTests(unittest.TestCase):
                     '20260612_03_add_users_password_hint',
                     '20260612_04_add_users_telegram_fields',
                     '20260612_05_ensure_users_telegram_unique_indexes',
+                    '20260920_01_add_users_local_profile_fields',
                     '20260614_01_add_users_telegram_digest_fields',
                     '20260614_02_add_telegram_deadline_reminders',
                 },

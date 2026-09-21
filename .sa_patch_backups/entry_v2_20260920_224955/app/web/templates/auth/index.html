@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block title %}Student Assistant — начни без email{% endblock %}
+{% block theme_color %}#050816{% endblock %}
+{% block body_class %}public-landing-page entry-page{% endblock %}
+{% block meta_description %}Student Assistant — расписание, задачи, дедлайны и заметки без обязательного email и пароля.{% endblock %}
+
+{% block content %}
+<section
+    class="entry-experience"
+    id="entryExperience"
+    data-open-start="{{ 'true' if open_start else 'false' }}"
+    data-start-error="{{ start_error or '' }}"
+>
+    <div class="entry-ambient" aria-hidden="true">
+        <span class="entry-aurora entry-aurora--one"></span>
+        <span class="entry-aurora entry-aurora--two"></span>
+        <span class="entry-grid"></span>
+        <span class="entry-noise"></span>
+        <div class="entry-particles" id="entryParticles"></div>
+    </div>
+
+    <div class="entry-stage" id="entryStage">
+        <div class="entry-copy" data-entry-layer="0.18">
+            <div class="entry-kicker"><i></i><span>STUDENT OS · 2026</span></div>
+            <h1 class="entry-title" aria-label="Student Assistant">
+                <span>Student</span>
+                <strong>Assistant</strong>
+            </h1>
+            <p class="entry-lead">Расписание, задачи, дедлайны и заметки — в одном спокойном пространстве.</p>
+
+            <div class="entry-actions">
+                <a href="#start" class="entry-primary" data-entry-open>
+                    <span>Начать</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"></path></svg>
+                </a>
+                <a href="/about" class="entry-ghost">О проекте</a>
+            </div>
+
+            <div class="entry-trust" aria-label="Преимущества входа">
+                <span><i>✓</i> Без email</span>
+                <span><i>✓</i> Без пароля</span>
+                <span><i>✓</i> Сразу в работу</span>
+            </div>
+        </div>
+
+        <div class="entry-product" data-entry-layer="0.42" aria-label="Возможности Student Assistant">
+            <span class="entry-product-halo" aria-hidden="true"></span>
+            <span class="entry-orbit entry-orbit--one" aria-hidden="true"></span>
+            <span class="entry-orbit entry-orbit--two" aria-hidden="true"></span>
+
+            <article class="entry-app-card">
+                <header class="entry-app-head">
+                    <div class="entry-app-brand"><span>SA</span><strong>Сегодня</strong></div>
+                    <span class="entry-live"><i></i> live</span>
+                </header>
+                <div class="entry-app-focus">
+                    <small>Следующее</small>
+                    <strong>Базы данных</strong>
+                    <span>Практика · 12:40</span>
+                </div>
+                <div class="entry-app-row">
+                    <div><small>Задачи</small><strong>03</strong><span>активные</span></div>
+                    <div><small>Пары</small><strong>04</strong><span>сегодня</span></div>
+                    <div><small>Ритм</small><strong>07</strong><span>дней</span></div>
+                </div>
+                <div class="entry-app-progress"><span><i></i></span><small>Неделя собрана на 72%</small></div>
+            </article>
+
+            <article class="entry-float-card entry-float-card--tasks">
+                <span class="entry-float-icon">✓</span>
+                <div><small>Дедлайн закрыт</small><strong>Практика №3</strong></div>
+            </article>
+            <article class="entry-float-card entry-float-card--calendar">
+                <span class="entry-date-number">20</span>
+                <div><small>Сентябрь</small><strong>4 события</strong></div>
+            </article>
+            <article class="entry-float-card entry-float-card--note">
+                <span class="entry-note-dot"></span>
+                <div><small>Новая заметка</small><strong>Идея сохранена</strong></div>
+            </article>
+        </div>
+    </div>
+
+    <aside class="entry-setup" id="entrySetup" aria-hidden="true">
+        <div class="entry-setup-backdrop" data-entry-close></div>
+        <section class="entry-setup-panel" role="dialog" aria-modal="true" aria-labelledby="entrySetupTitle">
+            <button type="button" class="entry-setup-close" data-entry-close aria-label="Закрыть">×</button>
+            <div class="entry-setup-mark" aria-hidden="true"><span>SA</span><i></i></div>
+            <div class="entry-setup-progress"><i id="entrySetupProgress"></i></div>
+
+            <form method="post" action="/start" id="entryStartForm" novalidate>
+                {{ csrf_input(request) }}
+
+                <section class="entry-step is-active" data-entry-step="1">
+                    <span class="entry-step-label">01 · Личный профиль</span>
+                    <h2 id="entrySetupTitle">Как тебя называть?</h2>
+                    <p>Только имя для интерфейса. Почта и пароль не нужны.</p>
+                    <label class="entry-field">
+                        <span>Имя</span>
+                        <input
+                            type="text"
+                            name="display_name"
+                            id="entryDisplayName"
+                            value="{{ (start_values or {}).get('display_name', '') }}"
+                            maxlength="40"
+                            autocomplete="name"
+                            placeholder="Например, Максим"
+                            required
+                        >
+                        <small class="entry-field-error" id="entryNameError"></small>
+                    </label>
+                    <button type="button" class="entry-next" id="entryNextStep">
+                        Продолжить
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"></path></svg>
+                    </button>
+                </section>
+
+                <section class="entry-step" data-entry-step="2" aria-hidden="true">
+                    <span class="entry-step-label">02 · Учёба</span>
+                    <h2>Пара деталей — и готово.</h2>
+                    <p>Это можно изменить позже в профиле.</p>
+
+                    {% if start_error %}<div class="entry-server-error" role="alert">{{ start_error }}</div>{% endif %}
+
+                    <div class="entry-field-grid">
+                        <label class="entry-field">
+                            <span>Группа <em>необязательно</em></span>
+                            <input type="text" name="group_name" value="{{ (start_values or {}).get('group_name', '') }}" maxlength="50" placeholder="ИКБО-42-24">
+                        </label>
+                        <label class="entry-field">
+                            <span>Курс <em>необязательно</em></span>
+                            <input type="number" name="course" value="{{ (start_values or {}).get('course', '') }}" min="1" max="12" inputmode="numeric" placeholder="2">
+                        </label>
+                    </div>
+
+                    <fieldset class="entry-unit-field">
+                        <legend>Как называем расписание?</legend>
+                        {% set selected_unit = (start_values or {}).get('schedule_unit', 'pair') %}
+                        <div class="entry-unit-options" id="entryUnitOptions">
+                            <button type="button" data-unit="pair" class="{% if selected_unit == 'pair' %}is-selected{% endif %}">Пары</button>
+                            <button type="button" data-unit="class" class="{% if selected_unit == 'class' %}is-selected{% endif %}">Занятия</button>
+                            <button type="button" data-unit="lesson" class="{% if selected_unit == 'lesson' %}is-selected{% endif %}">Уроки</button>
+                        </div>
+                        <input type="hidden" name="schedule_unit" id="entryScheduleUnit" value="{{ selected_unit }}">
+                    </fieldset>
+
+                    <div class="entry-step-actions">
+                        <button type="button" class="entry-back" id="entryBackStep">Назад</button>
+                        <button type="submit" class="entry-create" id="entryCreateProfile">
+                            <span>Открыть пространство</span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"></path></svg>
+                        </button>
+                    </div>
+                </section>
+            </form>
+        </section>
+    </aside>
+
+    <div class="entry-launch" id="entryLaunch" aria-hidden="true">
+        <div class="entry-launch-ring"><span>SA</span></div>
+        <p>Добро пожаловать, <strong id="entryLaunchName">студент</strong>.</p>
+        <small>Собираем твоё пространство…</small>
+    </div>
+
+    <noscript>
+        <section class="entry-noscript">
+            <h2>Быстрый старт</h2>
+            <form method="post" action="/start">
+                {{ csrf_input(request) }}
+                <input type="text" name="display_name" maxlength="40" placeholder="Имя" required>
+                <input type="text" name="group_name" maxlength="50" placeholder="Группа (необязательно)">
+                <input type="number" name="course" min="1" max="12" placeholder="Курс">
+                <input type="hidden" name="schedule_unit" value="pair">
+                <button type="submit">Начать</button>
+            </form>
+        </section>
+    </noscript>
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="/static/js/entry.js?v=20260920-entry-v1"></script>
+{% endblock %}
