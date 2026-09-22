@@ -14,12 +14,12 @@
         avatar: 'violet',
     };
     const accents = {
-        purple: { base: '#8b5cf6', hover: '#7c3aed', soft: 'rgba(139, 92, 246, 0.15)', border: 'rgba(139, 92, 246, 0.34)', glow: 'rgba(139, 92, 246, 0.22)' },
-        blue: { base: '#3b82f6', hover: '#2563eb', soft: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.34)', glow: 'rgba(59, 130, 246, 0.22)' },
-        pink: { base: '#ec4899', hover: '#db2777', soft: 'rgba(236, 72, 153, 0.15)', border: 'rgba(236, 72, 153, 0.34)', glow: 'rgba(236, 72, 153, 0.22)' },
-        green: { base: '#10b981', hover: '#059669', soft: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.34)', glow: 'rgba(16, 185, 129, 0.22)' },
-        orange: { base: '#f59e0b', hover: '#d97706', soft: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.34)', glow: 'rgba(245, 158, 11, 0.22)' },
-        cyan: { base: '#06b6d4', hover: '#0891b2', soft: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.34)', glow: 'rgba(6, 182, 212, 0.22)' },
+        purple: { base: '#6C8EFF', hover: '#82A0FF', soft: 'rgba(108, 142, 255, 0.10)', border: 'rgba(108, 142, 255, 0.28)', glow: 'rgba(108, 142, 255, 0.06)' },
+        blue: { base: '#6C8EFF', hover: '#82A0FF', soft: 'rgba(108, 142, 255, 0.10)', border: 'rgba(108, 142, 255, 0.28)', glow: 'rgba(108, 142, 255, 0.06)' },
+        pink: { base: '#B77F9F', hover: '#C993B1', soft: 'rgba(183, 127, 159, 0.10)', border: 'rgba(183, 127, 159, 0.28)', glow: 'rgba(183, 127, 159, 0.06)' },
+        green: { base: '#59A881', hover: '#71B996', soft: 'rgba(89, 168, 129, 0.10)', border: 'rgba(89, 168, 129, 0.28)', glow: 'rgba(89, 168, 129, 0.06)' },
+        orange: { base: '#C99A55', hover: '#D6AE72', soft: 'rgba(201, 154, 85, 0.10)', border: 'rgba(201, 154, 85, 0.28)', glow: 'rgba(201, 154, 85, 0.06)' },
+        cyan: { base: '#70A7B8', hover: '#87BBCA', soft: 'rgba(112, 167, 184, 0.10)', border: 'rgba(112, 167, 184, 0.28)', glow: 'rgba(112, 167, 184, 0.06)' },
     };
     const allowedTimezones = new Set(['system', 'Europe/Moscow', 'Europe/Vienna', 'Europe/London', 'Asia/Shanghai', 'UTC']);
     const allowedTimeFormats = new Set(['24', '12']);

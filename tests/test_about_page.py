@@ -72,7 +72,7 @@ def test_about_page_has_responsive_dark_styles():
     styles = Path('app/static/css/pages/about.css').read_text(encoding='utf-8')
 
     assert 'body.about-page' in styles
-    assert 'backdrop-filter: blur(18px)' in styles
+    assert 'backdrop-filter: blur(4px)' in styles
     assert '@media (max-width: 767.98px)' in styles
     assert '@media (max-width: 575.98px)' in styles
     assert 'overflow-x: hidden' in styles

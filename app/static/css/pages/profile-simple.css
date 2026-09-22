@@ -12,7 +12,7 @@
     display: grid;
     gap: 1rem;
     min-width: 0;
-    color: #f8fafc;
+    color: var(--text);
 }
 
 .profile-simple svg {
@@ -46,9 +46,9 @@
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    border: 1px solid var(--accent-border, rgba(139, 92, 246, 0.34));
-    color: #c4b5fd;
-    background: var(--accent-soft, rgba(139, 92, 246, 0.15));
+    border: 1px solid var(--accent-border, rgb(var(--accent-rgb) / 0.34));
+    color: var(--text);
+    background: var(--accent-soft, rgb(var(--accent-rgb) / 0.15));
 }
 
 .profile-simple-title-icon {
@@ -64,7 +64,7 @@
 
 .profile-simple-header h1 {
     margin: 0.18rem 0 0;
-    color: #f8fafc;
+    color: var(--text);
     font-size: clamp(1.65rem, 3vw, 2.25rem);
     font-weight: 850;
     letter-spacing: -0.04em;
@@ -72,7 +72,7 @@
 
 .profile-simple-header p {
     margin: 0.35rem 0 0;
-    color: #8490a5;
+    color: var(--text-secondary);
     font-size: 0.76rem;
 }
 
@@ -83,10 +83,10 @@
     gap: 0.45rem;
     align-items: center;
     padding: 0.65rem 0.8rem;
-    border: 1px solid rgba(148, 163, 184, 0.13);
+    border: 1px solid rgb(var(--accent-rgb) / 0.13);
     border-radius: 11px;
-    color: #9ba7ba;
-    background: rgba(15, 23, 42, 0.58);
+    color: var(--text-secondary);
+    background: var(--surface);
     font-size: 0.65rem;
     font-weight: 750;
     text-decoration: none;
@@ -95,7 +95,7 @@
 .profile-simple-back:hover,
 .profile-simple-back:focus-visible {
     border-color: var(--accent-border);
-    color: #fff;
+    color: var(--text);
     background: var(--accent-soft);
 }
 
@@ -119,10 +119,10 @@
 .profile-simple-nav,
 .profile-simple-card {
     min-width: 0;
-    border: 1px solid rgba(255, 255, 255, 0.075);
-    border-radius: 18px;
-    background: linear-gradient(145deg, rgba(15, 22, 40, 0.96), rgba(9, 14, 29, 0.98));
-    box-shadow: 0 16px 42px rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow);
 }
 
 .profile-simple-person {
@@ -133,7 +133,7 @@
 .profile-simple-person-label {
     display: block;
     margin-bottom: 0.65rem;
-    color: #68748a;
+    color: var(--text-secondary);
     font-size: 0.52rem;
     font-weight: 800;
     letter-spacing: 0.12em;
@@ -146,17 +146,17 @@
     height: 4.5rem;
     margin: 0 auto;
     place-items: center;
-    border: 4px solid rgba(255, 255, 255, 0.08);
+    border: 4px solid var(--border);
     border-radius: 50%;
-    color: #fff;
+    color: var(--text);
     font-size: 1.45rem;
     font-weight: 850;
-    box-shadow: 0 12px 28px var(--accent-glow, rgba(139, 92, 246, 0.22));
+    box-shadow: var(--shadow);
 }
 
 .profile-simple-person h2 {
     margin: 0.65rem 0 0;
-    color: #f8fafc;
+    color: var(--text);
     font-size: 1rem;
     font-weight: 820;
     overflow-wrap: anywhere;
@@ -164,7 +164,7 @@
 
 .profile-simple-person > p {
     margin: 0.18rem 0 0.6rem;
-    color: #7f8ba1;
+    color: var(--text-secondary);
     font-size: 0.62rem;
     overflow-wrap: anywhere;
 }
@@ -173,7 +173,7 @@
     display: inline-flex;
     gap: 0.35rem;
     align-items: center;
-    color: #86efac;
+    color: var(--success);
     font-size: 0.58rem;
     font-weight: 750;
 }
@@ -182,7 +182,7 @@
     width: 0.38rem;
     height: 0.38rem;
     border-radius: 50%;
-    background: #22c55e;
+    background: var(--success);
 }
 
 .profile-simple-meta {
@@ -191,14 +191,14 @@
     gap: 0.4rem;
     margin-top: 0.85rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--border);
 }
 
 .profile-simple-meta div {
     min-width: 0;
     padding: 0.5rem 0.25rem;
     border-radius: 10px;
-    background: rgba(6, 11, 24, 0.48);
+    background: var(--bg);
 }
 
 .profile-simple-meta span,
@@ -207,14 +207,14 @@
 }
 
 .profile-simple-meta span {
-    color: #667187;
+    color: var(--text-secondary);
     font-size: 0.52rem;
 }
 
 .profile-simple-meta strong {
     margin-top: 0.15rem;
     overflow: hidden;
-    color: #d6dce8;
+    color: var(--text);
     font-size: 0.61rem;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -233,7 +233,7 @@
     align-items: center;
     padding: 0.58rem 0.65rem;
     border-radius: 10px;
-    color: #8793a7;
+    color: var(--text-secondary);
     font-size: 0.65rem;
     font-weight: 750;
     text-decoration: none;
@@ -245,14 +245,14 @@
 
 .profile-simple-nav a:hover,
 .profile-simple-nav a:focus-visible {
-    color: #ddd6fe;
+    color: var(--text);
     background: var(--accent-soft);
 }
 
 .profile-simple-nav a.is-active {
-    color: #fff;
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    box-shadow: 0 8px 18px var(--accent-glow);
+    color: var(--text);
+    background: var(--accent);
+    box-shadow: var(--shadow);
 }
 
 .profile-simple-private {
@@ -261,15 +261,15 @@
     gap: 0.55rem;
     align-items: center;
     padding: 0.7rem;
-    border: 1px solid rgba(148, 163, 184, 0.1);
+    border: 1px solid rgb(var(--accent-rgb) / 0.1);
     border-radius: 13px;
-    color: #aeb8c9;
-    background: rgba(15, 23, 42, 0.58);
+    color: var(--text-secondary);
+    background: var(--surface);
     text-decoration: none;
 }
 
 .profile-simple-private > svg:first-child {
-    color: #7dd3fc;
+    color: var(--accent);
 }
 
 .profile-simple-private strong,
@@ -283,19 +283,19 @@
 
 .profile-simple-private small {
     margin-top: 0.1rem;
-    color: #68748a;
+    color: var(--text-secondary);
     font-size: 0.49rem;
 }
 
 .profile-simple-private > svg:last-child {
     width: 0.75rem;
-    color: #68748a;
+    color: var(--text-secondary);
 }
 
 .profile-simple-private:hover,
 .profile-simple-private:focus-visible {
     border-color: var(--accent-border);
-    color: #fff;
+    color: var(--text);
     background: var(--accent-soft);
 }
 
@@ -326,14 +326,14 @@
 
 .profile-simple-card-heading h2 {
     margin: 0;
-    color: #f8fafc;
+    color: var(--text);
     font-size: 0.92rem;
     font-weight: 820;
 }
 
 .profile-simple-card-heading p {
     margin: 0.2rem 0 0;
-    color: #78849a;
+    color: var(--text-secondary);
     font-size: 0.61rem;
 }
 
@@ -344,9 +344,9 @@
     align-items: center;
     margin-bottom: 1rem;
     padding: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
     border-radius: 14px;
-    background: rgba(7, 12, 26, 0.48);
+    background: var(--bg);
 }
 
 .profile-simple-avatar-row .profile-settings-avatar {
@@ -358,13 +358,13 @@
 
 .profile-simple-avatar-row strong {
     display: block;
-    color: #dce2ec;
+    color: var(--text);
     font-size: 0.7rem;
 }
 
 .profile-simple-avatar-row p {
     margin: 0.18rem 0 0;
-    color: #6f7b91;
+    color: var(--text-secondary);
     font-size: 0.57rem;
 }
 
@@ -377,7 +377,7 @@
     padding: 0.55rem 0.7rem;
     border: 1px solid var(--accent-border);
     border-radius: 10px;
-    color: #c4b5fd;
+    color: var(--text);
     background: var(--accent-soft);
     font-size: 0.61rem;
     font-weight: 800;
@@ -401,10 +401,10 @@
     gap: 0.55rem;
     margin: 0;
     padding: 0.7rem;
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid var(--border);
     border-radius: 14px;
-    background: rgba(9, 14, 29, 0.98);
-    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.42);
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow);
 }
 
 .profile-avatar-picker .profile-avatar-option {
@@ -452,10 +452,10 @@
 .profile-telegram-card {
     position: relative;
     overflow: hidden;
-    border-color: rgba(56, 189, 248, 0.16);
+    border-color: rgb(var(--accent-rgb) / 0.16);
     background:
-        radial-gradient(circle at 94% 8%, rgba(56, 189, 248, 0.12), transparent 34%),
-        linear-gradient(145deg, rgba(15, 22, 40, 0.97), rgba(9, 14, 29, 0.99));
+        radial-gradient(circle at 94% 8%, rgb(var(--accent-rgb) / 0.035), transparent 34%),
+        linear-gradient(145deg, var(--surface), var(--bg-secondary));
 }
 
 .profile-telegram-card::after {
@@ -464,16 +464,16 @@
     right: -4rem;
     width: 10rem;
     height: 10rem;
-    border: 1px solid rgba(56, 189, 248, 0.1);
+    border: 1px solid rgb(var(--accent-rgb) / 0.1);
     border-radius: 50%;
     content: "";
     pointer-events: none;
 }
 
 .profile-telegram-icon {
-    border-color: rgba(56, 189, 248, 0.3);
-    color: #7dd3fc;
-    background: rgba(14, 165, 233, 0.13);
+    border-color: rgb(var(--accent-rgb) / 0.3);
+    color: var(--accent);
+    background: rgb(var(--accent-rgb) / 0.13);
 }
 
 .profile-telegram-connect,
@@ -491,7 +491,7 @@
 
 .profile-telegram-copy h3 {
     margin: 0.25rem 0 0;
-    color: #edf6ff;
+    color: var(--text);
     font-size: 0.9rem;
 }
 
@@ -499,14 +499,14 @@
 .profile-telegram-state p,
 .profile-telegram-code-wrap > p {
     margin: 0.3rem 0 0;
-    color: #77859c;
+    color: var(--text-secondary);
     font-size: 0.6rem;
     line-height: 1.55;
 }
 
 .profile-telegram-kicker {
     display: block;
-    color: #7dd3fc;
+    color: var(--accent);
     font-size: 0.52rem;
     font-weight: 850;
     letter-spacing: 0.1em;
@@ -515,15 +515,15 @@
 
 .profile-telegram-code-wrap {
     padding: 0.75rem;
-    border: 1px solid rgba(56, 189, 248, 0.13);
+    border: 1px solid rgb(var(--accent-rgb) / 0.13);
     border-radius: 14px;
-    background: rgba(5, 11, 25, 0.62);
+    background: var(--bg);
 }
 
 .profile-telegram-code-wrap > span {
     display: block;
     margin-bottom: 0.4rem;
-    color: #77859c;
+    color: var(--text-secondary);
     font-size: 0.54rem;
     font-weight: 750;
 }
@@ -541,10 +541,10 @@
     flex: 1;
     padding: 0.7rem 0.8rem;
     overflow: hidden;
-    border: 1px solid rgba(125, 211, 252, 0.18);
+    border: 1px solid rgb(var(--accent-rgb) / 0.18);
     border-radius: 10px;
-    color: #e0f2fe;
-    background: rgba(14, 165, 233, 0.09);
+    color: var(--text);
+    background: rgb(var(--accent-rgb) / 0.09);
     font-size: 0.82rem;
     font-weight: 850;
     letter-spacing: 0.06em;
@@ -560,19 +560,19 @@
     align-items: center;
     justify-content: center;
     padding: 0.58rem 0.75rem;
-    border: 1px solid rgba(125, 211, 252, 0.18);
+    border: 1px solid rgb(var(--accent-rgb) / 0.18);
     border-radius: 10px;
-    color: #bae6fd;
-    background: rgba(14, 165, 233, 0.1);
+    color: var(--text);
+    background: rgb(var(--accent-rgb) / 0.1);
     font-size: 0.58rem;
     font-weight: 800;
 }
 
 .profile-telegram-code button:hover,
 .profile-telegram-code button:focus-visible {
-    border-color: rgba(125, 211, 252, 0.38);
-    color: #fff;
-    background: rgba(14, 165, 233, 0.18);
+    border-color: rgb(var(--accent-rgb) / 0.38);
+    color: var(--text);
+    background: rgb(var(--accent-rgb) / 0.18);
 }
 
 .profile-telegram-generate {
@@ -588,9 +588,9 @@
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     padding: 0.85rem;
-    border: 1px solid rgba(34, 197, 94, 0.16);
+    border: 1px solid rgb(var(--success-rgb) / 0.16);
     border-radius: 14px;
-    background: rgba(6, 78, 59, 0.1);
+    background: rgb(var(--success-rgb) / 0.1);
 }
 
 .profile-telegram-state {
@@ -606,16 +606,16 @@
     width: 2.6rem;
     height: 2.6rem;
     place-items: center;
-    border: 1px solid rgba(52, 211, 153, 0.2);
+    border: 1px solid rgb(var(--success-rgb) / 0.2);
     border-radius: 11px;
-    color: #86efac;
-    background: rgba(16, 185, 129, 0.12);
+    color: var(--success);
+    background: rgb(var(--success-rgb) / 0.12);
 }
 
 .profile-telegram-state strong {
     display: block;
     margin-top: 0.2rem;
-    color: #ecfdf5;
+    color: var(--success);
     font-size: 0.8rem;
     overflow-wrap: anywhere;
 }
@@ -625,16 +625,16 @@
 }
 
 .profile-telegram-unlink button {
-    border-color: rgba(248, 113, 113, 0.17);
-    color: #fca5a5;
-    background: rgba(127, 29, 29, 0.12);
+    border-color: rgb(var(--danger-rgb) / 0.17);
+    color: var(--danger);
+    background: rgb(var(--danger-rgb) / 0.12);
 }
 
 .profile-telegram-unlink button:hover,
 .profile-telegram-unlink button:focus-visible {
-    border-color: rgba(248, 113, 113, 0.35);
-    color: #fff;
-    background: rgba(127, 29, 29, 0.22);
+    border-color: rgb(var(--danger-rgb) / 0.35);
+    color: var(--text);
+    background: rgb(var(--danger-rgb) / 0.22);
 }
 
 .profile-telegram-connected-actions {
@@ -650,10 +650,10 @@
     align-items: center;
     justify-content: center;
     padding: 0.58rem 0.8rem;
-    border: 1px solid rgba(125, 211, 252, 0.2);
+    border: 1px solid rgb(var(--accent-rgb) / 0.2);
     border-radius: 10px;
-    color: #bae6fd;
-    background: rgba(14, 165, 233, 0.1);
+    color: var(--text);
+    background: rgb(var(--accent-rgb) / 0.1);
     font-size: 0.58rem;
     font-weight: 800;
     text-decoration: none;
@@ -661,9 +661,9 @@
 
 .profile-telegram-connected-actions > a:hover,
 .profile-telegram-connected-actions > a:focus-visible {
-    border-color: rgba(125, 211, 252, 0.4);
-    color: #fff;
-    background: rgba(14, 165, 233, 0.18);
+    border-color: rgb(var(--accent-rgb) / 0.4);
+    color: var(--text);
+    background: rgb(var(--accent-rgb) / 0.18);
 }
 
 .profile-telegram-notifications-form {
@@ -671,11 +671,11 @@
     z-index: 1;
     margin: 0.85rem 0 0;
     padding: 0.85rem;
-    border: 1px solid rgba(139, 92, 246, 0.16);
+    border: 1px solid rgb(var(--accent-rgb) / 0.16);
     border-radius: 20px;
     background:
-        linear-gradient(145deg, rgba(23, 19, 48, 0.7), rgba(6, 11, 25, 0.72));
-    backdrop-filter: blur(18px);
+        var(--surface);
+    backdrop-filter: blur(4px);
 }
 
 .profile-telegram-notifications-form.is-disabled {
@@ -697,9 +697,9 @@
 .profile-telegram-setting-panel {
     min-width: 0;
     padding: 0.8rem;
-    border: 1px solid rgba(148, 163, 184, 0.1);
-    border-radius: 16px;
-    background: rgba(5, 10, 23, 0.52);
+    border: 1px solid rgb(var(--accent-rgb) / 0.1);
+    border-radius: var(--radius-lg);
+    background: var(--bg);
 }
 
 .profile-telegram-setting-heading {
@@ -715,21 +715,21 @@
     width: 2.25rem;
     height: 2.25rem;
     place-items: center;
-    border: 1px solid rgba(167, 139, 250, 0.2);
+    border: 1px solid rgb(var(--accent-rgb) / 0.2);
     border-radius: 10px;
-    background: rgba(124, 58, 237, 0.12);
+    background: rgb(var(--accent-rgb) / 0.12);
     font-size: 0.9rem;
 }
 
 .profile-telegram-setting-heading h3 {
     margin: 0;
-    color: #f0edff;
+    color: var(--text);
     font-size: 0.75rem;
 }
 
 .profile-telegram-setting-heading p {
     margin: 0.22rem 0 0;
-    color: #79869c;
+    color: var(--text-secondary);
     font-size: 0.53rem;
     line-height: 1.45;
 }
@@ -742,10 +742,10 @@
     justify-content: space-between;
     margin-bottom: 0.65rem;
     padding: 0.55rem 0.65rem;
-    border: 1px solid rgba(148, 163, 184, 0.11);
+    border: 1px solid rgb(var(--accent-rgb) / 0.11);
     border-radius: 11px;
-    color: #d8deea;
-    background: rgba(12, 18, 34, 0.72);
+    color: var(--text);
+    background: var(--bg-secondary);
     font-size: 0.58rem;
     font-weight: 750;
 }
@@ -761,9 +761,9 @@
     width: 2rem;
     height: 1.1rem;
     flex: 0 0 auto;
-    border: 1px solid rgba(148, 163, 184, 0.2);
+    border: 1px solid rgb(var(--accent-rgb) / 0.2);
     border-radius: 999px;
-    background: rgba(51, 65, 85, 0.65);
+    background: rgb(var(--accent-rgb) / 0.65);
     transition: border-color 160ms ease, background 160ms ease;
 }
 
@@ -774,18 +774,18 @@
     width: 0.72rem;
     height: 0.72rem;
     border-radius: 50%;
-    background: #cbd5e1;
+    background: var(--text);
     content: "";
     transition: transform 160ms ease, background 160ms ease;
 }
 
 .profile-telegram-switch input:checked + i {
-    border-color: rgba(167, 139, 250, 0.52);
-    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    border-color: rgb(var(--accent-rgb) / 0.52);
+    background: var(--accent);
 }
 
 .profile-telegram-switch input:checked + i::after {
-    background: #fff;
+    background: var(--text);
     transform: translateX(0.88rem);
 }
 
@@ -798,7 +798,7 @@
     display: grid;
     gap: 0.3rem;
     margin-top: 0.55rem;
-    color: #8b98ad;
+    color: var(--text-secondary);
     font-size: 0.5rem;
     font-weight: 750;
 }
@@ -809,10 +809,10 @@
     min-width: 0;
     min-height: 2.4rem;
     padding: 0.5rem 0.65rem;
-    border: 1px solid rgba(148, 163, 184, 0.13);
+    border: 1px solid rgb(var(--accent-rgb) / 0.13);
     border-radius: 10px;
-    color: #e2e8f0;
-    background: rgba(5, 11, 25, 0.76);
+    color: var(--text);
+    background: var(--bg);
     font: inherit;
     color-scheme: dark;
 }
@@ -826,7 +826,7 @@
 
 .profile-telegram-hours legend {
     margin-bottom: 0.35rem;
-    color: #8b98ad;
+    color: var(--text-secondary);
     font-size: 0.5rem;
     font-weight: 750;
 }
@@ -854,20 +854,20 @@
     align-items: center;
     justify-content: center;
     padding: 0.45rem;
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    border: 1px solid rgb(var(--accent-rgb) / 0.12);
     border-radius: 10px;
-    color: #929db1;
-    background: rgba(7, 12, 27, 0.72);
+    color: var(--text-secondary);
+    background: var(--bg);
     font-size: 0.54rem;
     font-weight: 800;
     text-align: center;
 }
 
 .profile-telegram-hours input:checked + span {
-    border-color: rgba(167, 139, 250, 0.5);
-    color: #fff;
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.72), rgba(79, 70, 229, 0.62));
-    box-shadow: 0 8px 24px rgba(76, 29, 149, 0.18);
+    border-color: rgb(var(--accent-rgb) / 0.5);
+    color: var(--text);
+    background: var(--accent-soft);
+    box-shadow: var(--shadow);
 }
 
 .profile-telegram-hours input:focus-visible + span {
@@ -882,12 +882,12 @@
     justify-content: space-between;
     margin-top: 0.75rem;
     padding-top: 0.7rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.055);
+    border-top: 1px solid var(--border);
 }
 
 .profile-telegram-settings-footer p {
     margin: 0;
-    color: #6f7b91;
+    color: var(--text-secondary);
     font-size: 0.52rem;
 }
 
@@ -895,10 +895,10 @@
 .profile-telegram-test-form button {
     min-height: 2.45rem;
     padding: 0.55rem 0.85rem;
-    border: 1px solid rgba(139, 92, 246, 0.28);
+    border: 1px solid rgb(var(--accent-rgb) / 0.28);
     border-radius: 10px;
-    color: #fff;
-    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: var(--text);
+    background: var(--accent);
     font-size: 0.56rem;
     font-weight: 850;
 }
@@ -907,7 +907,7 @@
 .profile-telegram-settings-footer button:focus-visible,
 .profile-telegram-test-form button:hover,
 .profile-telegram-test-form button:focus-visible {
-    border-color: rgba(196, 181, 253, 0.55);
+    border-color: rgb(var(--accent-rgb) / 0.55);
     filter: brightness(1.08);
 }
 
@@ -918,8 +918,8 @@
 }
 
 .profile-telegram-test-form button {
-    color: #c4b5fd;
-    background: rgba(124, 58, 237, 0.1);
+    color: var(--text);
+    background: rgb(var(--accent-rgb) / 0.1);
 }
 
 .profile-telegram-digest {
@@ -931,9 +931,9 @@
     align-items: end;
     margin-top: 0.8rem;
     padding: 0.8rem;
-    border: 1px solid rgba(167, 139, 250, 0.14);
+    border: 1px solid rgb(var(--accent-rgb) / 0.14);
     border-radius: 14px;
-    background: rgba(76, 29, 149, 0.08);
+    background: rgb(var(--accent-rgb) / 0.08);
 }
 
 .profile-telegram-digest.is-disabled {
@@ -948,13 +948,13 @@
 
 .profile-telegram-digest-copy h3 {
     margin: 0.22rem 0 0;
-    color: #f1edff;
+    color: var(--text);
     font-size: 0.75rem;
 }
 
 .profile-telegram-digest-copy p {
     margin: 0.3rem 0 0;
-    color: #7f8ba1;
+    color: var(--text-secondary);
     font-size: 0.55rem;
     line-height: 1.5;
 }
@@ -970,7 +970,7 @@
 .profile-telegram-digest-form label {
     display: grid;
     gap: 0.3rem;
-    color: #8b98ad;
+    color: var(--text-secondary);
     font-size: 0.5rem;
     font-weight: 750;
 }
@@ -980,10 +980,10 @@
     width: 100%;
     min-height: 2.35rem;
     padding: 0.5rem 0.6rem;
-    border: 1px solid rgba(148, 163, 184, 0.13);
+    border: 1px solid rgb(var(--accent-rgb) / 0.13);
     border-radius: 10px;
-    color: #dce7f6;
-    background: rgba(5, 11, 25, 0.72);
+    color: var(--text);
+    background: var(--bg);
     font: inherit;
     color-scheme: dark;
 }
@@ -994,10 +994,10 @@
     gap: 0.45rem;
     align-items: center;
     padding: 0.5rem 0.65rem;
-    border: 1px solid rgba(148, 163, 184, 0.13);
+    border: 1px solid rgb(var(--accent-rgb) / 0.13);
     border-radius: 10px;
-    color: #cbd5e1 !important;
-    background: rgba(5, 11, 25, 0.72);
+    color: var(--text) !important;
+    background: var(--bg);
 }
 
 .profile-telegram-digest-toggle input {
@@ -1008,10 +1008,10 @@
 .profile-telegram-digest-test button {
     min-height: 2.35rem;
     padding: 0.5rem 0.72rem;
-    border: 1px solid rgba(139, 92, 246, 0.26);
+    border: 1px solid rgb(var(--accent-rgb) / 0.26);
     border-radius: 10px;
-    color: #f5f3ff;
-    background: rgba(124, 58, 237, 0.2);
+    color: var(--text);
+    background: rgb(var(--accent-rgb) / 0.2);
     font-size: 0.54rem;
     font-weight: 800;
     white-space: nowrap;
@@ -1022,7 +1022,7 @@
 }
 
 .profile-telegram-digest-test button {
-    color: #c4b5fd;
+    color: var(--text);
     background: transparent;
 }
 
@@ -1034,20 +1034,20 @@
     flex-wrap: wrap;
     margin-top: 0.85rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.055);
+    border-top: 1px solid var(--border);
 }
 
 .profile-telegram-commands span {
     padding: 0.38rem 0.55rem;
-    border: 1px solid rgba(148, 163, 184, 0.09);
+    border: 1px solid rgb(var(--accent-rgb) / 0.09);
     border-radius: 999px;
-    color: #7f8ba1;
-    background: rgba(7, 12, 26, 0.44);
+    color: var(--text-secondary);
+    background: var(--bg);
     font-size: 0.52rem;
 }
 
 .profile-telegram-commands code {
-    color: #bae6fd;
+    color: var(--text);
     font-weight: 800;
 }
 
@@ -1070,10 +1070,10 @@
     gap: 0.65rem;
     align-items: center;
     padding: 0.65rem;
-    border: 1px solid rgba(148, 163, 184, 0.11);
+    border: 1px solid rgb(var(--accent-rgb) / 0.11);
     border-radius: 13px;
-    color: #cbd5e1;
-    background: rgba(7, 12, 26, 0.5);
+    color: var(--text);
+    background: var(--bg);
     text-align: left;
     text-decoration: none;
     cursor: pointer;
@@ -1085,7 +1085,7 @@
     height: 2.25rem;
     place-items: center;
     border-radius: 9px;
-    color: #c4b5fd;
+    color: var(--text);
     background: var(--accent-soft);
 }
 
@@ -1095,25 +1095,25 @@
 }
 
 .profile-simple-action strong {
-    color: #dce2ec;
+    color: var(--text);
     font-size: 0.67rem;
 }
 
 .profile-simple-action small {
     margin-top: 0.12rem;
-    color: #6f7b91;
+    color: var(--text-secondary);
     font-size: 0.53rem;
 }
 
 .profile-simple-action > svg {
     width: 0.75rem;
-    color: #657087;
+    color: var(--text-secondary);
 }
 
 .profile-simple-action:hover,
 .profile-simple-action:focus-visible {
     border-color: var(--accent-border);
-    color: #fff;
+    color: var(--text);
     background: var(--accent-soft);
 }
 
@@ -1124,7 +1124,7 @@
     flex-wrap: wrap;
     margin-top: 0.75rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--border);
 }
 
 .profile-simple-local-actions button,
@@ -1134,9 +1134,9 @@
     gap: 0.4rem;
     align-items: center;
     padding: 0.5rem 0.65rem;
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    border: 1px solid rgb(var(--accent-rgb) / 0.12);
     border-radius: 9px;
-    color: #8e9aaf;
+    color: var(--text-secondary);
     background: transparent;
     font-size: 0.56rem;
     font-weight: 750;
@@ -1147,13 +1147,13 @@
 .profile-simple-local-actions form button:hover,
 .profile-simple-local-actions form button:focus-visible {
     border-color: var(--accent-border);
-    color: #fff;
+    color: var(--text);
     background: var(--accent-soft);
 }
 
 .profile-simple-local-actions button.is-danger {
     margin-left: auto;
-    color: #e9a2a2;
+    color: var(--danger);
 }
 
 .profile-onboarding-restart {
@@ -1185,19 +1185,19 @@
 }
 
 .profile-simple-data > summary strong {
-    color: #e5eaf2;
+    color: var(--text);
     font-size: 0.75rem;
 }
 
 .profile-simple-data > summary small {
     margin-top: 0.15rem;
-    color: #6f7b91;
+    color: var(--text-secondary);
     font-size: 0.56rem;
 }
 
 .profile-simple-data > summary > i {
     display: grid;
-    color: #718096;
+    color: var(--text-secondary);
     transition: transform 180ms ease;
 }
 
@@ -1209,7 +1209,7 @@
     display: grid;
     gap: 0.85rem;
     padding: 0 1.15rem 1.15rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--border);
 }
 
 .profile-simple-export {
@@ -1222,13 +1222,13 @@
 
 .profile-simple-export h3 {
     margin: 0;
-    color: #e5eaf2;
+    color: var(--text);
     font-size: 0.75rem;
 }
 
 .profile-simple-export p {
     margin: 0.2rem 0 0;
-    color: #6f7b91;
+    color: var(--text-secondary);
     font-size: 0.57rem;
 }
 
@@ -1460,7 +1460,7 @@
 
     .profile-simple-card {
         padding: 0.9rem;
-        border-radius: 16px;
+        border-radius: var(--radius-lg);
     }
 
     .profile-simple-data {
@@ -1506,9 +1506,9 @@
     gap: 0.85rem;
     align-items: center;
     padding: 0.9rem 1rem;
-    border: 1px solid rgba(139, 92, 246, 0.14);
+    border: 1px solid rgb(var(--accent-rgb) / 0.14);
     border-radius: 14px;
-    background: rgba(124, 58, 237, 0.055);
+    background: rgb(var(--accent-rgb) / 0.055);
 }
 .profile-simple-device-note > span {
     display: grid;
@@ -1517,11 +1517,11 @@
     flex: 0 0 auto;
     place-items: center;
     border-radius: 11px;
-    color: #c4b5fd;
-    background: rgba(124, 58, 237, 0.12);
+    color: var(--text);
+    background: rgb(var(--accent-rgb) / 0.12);
 }
 .profile-simple-device-note svg { width: 1rem; fill: none; stroke: currentColor; stroke-width: 1.8; }
 .profile-simple-device-note strong,
 .profile-simple-device-note small { display: block; }
-.profile-simple-device-note strong { color: #e8eaf2; font-size: 0.72rem; }
-.profile-simple-device-note small { margin-top: 0.2rem; color: #77839a; font-size: 0.62rem; line-height: 1.45; }
+.profile-simple-device-note strong { color: var(--text); font-size: 0.72rem; }
+.profile-simple-device-note small { margin-top: 0.2rem; color: var(--text-secondary); font-size: 0.62rem; line-height: 1.45; }

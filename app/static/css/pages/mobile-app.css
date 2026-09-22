@@ -102,14 +102,14 @@ button {
         height: 2.75rem;
         padding: 0;
         place-items: center;
-        border: 1px solid rgba(139, 92, 246, 0.24) !important;
+        border: 1px solid rgb(var(--accent-rgb) / 0.24) !important;
         border-radius: 12px;
-        background: rgba(139, 92, 246, 0.08);
+        background: rgb(var(--accent-rgb) / 0.08);
         box-shadow: none;
     }
 
     .topbar:not(.auth-topbar) .navbar-toggler:focus {
-        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+        box-shadow: var(--shadow);
     }
 
     .topbar:not(.auth-topbar) .navbar-collapse {
@@ -117,12 +117,12 @@ button {
         margin-top: 0.65rem;
         padding: 0.75rem;
         overflow-y: auto;
-        border: 1px solid rgba(139, 92, 246, 0.2);
+        border: 1px solid rgb(var(--accent-rgb) / 0.2);
         border-radius: 16px;
         background:
-            radial-gradient(circle at 90% 0, rgba(139, 92, 246, 0.13), transparent 14rem),
-            rgba(7, 12, 27, 0.98);
-        box-shadow: 0 20px 44px rgba(0, 0, 0, 0.38);
+            radial-gradient(circle at 90% 0, rgb(var(--accent-rgb) / 0.035), transparent 14rem),
+            var(--bg);
+        box-shadow: var(--shadow);
     }
 
     .topbar:not(.auth-topbar) .navbar-nav {
@@ -155,8 +155,8 @@ button {
     .topbar:not(.auth-topbar) .dashboard-logout-button {
         width: 2.75rem;
         height: 2.75rem;
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        background: rgba(15, 23, 42, 0.72);
+        border: 1px solid var(--border);
+        background: var(--surface);
     }
 
     .topbar:not(.auth-topbar) .dashboard-profile-link {
@@ -332,10 +332,10 @@ button {
         width: 100%;
         padding: 0.85rem;
         overflow: hidden;
-        border: 1px solid rgba(139, 92, 246, 0.16);
+        border: 1px solid rgb(var(--accent-rgb) / 0.16);
         border-radius: 14px;
-        background: rgba(9, 15, 32, 0.78);
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+        background: var(--bg-secondary);
+        box-shadow: var(--shadow);
     }
 
     .tasks-task-row > .tasks-check-form {
@@ -381,7 +381,7 @@ button {
     .tasks-task-priority {
         justify-items: start !important;
         padding-top: 0.55rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        border-top: 1px solid var(--border);
     }
 
     .tasks-task-deadline small {
@@ -432,8 +432,8 @@ button {
     /* Schedule: day sections contain lesson cards instead of table rows. */
     .schedule-day-section {
         overflow: hidden;
-        border-color: rgba(139, 92, 246, 0.17);
-        background: rgba(7, 12, 27, 0.68);
+        border-color: rgb(var(--accent-rgb) / 0.17);
+        background: var(--bg);
     }
 
     .schedule-day-heading {
@@ -457,10 +457,10 @@ button {
         width: 100%;
         padding: 0.9rem 0.85rem 0.85rem 1rem;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.07);
+        border: 1px solid var(--border);
         border-radius: 13px;
-        background: rgba(11, 18, 37, 0.84);
-        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
+        background: var(--surface);
+        box-shadow: var(--shadow);
     }
 
     .schedule-event-stripe {
@@ -599,14 +599,14 @@ button {
     }
 
     .calendar-mobile-event-copy strong {
-        color: #f1f5f9;
+        color: var(--text);
         font-size: 0.74rem;
         line-height: 1.35;
         overflow-wrap: anywhere;
     }
 
     .calendar-mobile-event-copy small {
-        color: #9aa6ba;
+        color: var(--text-secondary);
         font-size: 0.62rem;
         line-height: 1.45;
         overflow-wrap: anywhere;
@@ -626,8 +626,8 @@ button {
         align-items: center;
         padding: 0.25rem 0.45rem;
         border-radius: 999px;
-        color: #ddd6fe !important;
-        background: rgba(139, 92, 246, 0.17);
+        color: var(--text) !important;
+        background: rgb(var(--accent-rgb) / 0.17);
         font-size: 0.56rem !important;
         font-weight: 800 !important;
     }

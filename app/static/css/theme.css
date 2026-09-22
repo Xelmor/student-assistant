@@ -1,0 +1,171 @@
+/* Graphite + Ice Blue. Shared palette; page-prefixed tokens are compatibility aliases.
+   Geometry, typography sizes and animation timelines stay in their existing files. */
+:root {
+    --bg: #0D0F12;
+    --bg-secondary: #111419;
+    --surface: #15181D;
+    --surface-elevated: #1A1E24;
+    --border: #272B32;
+    --border-hover: #343A44;
+    --text: #F2F4F7;
+    --text-secondary: #8D96A3;
+    --text-muted: #69717D;
+    --accent: #6C8EFF;
+    --accent-hover: #82A0FF;
+    --accent-rgb: 108 142 255;
+    --palette-ice: #6C8EFF;
+    --palette-rose: #B77F9F;
+    --palette-cyan: #70A7B8;
+    --accent-soft: rgba(108, 142, 255, 0.10);
+    --accent-border: rgba(108, 142, 255, 0.28);
+    --accent-glow: rgba(108, 142, 255, 0.06);
+    --success: #59A881;
+    --success-rgb: 89 168 129;
+    --warning: #C99A55;
+    --warning-rgb: 201 154 85;
+    --danger: #C76767;
+    --danger-rgb: 199 103 103;
+    --info: var(--accent);
+    --surface-strong: var(--surface-elevated);
+    --surface-muted: var(--bg-secondary);
+    --border-strong: var(--border-hover);
+    --muted: var(--text-secondary);
+    --primary: var(--accent);
+    --primary-dark: var(--accent-hover);
+    --accent-strong: var(--accent-hover);
+    --danger-soft: rgb(var(--danger-rgb) / 0.10);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.16);
+    --radius-xl: 14px;
+    --radius-lg: 14px;
+    --radius-md: 12px;
+    --radius-control: 12px;
+    --bs-body-color: var(--text);
+    --bs-body-bg: var(--bg);
+    --bs-border-color: var(--border);
+}
+
+body[class], body {
+    color: var(--text);
+    background: var(--bg) !important;
+}
+body::before, body::after {
+    background: radial-gradient(circle, var(--accent-glow), transparent 70%) !important;
+}
+body .topbar, body .public-topbar, body .mobile-tabbar,
+body .mobile-quick-actions-sheet, body .profile-menu-panel, body .install-sheet-card {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border);
+    box-shadow: var(--shadow) !important;
+    backdrop-filter: blur(4px);
+}
+body .topbar .nav-link, body .topbar .navbar-nav .nav-link {
+    color: var(--text-secondary) !important;
+    border-radius: 10px;
+}
+body .topbar .nav-link:is(:hover, .active),
+body .topbar .navbar-nav .nav-link:is(:hover, .active) {
+    color: var(--accent) !important;
+    background: var(--accent-soft) !important;
+}
+body .topbar .nav-link.active::after { background: var(--accent); }
+body .brand-mark { background: var(--accent) !important; color: white !important; box-shadow: none; }
+
+/* Shared controls, including custom page controls. No sizing or positioning rules. */
+body :is(.btn, [class$="-primary-button"], .auth-submit-button, .entry-v3-primary,
+.entry-v3-ghost, .public-register-btn, .calendar-form-submit) { border-radius: var(--radius-control); }
+body :is(.btn-primary, [class$="-primary-button"], .auth-submit-button, .entry-v3-primary,
+.public-register-btn, .calendar-action.is-primary, .calendar-form-submit:not(.is-secondary),
+.about-button--primary) {
+    color: #fff !important;
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    box-shadow: none !important;
+}
+body :is(.btn-primary, [class$="-primary-button"], .auth-submit-button, .entry-v3-primary,
+.public-register-btn, .calendar-action.is-primary, .calendar-form-submit:not(.is-secondary),
+.about-button--primary):hover {
+    background: var(--accent-hover) !important;
+    border-color: var(--accent-hover) !important;
+}
+body :is(.btn-outline-primary, .btn-outline-secondary, .btn-outline-light,
+.entry-v3-ghost, .about-button--secondary, .calendar-form-submit.is-secondary) {
+    color: var(--text-secondary);
+    background: transparent;
+    border-color: var(--border-hover);
+    box-shadow: none !important;
+}
+body :is(.btn-outline-primary, .btn-outline-secondary, .btn-outline-light,
+.entry-v3-ghost, .about-button--secondary, .calendar-form-submit.is-secondary):hover {
+    color: var(--text);
+    background: var(--surface-elevated);
+    border-color: var(--border-hover);
+}
+body .btn-danger, body .btn-outline-danger:hover { background: var(--danger); border-color: var(--danger); }
+body .btn-success, body .btn-outline-success:hover { background: var(--success); border-color: var(--success); }
+body :is(.form-control, .form-select, input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]), textarea) {
+    color: var(--text);
+    background-color: var(--bg-secondary);
+    border-color: var(--border);
+}
+body :is(.form-control, .form-select, input, textarea):focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-glow) !important;
+}
+body input::placeholder, body textarea::placeholder { color: var(--text-muted) !important; }
+body :is(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+body :is(.card, .hero-panel, .feature-panel, .auth-panel) {
+    background: var(--surface);
+    border-color: var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+}
+body :is(.card, .hero-panel, .feature-panel, .auth-panel):hover {
+    border-color: var(--border-hover);
+    background: var(--surface-elevated);
+    box-shadow: var(--shadow-hover);
+}
+body :is(.icon-purple, .icon-violet, .icon-cyan, .tasks-title-icon, .tasks-panel-icon,
+.notes-panel-icon, .schedule-panel-icon, .feature-icon) {
+    color: var(--text-secondary);
+    background: var(--surface-elevated);
+}
+.entry-v3 { background: var(--bg); }
+.entry-v3-orb { opacity: 0.035; }
+.entry-v3-orb-b { opacity: 0.025; }
+.entry-line-purple > span, .entry-line-blue > span { color: var(--text); -webkit-text-fill-color: var(--text); background: none; }
+
+/* Common surface states for the page-specific components. */
+body :is(.dashboard-card, .tasks-panel, .tasks-overview, .tasks-stat-card,
+.subjects-panel, .subjects-stat-card, .schedule-panel, .schedule-stat-card,
+.calendar-stat-card, .notes-panel, .profile-simple-card, .about-info-card,
+.onboarding-card, .empty-state) {
+    background: var(--surface);
+    border-color: var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+}
+body :is(.dashboard-card, .tasks-panel, .tasks-stat-card, .subjects-panel,
+.subjects-stat-card, .schedule-panel, .schedule-stat-card, .calendar-stat-card,
+.notes-panel, .profile-simple-card, .about-info-card):hover {
+    background: var(--surface-elevated);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-hover);
+}
+.empty-state__glow { background: var(--accent-glow); opacity: 0.35; }
+body :is(.tasks-stat-card.is-today, .tasks-stat-card.is-active) .tasks-stat-icon {
+    color: var(--text-secondary);
+    background: var(--surface-elevated);
+}
+
+/* Saved accent preferences retain their muted palette and matching tint. */
+:root[data-accent="pink"] { --accent-rgb: 183 127 159; }
+:root[data-accent="green"] { --accent-rgb: 89 168 129; }
+:root[data-accent="orange"] { --accent-rgb: 201 154 85; }
+:root[data-accent="cyan"] { --accent-rgb: 112 167 184; }
+
+/* PWA actions use the same quiet button states as the application. */
+body #installAction { background: var(--accent); border-color: var(--accent); box-shadow: none; }
+body #installAction:is(:hover, :focus-visible) { background: var(--accent-hover); box-shadow: none; }
+body #installLater, body .install-sheet-close { background: transparent; border-color: var(--border-hover); color: var(--text-secondary); }
+body #installLater:is(:hover, :focus-visible), body .install-sheet-close:hover { background: var(--surface-elevated); border-color: var(--border-hover); color: var(--text); }

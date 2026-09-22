@@ -1,0 +1,104 @@
+/* Only the final CTA owns these effects. Onboarding keeps its existing layout. */
+.entry-v3-final [data-entry-morph] {
+    position: relative;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    isolation: isolate;
+    transition: transform 200ms ease, background-color 200ms ease !important;
+}
+
+.entry-v3-final [data-entry-morph] .entry-cta-arrow {
+    flex-shrink: 0;
+    transition: transform 200ms ease !important;
+}
+
+.entry-v3-final [data-entry-morph]:not(.is-cta-running):hover {
+    transform: translateY(-2px);
+}
+
+.entry-v3-final [data-entry-morph]:not(.is-cta-running):hover .entry-cta-arrow {
+    transform: translateX(4px);
+}
+
+.entry-cta-label { white-space: nowrap; }
+
+.entry-v3-final .entry-cta-loader,
+.entry-v3-final .entry-cta-wave {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.entry-v3-final [data-entry-morph] .entry-cta-ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.4;
+    transform: rotate(-90deg);
+}
+
+.entry-cta-ring-track { stroke-opacity: 0.12; }
+.entry-cta-ring-progress { stroke-dasharray: 100; stroke-dashoffset: 100; stroke-linecap: round; }
+
+.entry-cta-dot,
+.entry-cta-symbol {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.entry-cta-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+.entry-cta-symbol { color: var(--text); font-size: 12px; font-weight: 800; letter-spacing: -0.04em; opacity: 0; }
+.entry-cta-wave { border: 1px solid var(--accent-border); border-radius: 50%; }
+
+body .entry-v3-final [data-entry-morph].is-cta-running {
+    width: var(--cta-width);
+    height: var(--cta-size);
+    min-height: var(--cta-size);
+    min-width: 0;
+    padding: 0;
+    transform: none;
+    background: var(--bg-secondary) !important;
+    border-color: var(--accent-border) !important;
+    box-shadow: 0 0 0 8px rgb(var(--accent-rgb) / 0.025), 0 0 28px rgb(var(--accent-rgb) / 0.045) !important;
+    transition: background-color 400ms ease, border-color 400ms ease !important;
+    will-change: width, border-radius;
+}
+
+.entry-cta-portal {
+    position: fixed;
+    inset: 0;
+    z-index: 310;
+    pointer-events: auto;
+    background: radial-gradient(circle at var(--cta-x) var(--cta-y), rgb(var(--accent-rgb) / 0.055), transparent 55%), var(--bg-secondary);
+    will-change: clip-path, opacity;
+}
+
+.entry-cta-portal-mark {
+    position: absolute;
+    left: var(--cta-x);
+    top: var(--cta-y);
+    transform: translate(-50%, -50%);
+    color: var(--text);
+    font: 800 12px "Manrope", "Segoe UI", sans-serif;
+    letter-spacing: -0.04em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .entry-v3-final [data-entry-morph],
+    .entry-v3-final [data-entry-morph] .entry-cta-arrow {
+        transform: none !important;
+        transition: none !important;
+    }
+}

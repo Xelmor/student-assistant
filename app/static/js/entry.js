@@ -22,6 +22,10 @@
     const telegramDemo = root.querySelector('[data-telegram-demo]');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const finalCTA = root.querySelector('[data-entry-morph]');
+    let finalTransition = null;
+    let setupOpenedFromFinal = false;
+    let finalSetupScroll = null;
     let submitTimer = null;
 
     if (particles && !particles.childElementCount) {
@@ -43,36 +47,189 @@
         particles.appendChild(fragment);
     }
 
-    const setStep = (step) => {
+    const setStep = (step, focus = true) => {
         root.querySelectorAll('[data-entry-step]').forEach((section) => {
             const active = Number(section.dataset.entryStep) === step;
             section.classList.toggle('is-active', active);
             section.setAttribute('aria-hidden', String(!active));
         });
         if (progress) progress.style.width = step === 1 ? '50%' : '100%';
+        if (!focus) return;
         window.setTimeout(() => {
             if (step === 1) nameInput?.focus();
             else root.querySelector('[data-entry-step="2"] input:not([type="hidden"])')?.focus();
         }, reduceMotion ? 0 : 180);
     };
 
-    const openSetup = () => {
+    const openSetup = ({ focus = true } = {}) => {
         setup?.classList.add('is-open');
         setup?.setAttribute('aria-hidden', 'false');
         document.body.classList.add('entry-modal-open');
         const hasError = Boolean(root.dataset.startError);
-        setStep(hasError ? 2 : 1);
+        setStep(hasError ? 2 : 1, focus);
     };
 
     const closeSetup = () => {
         if (submitTimer) return;
+        cancelFinalTransition();
         setup?.classList.remove('is-open');
         setup?.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('entry-modal-open');
         if (window.location.hash === '#start') {
             window.history.replaceState({}, '', window.location.pathname);
         }
+        if (setupOpenedFromFinal) {
+            if (finalSetupScroll) window.scrollTo({ ...finalSetupScroll, behavior: 'instant' });
+            finalCTA?.focus({ preventScroll: true });
+        }
+        setupOpenedFromFinal = false;
+        finalSetupScroll = null;
     };
+
+    const enterExistingSetup = (focus = true) => {
+        if (setupOpenedFromFinal && !finalSetupScroll) {
+            finalSetupScroll = { left: window.scrollX, top: window.scrollY };
+        }
+        window.history.replaceState({}, '', `${window.location.pathname}#start`);
+        openSetup({ focus });
+        if (setupOpenedFromFinal) {
+            // The landing's existing transform contains its fixed dialog. Center
+            // that dialog under the portal before revealing/focusing the form.
+            setup.querySelector('.entry-v3-setup-panel')?.scrollIntoView({ block: 'center', behavior: 'instant' });
+        }
+    };
+
+    const cleanFinalTransition = (run) => {
+        if (run.cleaned) return;
+        run.cleaned = true;
+        run.animations.forEach((animation) => animation.cancel());
+        run.portal?.remove();
+        finalCTA.classList.remove('is-cta-running');
+        finalCTA.style.removeProperty('--cta-width');
+        finalCTA.style.removeProperty('--cta-size');
+        finalCTA.removeAttribute('aria-disabled');
+        finalCTA.removeAttribute('aria-busy');
+        run.motion.removeEventListener('change', run.motionChanged);
+        if (finalTransition === run) finalTransition = null;
+    };
+
+    const cancelFinalTransition = () => {
+        if (!finalTransition) return;
+        finalTransition.cancelled = true;
+        cleanFinalTransition(finalTransition);
+    };
+
+    // All timing comes from finished visual animations, not a simulated request.
+    const morphFinalCTA = async () => {
+        if (finalTransition || setup?.classList.contains('is-open')) return;
+        if (!finalCTA?.animate || !setup) {
+            enterExistingSetup();
+            return;
+        }
+        const run = {
+            animations: [], portal: null, cancelled: false, cleaned: false,
+            motion: window.matchMedia('(prefers-reduced-motion: reduce)'),
+        };
+        finalTransition = run;
+        const play = (element, keyframes, duration, options = {}) => {
+            const animation = element.animate(keyframes, {
+                duration, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'both', ...options,
+            });
+            run.animations.push(animation);
+            // Cancellation is expected on Escape, pagehide or motion preference changes.
+            animation.finished.catch(() => {});
+            return animation.finished;
+        };
+        run.motionChanged = () => {
+            if (!run.motion.matches) return;
+            cancelFinalTransition();
+            setupOpenedFromFinal = true;
+            enterExistingSetup();
+        };
+        run.motion.addEventListener('change', run.motionChanged);
+        finalCTA.setAttribute('aria-disabled', 'true');
+        finalCTA.setAttribute('aria-busy', 'true');
+
+        try {
+            if (run.motion.matches) {
+                await play(finalCTA, [{ opacity: 1 }, { opacity: 0.5 }], 120);
+                setupOpenedFromFinal = true;
+                enterExistingSetup(false);
+                await play(setup.querySelector('.entry-v3-setup-panel'), [{ opacity: 0 }, { opacity: 1 }], 140);
+            } else {
+                const box = finalCTA.getBoundingClientRect();
+                const radius = getComputedStyle(finalCTA).borderRadius;
+                finalCTA.style.setProperty('--cta-width', `${box.width}px`);
+                finalCTA.style.setProperty('--cta-size', `${box.height}px`);
+                finalCTA.classList.add('is-cta-running');
+                for (const sibling of finalCTA.parentElement.children) {
+                    if (sibling !== finalCTA) play(sibling, [{ opacity: 1, filter: 'blur(0px)' }, { opacity: 0.4, filter: 'blur(2px)' }], 400);
+                }
+                play(finalCTA.querySelector('.entry-cta-label'), [{ opacity: 1 }, { opacity: 0 }], 140);
+                play(finalCTA.querySelector('.entry-cta-arrow'), [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(16px)' }], 180);
+                await play(finalCTA, [{ width: `${box.width}px`, borderRadius: radius }, { width: `${box.height}px`, borderRadius: `${box.height / 2}px` }], 400, { easing: 'cubic-bezier(.4,0,.2,1)' });
+
+                play(finalCTA.querySelector('.entry-cta-loader'), [{ opacity: 0 }, { opacity: 1 }], 140);
+                await play(finalCTA.querySelector('.entry-cta-ring-progress'), [{ strokeDashoffset: '100' }, { strokeDashoffset: '0' }], 800, { easing: 'cubic-bezier(.4,0,.2,1)' });
+                play(finalCTA.querySelector('.entry-cta-dot'), [{ opacity: 1 }, { opacity: 0 }], 100);
+                play(finalCTA.querySelector('.entry-cta-symbol'), [{ opacity: 0 }, { opacity: 1 }], 160);
+                play(finalCTA.querySelector('.entry-cta-wave'), [{ opacity: 0.18, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(2.2)' }], 620);
+                await play(finalCTA, [{ transform: 'scale(1)' }, { transform: 'scale(1.08)', offset: 0.5 }, { transform: 'scale(1)' }], 160);
+
+                // Read the actual circle position again after any scroll/resize.
+                const circle = finalCTA.getBoundingClientRect();
+                const x = circle.left + circle.width / 2;
+                const y = circle.top + circle.height / 2;
+                const cover = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+                const portal = document.createElement('div');
+                portal.className = 'entry-cta-portal';
+                portal.setAttribute('aria-hidden', 'true');
+                portal.style.setProperty('--cta-x', `${x}px`);
+                portal.style.setProperty('--cta-y', `${y}px`);
+                const mark = document.createElement('span');
+                mark.className = 'entry-cta-portal-mark';
+                mark.textContent = 'SA';
+                portal.append(mark);
+                document.body.append(portal);
+                run.portal = portal;
+                play(mark, [{ opacity: 1 }, { opacity: 0 }], 240);
+                await play(portal, [
+                    { clipPath: `circle(${circle.width / 2}px at ${x}px ${y}px)` },
+                    { clipPath: `circle(${cover}px at ${x}px ${y}px)` },
+                ], 540, { easing: 'cubic-bezier(.65,0,.25,1)' });
+
+                setupOpenedFromFinal = true;
+                enterExistingSetup(false);
+                const panel = setup.querySelector('.entry-v3-setup-panel');
+                const field = setup.querySelector('.entry-v3-step.is-active .entry-v3-field');
+                play(portal, [{ opacity: 1 }, { opacity: 0 }], 260);
+                play(field, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }], 140, { delay: 120 });
+                await play(panel, [
+                    { opacity: 0, transform: 'translateY(20px)', filter: 'blur(8px)' },
+                    { opacity: 1, transform: 'translateY(0)', filter: 'blur(0px)' },
+                ], 260);
+            }
+            if (!run.cancelled && setup.classList.contains('is-open')) {
+                setup.querySelector('.entry-v3-step.is-active input:not([type="hidden"])')?.focus({ preventScroll: true });
+            }
+        } catch (_) {
+            // If animation support fails, the same onboarding remains available.
+            if (!run.cancelled) {
+                setupOpenedFromFinal = true;
+                enterExistingSetup();
+            }
+        } finally {
+            cleanFinalTransition(run);
+        }
+    };
+
+    finalCTA?.addEventListener('keydown', (event) => {
+        if (event.key === ' ') {
+            event.preventDefault();
+            if (!event.repeat) finalCTA.click();
+        }
+    });
+    window.addEventListener('pagehide', cancelFinalTransition);
 
     const validateName = () => {
         const value = nameInput?.value.trim() || '';
@@ -93,8 +250,9 @@
     root.querySelectorAll('[data-entry-open]').forEach((control) => {
         control.addEventListener('click', (event) => {
             event.preventDefault();
-            window.history.replaceState({}, '', `${window.location.pathname}#start`);
-            openSetup();
+            if (finalTransition) return;
+            if (control === finalCTA) morphFinalCTA();
+            else enterExistingSetup();
         });
     });
 
@@ -140,6 +298,13 @@
     });
 
     document.addEventListener('keydown', (event) => {
+        if (finalTransition && !setup?.classList.contains('is-open')) {
+            if (event.key === 'Tab') event.preventDefault();
+            if (event.key === 'Escape') {
+                cancelFinalTransition();
+                finalCTA?.focus({ preventScroll: true });
+            }
+        }
         if (event.key === 'Escape' && setup?.classList.contains('is-open')) closeSetup();
     });
 

@@ -1,561 +1,214 @@
 {% extends 'base.html' %}
-{% block title %}Главная{% endblock %}
-{% block theme_color %}#070b1a{% endblock %}
-{% block body_class %}dashboard-page dashboard-dark{% endblock %}
 {% from 'components/empty_state.html' import empty_state %}
+{% block title %}Главная{% endblock %}
+{% block theme_color %}#0D0F12{% endblock %}
+{% block body_class %}dashboard-page dashboard-dark{% endblock %}
+
+{% macro dashboard_icon(name) -%}
+<svg viewBox="0 0 24 24" aria-hidden="true">
+    {% if name == 'calendar' %}
+        <rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M8 3v4m8-4v4M3 10h18"></path>
+    {% elif name == 'clock' %}
+        <circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>
+    {% elif name == 'task' %}
+        <rect x="4" y="3" width="16" height="18" rx="3"></rect><path d="m8 12 2.5 2.5L16 9"></path>
+    {% elif name == 'note' %}
+        <path d="M6 3h9l3 3v15H6z"></path><path d="M15 3v4h4M9 11h6M9 15h6"></path>
+    {% elif name == 'bell' %}
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"></path>
+    {% elif name == 'arrow' %}
+        <path d="M5 12h14m-5-5 5 5-5 5"></path>
+    {% endif %}
+</svg>
+{%- endmacro %}
+
 {% block content %}
-<span class="visually-hidden" id="dashboard-live-date" data-server-date="{{ now.strftime('%Y-%m-%d') }}">
-    Сегодня: {{ now.strftime('%d.%m.%Y') }}
-</span>
-
-{% if onboarding_chat_visible %}
-    {% include 'components/onboarding_chat.html' %}
-{% endif %}
+<span class="visually-hidden" id="dashboard-live-date" data-server-date="{{ now.strftime('%Y-%m-%d') }}">Сегодня: {{ now.strftime('%d.%m.%Y') }}</span>
+{% if onboarding_chat_visible %}{% include 'components/onboarding_chat.html' %}{% endif %}
 <span id="onboardingChatStatus" data-status="{{ onboarding_chat_status or '' }}" hidden></span>
-
 {% if onboarding.visible %}
-<section
-    class="onboarding-card{% if onboarding.all_completed %} is-complete{% endif %}"
-    id="dashboardOnboarding"
-    data-onboarding-completed="{{ onboarding.completed_count }}"
-    data-onboarding-total="{{ onboarding.total_count }}"
-    aria-labelledby="onboardingTitle"
->
-    <div class="onboarding-glow-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24">
-            <path d="M14 4c3.1.6 5.4 2.9 6 6l-5.2 5.2-6-6L14 4Z"></path>
-            <path d="m8.8 9.2-3.5.6-2 2 4.3 1.1m7.2 2.1-.6 3.5-2 2-1.1-4.3"></path>
-            <path d="m8.2 15.8-2 2m4-9.8 5.8 5.8"></path>
-        </svg>
-    </div>
-
-    <header class="onboarding-header">
-        <div class="onboarding-heading">
-            <span class="onboarding-kicker">Быстрый старт</span>
-            {% if onboarding.all_completed %}
-                <h2 id="onboardingTitle">Рабочее пространство готово!</h2>
-                <p>Отлично, теперь можно планировать учёбу и следить за дедлайнами.</p>
-            {% else %}
-                <h2 id="onboardingTitle">Добро пожаловать в Student Assistant!</h2>
-                <p>Давай быстро настроим рабочее пространство, чтобы тебе было удобнее планировать учёбу.</p>
-            {% endif %}
-        </div>
-        {% if not onboarding.all_completed %}
-        <button type="button" class="onboarding-skip" id="onboardingSkipButton">Пропустить</button>
-        {% endif %}
-    </header>
-
-    <div class="onboarding-progress">
-        <div class="onboarding-progress-copy">
-            <strong><span id="onboardingCompletedCount">{{ onboarding.completed_count }}</span> из {{ onboarding.total_count }} выполнено</strong>
-            <span id="onboardingPercent">{{ onboarding.percent }}%</span>
-        </div>
-        <div
-            class="onboarding-progress-track"
-            role="progressbar"
-            aria-label="Прогресс первоначальной настройки"
-            aria-valuemin="0"
-            aria-valuemax="{{ onboarding.total_count }}"
-            aria-valuenow="{{ onboarding.completed_count }}"
-        >
-            <span id="onboardingProgressBar" style="--onboarding-progress: {{ onboarding.percent }}%;"></span>
-        </div>
-    </div>
-
+<section class="onboarding-card{% if onboarding.all_completed %} is-complete{% endif %}" id="dashboardOnboarding" data-onboarding-completed="{{ onboarding.completed_count }}" data-onboarding-total="{{ onboarding.total_count }}" aria-labelledby="onboardingTitle">
+    <div class="onboarding-glow-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 4c3.1.6 5.4 2.9 6 6l-5.2 5.2-6-6L14 4Z"></path><path d="m8.8 9.2-3.5.6-2 2 4.3 1.1m7.2 2.1-.6 3.5-2 2-1.1-4.3"></path><path d="m8.2 15.8-2 2m4-9.8 5.8 5.8"></path></svg></div>
+    <header class="onboarding-header"><div class="onboarding-heading"><span class="onboarding-kicker">Быстрый старт</span>{% if onboarding.all_completed %}<h2 id="onboardingTitle">Рабочее пространство готово!</h2><p>Отлично, теперь можно планировать учёбу и следить за дедлайнами.</p>{% else %}<h2 id="onboardingTitle">Добро пожаловать в Student Assistant!</h2><p>Давай быстро настроим рабочее пространство, чтобы тебе было удобнее планировать учёбу.</p>{% endif %}</div>{% if not onboarding.all_completed %}<button type="button" class="onboarding-skip" id="onboardingSkipButton">Пропустить</button>{% endif %}</header>
+    <div class="onboarding-progress"><div class="onboarding-progress-copy"><strong><span id="onboardingCompletedCount">{{ onboarding.completed_count }}</span> из {{ onboarding.total_count }} выполнено</strong><span id="onboardingPercent">{{ onboarding.percent }}%</span></div><div class="onboarding-progress-track" role="progressbar" aria-label="Прогресс первоначальной настройки" aria-valuemin="0" aria-valuemax="{{ onboarding.total_count }}" aria-valuenow="{{ onboarding.completed_count }}"><span id="onboardingProgressBar" style="--onboarding-progress: {{ onboarding.percent }}%;"></span></div></div>
     <div class="onboarding-steps">
         {% for step in onboarding.steps %}
-        <article
-            class="onboarding-step{% if step.completed %} is-completed{% elif step.active %} is-active{% endif %}"
-            data-onboarding-step="{{ step.key }}"
-        >
-            <span class="onboarding-step-state" aria-hidden="true">
-                {% if step.completed %}
-                    <svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg>
-                {% else %}
-                    <span></span>
-                {% endif %}
-            </span>
-            <span class="onboarding-step-icon" aria-hidden="true">
-                {% if step.icon == 'book' %}
-                    <svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"></path><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z"></path></svg>
-                {% elif step.icon == 'check' %}
-                    <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"></rect><path d="m8 12 2.5 2.5L16 9"></path></svg>
-                {% elif step.icon == 'calendar' %}
-                    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M8 3v4m8-4v4M3 10h18"></path></svg>
-                {% else %}
-                    <svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9L12 3Z"></path></svg>
-                {% endif %}
-            </span>
-            <div class="onboarding-step-copy">
-                <span>Шаг {{ loop.index }}</span>
-                <h3>{{ step.title }}</h3>
-                <p>{{ step.description }}</p>
-            </div>
-            <a class="onboarding-step-action" href="{{ step.url }}">
-                {% if step.completed %}Открыть{% else %}{{ step.action_label }}{% endif %}
-                <span aria-hidden="true">→</span>
-            </a>
+        <article class="onboarding-step{% if step.completed %} is-completed{% elif step.active %} is-active{% endif %}" data-onboarding-step="{{ step.key }}">
+            <span class="onboarding-step-state" aria-hidden="true">{% if step.completed %}<svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg>{% else %}<span></span>{% endif %}</span>
+            <span class="onboarding-step-icon" aria-hidden="true">{% if step.icon == 'book' %}<svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"></path><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z"></path></svg>{% elif step.icon == 'check' %}<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"></rect><path d="m8 12 2.5 2.5L16 9"></path></svg>{% elif step.icon == 'calendar' %}<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M8 3v4m8-4v4M3 10h18"></path></svg>{% else %}<svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9L12 3Z"></path></svg>{% endif %}</span>
+            <div class="onboarding-step-copy"><span>Шаг {{ loop.index }}</span><h3>{{ step.title }}</h3><p>{{ step.description }}</p></div><a class="onboarding-step-action" href="{{ step.url }}">{% if step.completed %}Открыть{% else %}{{ step.action_label }}{% endif %}<span aria-hidden="true">→</span></a>
         </article>
         {% endfor %}
     </div>
-
-    {% if onboarding.all_completed %}
-    <form method="post" action="/onboarding/complete" class="onboarding-complete-form" data-skip-toast="true">
-        {{ csrf_input(request) }}
-        <button type="submit" class="onboarding-complete-button">
-            <span aria-hidden="true">✓</span>
-            Скрыть подсказки
-        </button>
-    </form>
-    {% else %}
-    <form method="post" action="/onboarding/skip" id="onboardingSkipForm" data-skip-toast="true" hidden>
-        {{ csrf_input(request) }}
-    </form>
-    {% endif %}
+    {% if onboarding.all_completed %}<form method="post" action="/onboarding/complete" class="onboarding-complete-form" data-skip-toast="true">{{ csrf_input(request) }}<button type="submit" class="onboarding-complete-button"><span aria-hidden="true">✓</span>Скрыть подсказки</button></form>{% else %}<form method="post" action="/onboarding/skip" id="onboardingSkipForm" data-skip-toast="true" hidden>{{ csrf_input(request) }}</form>{% endif %}
 </section>
 {% endif %}
-
 <span id="onboardingStatus" data-status="{{ onboarding_status or '' }}" hidden></span>
 
-<section class="dashboard-overview-grid" data-testid="dashboard-page">
-    <article class="dashboard-card dashboard-hero-card dashboard-live-hero-v3" id="dashboardLiveHero">
-        <div class="sa-live-hero-layout">
-            <div class="dashboard-hero-copy">
-                <span class="dashboard-eyebrow">Твой центр продуктивности</span>
-                <h1>Добрый день,<br><strong data-testid="current-user-name">{{ user.display_name or user.username }}</strong></h1>
-                <p>Фокус, план и дисциплина помогают двигаться к большим результатам каждый день.</p>
-                <div class="dashboard-focus-chip">
-                    <span aria-hidden="true">✦</span>
-                    <span>{{ motivation_quote }}</span>
+{% set month_genitive = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'] %}
+{% set current_minutes = now.hour * 60 + now.minute %}
+{% set day_range = namespace(start=current_minutes, end=current_minutes, deadline=none, event_count=0) %}
+{% for item in today_schedule %}
+    {% set item_start = item.start_time.hour * 60 + item.start_time.minute %}
+    {% set item_end = item.end_time.hour * 60 + item.end_time.minute %}
+    {% if item_start < day_range.start %}{% set day_range.start = item_start %}{% endif %}
+    {% if item_end > day_range.end %}{% set day_range.end = item_end %}{% endif %}
+    {% set day_range.event_count = day_range.event_count + 1 %}
+{% endfor %}
+{% for task in urgent_tasks %}
+    {% if not day_range.deadline and task.deadline and task.deadline.date() == now.date() %}
+        {% set day_range.deadline = task %}
+        {% set deadline_minutes = task.deadline.hour * 60 + task.deadline.minute %}
+        {% if deadline_minutes < day_range.start %}{% set day_range.start = deadline_minutes %}{% endif %}
+        {% if deadline_minutes > day_range.end %}{% set day_range.end = deadline_minutes %}{% endif %}
+        {% set day_range.event_count = day_range.event_count + 1 %}
+    {% endif %}
+{% endfor %}
+{% if day_range.event_count == 0 %}{% set day_range.event_count = 1 %}{% endif %}
+{% set range_start = (((day_range.start - 60) / 60)|int * 60) if day_range.start >= 60 else 0 %}
+{% set range_end = [(((day_range.end + 119) / 60)|int) * 60, 1440]|min %}
+{% if range_end - range_start < 360 %}{% set range_end = range_start + 360 %}{% endif %}
+{% if range_end > 1440 %}{% set range_start = [0, 1440 - 360]|max %}{% set range_end = 1440 %}{% endif %}
+
+<main class="dashboard-center" id="dashboardCenter" data-testid="dashboard-page" data-day-start="{{ range_start }}" data-day-end="{{ range_end }}" data-now-minutes="{{ current_minutes }}">
+    <section class="dashboard-center-intro" aria-labelledby="dashboardGreeting">
+        <div class="dashboard-center-welcome" data-dashboard-reveal="welcome">
+            <span class="dashboard-center-kicker">Твой центр продуктивности</span>
+            <h1 id="dashboardGreeting">Добрый день, <strong data-testid="current-user-name">{{ user.display_name or user.username }}</strong></h1>
+            <time datetime="{{ now.strftime('%Y-%m-%d') }}">{{ weekdays[now.weekday()] }}, {{ now.day }} {{ month_genitive[now.month - 1] }}</time>
+            <p>
+                {% if overdue_count %}Есть {{ overdue_count }} просроченн{% if overdue_count == 1 %}ая задача{% elif overdue_count in [2, 3, 4] %}ые задачи{% else %}ых задач{% endif %}. Начни с самого важного.
+                {% elif active_schedule_item %}Сейчас идёт {{ active_schedule_item.subject.name }}. Остальное можно сделать после занятия.
+                {% elif next_schedule_item %}Следующее занятие — {{ next_schedule_item.subject.name }} в {{ next_schedule_item.start_time.strftime('%H:%M') }}.
+                {% else %}Сегодня всё спокойно. Можно сосредоточиться на главном.{% endif %}
+            </p>
+        </div>
+        <div class="dashboard-quick-stats" aria-label="Сводка дня">
+            <a href="/tasks" class="dashboard-stat" data-dashboard-stat style="--stat-index: 0">
+                <strong id="dashboardCorePendingCount" data-count="{{ pending_count }}">{{ pending_count }}</strong>
+                <span id="dashboardCorePendingLabel">активн{% if pending_count == 1 %}ая задача{% elif pending_count in [2, 3, 4] %}ые задачи{% else %}ых задач{% endif %}</span>
+            </a>
+            <a href="/schedule" class="dashboard-stat" data-dashboard-stat style="--stat-index: 1">
+                <strong data-count="{{ today_schedule|length }}">{{ today_schedule|length }}</strong>
+                <span>заняти{% if today_schedule|length == 1 %}е{% elif today_schedule|length in [2, 3, 4] %}я{% else %}й{% endif %} сегодня</span>
+            </a>
+            <a href="/profile" class="dashboard-stat" data-dashboard-stat style="--stat-index: 2">
+                <strong data-count="{{ streak.days }}">{{ streak.days }}</strong>
+                <span>дн{% if streak.days == 1 %}ень{% elif streak.days in [2, 3, 4] %}я{% else %}ей{% endif %} ритма</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="dashboard-day-layout">
+        <article class="dashboard-surface dashboard-day-card" aria-labelledby="dashboardDayTitle">
+            <header class="dashboard-center-card-heading">
+                <div><span class="dashboard-center-kicker">Сегодня</span><h2 id="dashboardDayTitle">Мой день</h2></div>
+                <a href="/calendar">Открыть календарь {{ dashboard_icon('arrow') }}</a>
+            </header>
+            <div class="dashboard-day-timeline" id="dashboardDayTimeline">
+                <div class="dashboard-timeline-scale" id="dashboardTimelineScale" aria-hidden="true"></div>
+                <div class="dashboard-timeline-track" aria-hidden="true">
+                    <span class="dashboard-timeline-progress" id="dashboardTimelineProgress"></span>
+                    <span class="dashboard-timeline-now" id="dashboardTimelineNow"><i></i><b>Сейчас</b></span>
                 </div>
-            </div>
-
-            <div class="sa-live-hero-stage" aria-label="Сводка на сегодня">
-                <div class="sa-live-hero-grid" aria-hidden="true"></div>
-                <div class="sa-live-hero-aurora sa-live-hero-aurora-a" data-hero-depth="0.12" aria-hidden="true"></div>
-                <div class="sa-live-hero-aurora sa-live-hero-aurora-b" data-hero-depth="0.18" aria-hidden="true"></div>
-                <span class="sa-live-hero-particle particle-a" data-hero-depth="0.22" aria-hidden="true"></span>
-                <span class="sa-live-hero-particle particle-b" data-hero-depth="0.16" aria-hidden="true"></span>
-                <span class="sa-live-hero-particle particle-c" data-hero-depth="0.28" aria-hidden="true"></span>
-                <span class="sa-live-hero-particle particle-d" data-hero-depth="0.20" aria-hidden="true"></span>
-
-                <div class="sa-live-hero-board-wrap">
-                    <section class="sa-live-hero-board" data-hero-depth="0.42">
-                        <header class="sa-live-hero-board-top">
-                            <span class="sa-live-hero-status">
-                                <i aria-hidden="true"></i>
-                                Сегодня
-                            </span>
-                            <time class="sa-live-hero-clock" id="dashboardHeroClock">{{ now.strftime('%H:%M') }}</time>
-                        </header>
-
-                        <div class="sa-live-hero-date">{{ now.strftime('%d.%m.%Y') }}</div>
-
-                        <div class="sa-live-hero-next">
-                            {% if active_schedule_item %}
-                                <span class="sa-live-hero-next-kicker is-live">Сейчас идёт</span>
-                                <strong>{{ active_schedule_item.subject.name }}</strong>
-                                <p>
-                                    {{ active_schedule_item.start_time.strftime('%H:%M') }}–{{ active_schedule_item.end_time.strftime('%H:%M') }}
-                                    {% if active_schedule_item.room %}<span>·</span>{{ active_schedule_item.room }}{% endif %}
-                                </p>
-                            {% elif next_schedule_item %}
-                                <span class="sa-live-hero-next-kicker">Следующая пара</span>
-                                <strong>{{ next_schedule_item.subject.name }}</strong>
-                                <p>
-                                    {{ next_schedule_item.start_time.strftime('%H:%M') }}–{{ next_schedule_item.end_time.strftime('%H:%M') }}
-                                    {% if next_schedule_item.room %}<span>·</span>{{ next_schedule_item.room }}{% endif %}
-                                </p>
-                            {% elif urgent_tasks %}
-                                <span class="sa-live-hero-next-kicker">Ближайшая задача</span>
-                                <strong>{{ urgent_tasks[0].title }}</strong>
-                                <p>
-                                    {% if urgent_tasks[0].subject %}{{ urgent_tasks[0].subject.name }}{% else %}Без предмета{% endif %}
-                                    {% if urgent_tasks[0].deadline %}<span>·</span>до {{ urgent_tasks[0].deadline.strftime('%d.%m %H:%M') }}{% endif %}
-                                </p>
-                            {% else %}
-                                <span class="sa-live-hero-next-kicker">Свободное окно</span>
-                                <strong>На сегодня всё спокойно</strong>
-                                <p>Можно разобрать заметки или запланировать следующий шаг.</p>
-                            {% endif %}
-                        </div>
-
-                        <div class="sa-live-hero-progress" aria-hidden="true">
-                            <span class="is-active"></span>
-                            <span class="is-active"></span>
-                            <span class="{% if pending_count or today_schedule %}is-active{% endif %}"></span>
-                            <span></span>
-                        </div>
-
-                        <div class="sa-live-hero-stats">
-                            <a href="/tasks" class="sa-live-hero-stat">
-                                <small>Задачи</small>
-                                <strong>{{ pending_count }}</strong>
-                                <span>{% if pending_count == 1 %}активная{% else %}активных{% endif %}</span>
-                            </a>
-                            <a href="/schedule" class="sa-live-hero-stat">
-                                <small>Сегодня</small>
-                                <strong>{{ today_schedule|length }}</strong>
-                                <span>{% if today_schedule|length == 1 %}занятие{% else %}занятия{% endif %}</span>
-                            </a>
-                            <a href="/profile" class="sa-live-hero-stat sa-live-hero-stat-rhythm">
-                                <small>Ритм</small>
-                                {% if streak.days > 0 %}
-                                    <strong>{{ streak.days }}</strong>
-                                    <span>{% if streak.days == 1 %}день подряд{% else %}дней подряд{% endif %}</span>
-                                {% else %}
-                                    <strong class="is-word">Старт</strong>
-                                    <span>закрой задачу</span>
-                                {% endif %}
-                            </a>
-                        </div>
-
-                        <footer class="sa-live-hero-board-footer">
-                            <span>STUDENT ASSISTANT</span>
-                            <a href="/calendar">Открыть день <b aria-hidden="true">→</b></a>
-                        </footer>
-                    </section>
-                </div>
-
-                <div class="sa-live-hero-caption" aria-hidden="true">
-                    <i></i>
-                    <span>Учебный день в фокусе</span>
-                </div>
-            </div>
-        </div>
-    </article>
-
-<article class="dashboard-card dashboard-calendar-card">
-        <header class="dashboard-card-heading">
-            <div>
-                <span class="dashboard-card-kicker">Календарь</span>
-                <h2>{{ calendar_month_name }} {{ now.year }}</h2>
-            </div>
-            <a href="/calendar" class="dashboard-icon-link" aria-label="Открыть календарь">→</a>
-        </header>
-        <div class="dashboard-month-grid dashboard-month-weekdays" aria-hidden="true">
-            <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
-        </div>
-        <div class="dashboard-month-grid">
-            {% for day in calendar_days %}
-                <span class="dashboard-month-day {% if not day.in_month %}is-muted{% endif %} {% if day.is_today %}is-today{% endif %}">
-                    {{ day.day }}
-                </span>
-            {% endfor %}
-        </div>
-    </article>
-
-    <article class="dashboard-card dashboard-time-card">
-        <div class="dashboard-time-top">
-            <div>
-                <span class="dashboard-card-kicker">Местное время</span>
-                <div class="dashboard-live-time" id="dashboard-live-clock" data-initial-time="{{ now.strftime('%H:%M:%S') }}">
-                    {{ now.strftime('%H:%M:%S') }}
-                </div>
-            </div>
-            <div
-                class="dashboard-analog-clock"
-                style="--hour-angle: {{ ((now.hour % 12) * 30 + now.minute * 0.5)|round(1) }}deg; --minute-angle: {{ (now.minute * 6)|round(1) }}deg;"
-                aria-hidden="true"
-            >
-                <span class="clock-mark clock-mark-12"></span>
-                <span class="clock-mark clock-mark-3"></span>
-                <span class="clock-mark clock-mark-6"></span>
-                <span class="clock-mark clock-mark-9"></span>
-                <span class="clock-hand clock-hour"></span>
-                <span class="clock-hand clock-minute"></span>
-                <span class="clock-pin"></span>
-            </div>
-        </div>
-
-        <div class="dashboard-next-label">Ближайшее событие</div>
-        <div class="dashboard-next-event {% if urgent_tasks and urgent_tasks[0].deadline and urgent_tasks[0].deadline < now and not active_schedule_item and not next_schedule_item %}is-overdue{% endif %}">
-            <span class="dashboard-event-icon" aria-hidden="true">▣</span>
-            <div class="dashboard-event-copy">
-                {% if active_schedule_item %}
-                    <strong>{{ active_schedule_item.subject.name }}</strong>
-                    <span>{{ active_schedule_item.start_time.strftime('%H:%M') }} - {{ active_schedule_item.end_time.strftime('%H:%M') }}</span>
-                    <small id="dashboard-lesson-remaining" data-remaining-seconds="{{ active_schedule_remaining_seconds }}">До конца: --</small>
-                {% elif next_schedule_item %}
-                    <strong>{{ next_schedule_item.subject.name }}</strong>
-                    <span>{{ next_schedule_item.start_time.strftime('%H:%M') }} - {{ next_schedule_item.end_time.strftime('%H:%M') }}</span>
-                    <small>{{ next_schedule_item.lesson_type or 'Занятие' }}{% if next_schedule_item.room %} · {{ next_schedule_item.room }}{% endif %}</small>
-                {% elif urgent_tasks %}
-                    <a href="/tasks?task={{ urgent_tasks[0].id }}">{{ urgent_tasks[0].title }}</a>
-                    <span>
-                        {% if urgent_tasks[0].deadline and urgent_tasks[0].deadline < now %}
-                            Просрочена до {{ urgent_tasks[0].deadline.strftime('%H:%M') }}
-                        {% elif urgent_tasks[0].deadline %}
-                            До {{ urgent_tasks[0].deadline.strftime('%H:%M') }}
-                        {% else %}
-                            Без дедлайна
-                        {% endif %}
-                    </span>
-                    <small>{% if urgent_tasks[0].subject %}{{ urgent_tasks[0].subject.name }}{% else %}Учебная задача{% endif %}</small>
-                {% else %}
-                    <strong>Свободное окно</strong>
-                    <span>Можно спокойно распланировать день</span>
-                    <small>Срочных событий сейчас нет</small>
-                {% endif %}
-            </div>
-            <span class="dashboard-event-arrow" aria-hidden="true">›</span>
-        </div>
-
-        <div class="dashboard-time-stats">
-            <div>
-                <span>Приоритет</span>
-                <strong>{% if urgent_tasks %}{{ level_label(urgent_tasks[0].priority) }}{% else %}Спокойный{% endif %}</strong>
-            </div>
-            <div>
-                <span>Активных задач</span>
-                <strong>{{ pending_count }}</strong>
-            </div>
-        </div>
-    </article>
-</section>
-
-<section class="dashboard-info-grid">
-    <article class="dashboard-card dashboard-info-card">
-        <header class="dashboard-info-heading">
-            <span class="dashboard-panel-icon icon-purple" aria-hidden="true">▦</span>
-            <h2>Расписание</h2>
-            <a href="/schedule" class="dashboard-icon-link" aria-label="Открыть расписание">›</a>
-        </header>
-        <div class="dashboard-info-body">
-            <div class="dashboard-info-title-row">
-                <strong>{{ weekdays[now.weekday()] }}</strong>
-                <span>Сегодня</span>
-            </div>
-            {% if today_schedule %}
-                <div class="dashboard-compact-list">
-                    {% for item in today_schedule[:2] %}
-                        <a href="/schedule" class="dashboard-compact-item">
-                            <span>{{ item.start_time.strftime('%H:%M') }}</span>
-                            <div>
-                                <strong>{{ item.subject.name }}</strong>
-                                <small>{{ item.lesson_type or 'Занятие' }}{% if item.room %} · {{ item.room }}{% endif %}</small>
-                            </div>
-                        </a>
-                    {% endfor %}
-                </div>
-            {% else %}
-                {{ empty_state(
-                    'schedule',
-                    'На сегодня занятий нет',
-                    'Можно заняться задачами или повторить материал.',
-                    'Открыть расписание',
-                    '/schedule',
-                    variant='compact'
-                ) }}
-            {% endif %}
-        </div>
-        <a class="dashboard-card-footer" href="/schedule">Открыть расписание <span>→</span></a>
-    </article>
-
-    <article class="dashboard-card dashboard-info-card">
-        <header class="dashboard-info-heading">
-            <span class="dashboard-panel-icon icon-violet" aria-hidden="true">✓</span>
-            <h2>Ближайшие задачи</h2>
-            <a href="/tasks" class="dashboard-icon-link" aria-label="Открыть задачи">›</a>
-        </header>
-        <div class="dashboard-info-body">
-            {% if today_focus_tasks %}
-                <div class="dashboard-task-stack">
-                    {% for task in today_focus_tasks[:2] %}
-                        <a href="/tasks?task={{ task.id }}" class="dashboard-task-line {% if task.deadline and task.deadline < now %}is-overdue{% endif %}">
-                            <span class="dashboard-task-dot"></span>
-                            <div>
-                                <strong>{{ task.title }}</strong>
-                                <small>{% if task.subject %}{{ task.subject.name }} · {% endif %}{% if task.deadline %}{{ task.deadline.strftime('%d.%m %H:%M') }}{% else %}Без дедлайна{% endif %}</small>
-                            </div>
-                            <span class="dashboard-priority">{{ level_label(task.priority) }}</span>
-                        </a>
-                    {% endfor %}
-                </div>
-            {% else %}
-                {{ empty_state(
-                    'tasks',
-                    'Нет ближайших задач',
-                    'Добавь задачу или выбери фокус дня.',
-                    '+ Добавить задачу',
-                    '/tasks#task-create',
-                    focus_target='#taskTitleInput',
-                    variant='compact'
-                ) }}
-            {% endif %}
-        </div>
-        <a class="dashboard-card-footer" href="/tasks">Все задачи <span>→</span></a>
-    </article>
-
-    <article class="dashboard-card dashboard-info-card">
-        <header class="dashboard-info-heading">
-            <span class="dashboard-panel-icon icon-amber" aria-hidden="true">♢</span>
-            <h2>Напоминания</h2>
-            <a href="/calendar" class="dashboard-icon-link" aria-label="Открыть напоминания">›</a>
-        </header>
-        <div class="dashboard-info-body">
-            {% if today_reminders %}
-                <div class="dashboard-compact-list">
-                    {% for reminder in today_reminders[:2] %}
-                        <a href="{{ reminder.url }}" class="dashboard-compact-item">
-                            <span>{{ reminder.time_label }}</span>
-                            <div>
-                                <strong>{{ reminder.title }}</strong>
-                                <small>{{ reminder.meta }}</small>
-                            </div>
-                        </a>
-                    {% endfor %}
-                </div>
-            {% else %}
-                {{ empty_state(
-                    'reminders',
-                    'Нет важных напоминаний',
-                    'Когда появятся дедлайны или события, они будут здесь.',
-                    'Открыть календарь',
-                    '/calendar',
-                    variant='compact'
-                ) }}
-            {% endif %}
-        </div>
-        <a class="dashboard-card-footer" href="/calendar">Все напоминания <span>→</span></a>
-    </article>
-
-    <article class="dashboard-card dashboard-info-card">
-        <header class="dashboard-info-heading">
-            <span class="dashboard-panel-icon icon-cyan" aria-hidden="true">▤</span>
-            <h2>Последние записи</h2>
-            <a href="/notes" class="dashboard-icon-link" aria-label="Открыть заметки">›</a>
-        </header>
-        <div class="dashboard-info-body">
-            {% if today_notes %}
-                {% for note in today_notes[:1] %}
-                    <a href="/notes" class="dashboard-note-preview">
-                        <strong>{{ note.title }}</strong>
-                        <p>
-                            {% if note.content %}{{ note.content[:110] }}{% if note.content|length > 110 %}...{% endif %}
-                            {% elif note.link %}{{ note.link }}
-                            {% else %}Без текста{% endif %}
-                        </p>
-                        <span>{{ note.created_at.strftime('%d.%m %H:%M') }}</span>
+                <div class="dashboard-timeline-events" id="dashboardTimelineEvents">
+                    {% for item in today_schedule %}
+                    {% set item_minutes = item.start_time.hour * 60 + item.start_time.minute %}
+                    <a href="/schedule" class="dashboard-day-event{% if active_schedule_item and active_schedule_item.id == item.id %} is-current{% endif %}" data-timeline-event data-minute="{{ item_minutes }}" data-end-minute="{{ item.end_time.hour * 60 + item.end_time.minute }}">
+                        <time>{{ item.start_time.strftime('%H:%M') }}</time><strong>{{ item.subject.name }}</strong><span>{{ item.lesson_type or schedule_terms.singular|capitalize }}{% if item.room %} · {{ item.room }}{% endif %}</span>
                     </a>
-                {% endfor %}
-            {% else %}
-                {{ empty_state(
-                    'notes',
-                    'Пока нет заметок',
-                    'Создай первую запись для конспектов и ссылок.',
-                    '+ Создать заметку',
-                    '/notes#note-create',
-                    focus_target='#noteTitleInput',
-                    variant='compact'
-                ) }}
-            {% endif %}
-        </div>
-        <a class="dashboard-card-footer" href="/notes">Все заметки <span>→</span></a>
-    </article>
-</section>
+                    {% if not loop.last %}
+                        {% set next_item = today_schedule[loop.index0 + 1] %}
+                        {% set gap_start = item.end_time.hour * 60 + item.end_time.minute %}
+                        {% set gap_end = next_item.start_time.hour * 60 + next_item.start_time.minute %}
+                        {% if gap_end - gap_start >= 30 %}
+                        <article class="dashboard-day-event is-free" data-timeline-event data-minute="{{ ((gap_start + gap_end) / 2)|int }}" data-start-minute="{{ gap_start }}" data-end-minute="{{ gap_end }}">
+                            <time>{{ item.end_time.strftime('%H:%M') }}</time><strong>Свободное окно</strong><span>До {{ next_item.start_time.strftime('%H:%M') }}</span>
+                        </article>
+                        {% endif %}
+                    {% endif %}
+                    {% endfor %}
+                    {% if day_range.deadline %}
+                    <a href="/tasks?task={{ day_range.deadline.id }}" class="dashboard-day-event is-deadline" data-timeline-event data-minute="{{ day_range.deadline.deadline.hour * 60 + day_range.deadline.deadline.minute }}">
+                        <time>{{ day_range.deadline.deadline.strftime('%H:%M') }}</time><strong>{{ day_range.deadline.title }}</strong><span>Дедлайн{% if day_range.deadline.subject %} · {{ day_range.deadline.subject.name }}{% endif %}</span>
+                    </a>
+                    {% endif %}
+                    {% if not today_schedule and not day_range.deadline %}
+                    <article class="dashboard-day-event is-free is-current" data-timeline-event data-minute="{{ current_minutes }}">
+                        <time>{{ now.strftime('%H:%M') }}</time><strong>Свободное окно</strong><span>Можно сосредоточиться на главном</span>
+                    </article>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
 
-<section class="dashboard-bottom-grid">
-    <article class="dashboard-card dashboard-actions-card" id="dashboardQuickTaskCard">
-        <header class="dashboard-section-heading">
-            <span class="dashboard-panel-icon icon-violet" aria-hidden="true">ϟ</span>
-            <h2>Быстрые действия</h2>
-        </header>
-        <div class="dashboard-action-grid">
-            <button type="button" class="dashboard-action-button">
-                <span aria-hidden="true">＋</span>
-                <strong>Новая задача</strong>
-            </button>
-            <a href="/notes#note-create" class="dashboard-action-button">
-                <span aria-hidden="true">▰</span>
-                <strong>Новая заметка</strong>
-            </a>
-            <a href="/calendar" class="dashboard-action-button">
-                <span aria-hidden="true">♢</span>
-                <strong>Добавить напоминание</strong>
-            </a>
-            <a href="/calendar" class="dashboard-action-button">
-                <span aria-hidden="true">▦</span>
-                <strong>Открыть календарь</strong>
-            </a>
-            <a href="/profile" class="dashboard-action-button">
-                <span aria-hidden="true">▤</span>
-                <strong>Импортировать материалы</strong>
-            </a>
-        </div>
-        <form method="post" action="/tasks/quick-add" class="dashboard-quick-form" id="dashboardQuickTaskForm" data-skip-scroll-restore="true">
-            {{ csrf_input(request) }}
-            <label class="visually-hidden" for="dashboard-quick-task-title">Название задачи</label>
-            <input
-                type="text"
-                id="dashboard-quick-task-title"
-                name="title"
-                placeholder="Быстро добавить задачу и нажать Enter"
-                autocomplete="off"
-                required
-            >
-            <button type="submit">Добавить</button>
-            <span class="dashboard-quick-status" id="dashboardQuickTaskStatus" aria-live="polite"></span>
-        </form>
-    </article>
+        <aside class="dashboard-day-aside">
+            <article class="dashboard-surface dashboard-mini-calendar">
+                <header class="dashboard-center-card-heading is-compact"><div><span class="dashboard-center-kicker">Календарь</span><h2>{{ calendar_month_name }} {{ now.year }}</h2></div><a href="/calendar" aria-label="Открыть календарь">{{ dashboard_icon('arrow') }}</a></header>
+                <div class="dashboard-month-grid dashboard-month-weekdays" aria-hidden="true"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+                <div class="dashboard-month-grid">{% for day in calendar_days %}<span class="dashboard-month-day{% if not day.in_month %} is-muted{% endif %}{% if day.is_today %} is-today{% endif %}">{{ day.day }}</span>{% endfor %}</div>
+            </article>
 
-    <article class="dashboard-card dashboard-active-card">
-        <header class="dashboard-section-heading">
-            <span class="dashboard-panel-icon icon-purple" aria-hidden="true">◉</span>
-            <h2>Активные задачи</h2>
-        </header>
-        <div class="dashboard-active-layout">
-            <div class="dashboard-active-number">
-                <strong id="dashboardPendingCount">{{ pending_count }}</strong>
-                <span id="dashboardPendingCopy">
-                    {% if pending_count == 1 %}задача в работе{% else %}задач в работе{% endif %}
-                </span>
-            </div>
-            {% set task_total = pending_count + completed_count %}
-            {% set task_progress = ((completed_count / task_total) * 100)|round|int if task_total else 0 %}
-            <div class="dashboard-progress-ring" style="--task-progress: {{ task_progress }}%;" aria-label="Выполнено {{ task_progress }} процентов">
-                <span>{{ task_progress }}%</span>
-            </div>
-            <div class="dashboard-active-meta">
-                <div><span class="meta-dot meta-overdue"></span><span>Просрочено</span><strong id="dashboardOverdueCount">{{ overdue_count }}</strong></div>
-                <div><span class="meta-dot meta-urgent"></span><span>Срочных</span><strong id="dashboardUrgentCount">{{ urgent_tasks|length }}</strong></div>
-            </div>
-        </div>
-        <a class="dashboard-card-footer" href="/tasks">Все задачи <span>→</span></a>
-    </article>
+            <article class="dashboard-surface dashboard-local-time">
+                <header><div><span class="dashboard-center-kicker">Местное время</span><time id="dashboard-live-clock" data-initial-time="{{ now.strftime('%H:%M:%S') }}">{{ now.strftime('%H:%M:%S') }}</time></div><span class="dashboard-time-icon">{{ dashboard_icon('clock') }}</span></header>
+                <span class="dashboard-next-label">Ближайшее событие</span>
+                <div class="dashboard-next-event" data-nearest-event>
+                    <span class="dashboard-event-icon">{{ dashboard_icon('calendar') }}</span>
+                    <div>
+                        {% if active_schedule_item %}
+                            <strong>{{ active_schedule_item.subject.name }}</strong><span>{{ active_schedule_item.start_time.strftime('%H:%M') }} — {{ active_schedule_item.end_time.strftime('%H:%M') }}</span><small>{% if active_schedule_item.room %}Ауд. {{ active_schedule_item.room }}{% else %}{{ active_schedule_item.lesson_type or schedule_terms.singular|capitalize }}{% endif %}</small><i id="dashboard-lesson-remaining" data-remaining-seconds="{{ active_schedule_remaining_seconds }}">До конца: --</i>
+                        {% elif next_schedule_item %}
+                            <strong>{{ next_schedule_item.subject.name }}</strong><span>{{ next_schedule_item.start_time.strftime('%H:%M') }} — {{ next_schedule_item.end_time.strftime('%H:%M') }}</span><small>{% if next_schedule_item.room %}Ауд. {{ next_schedule_item.room }}{% else %}{{ next_schedule_item.lesson_type or schedule_terms.singular|capitalize }}{% endif %}</small>
+                        {% elif day_range.deadline %}
+                            <strong>{{ day_range.deadline.title }}</strong><span>До {{ day_range.deadline.deadline.strftime('%H:%M') }}</span><small>{% if day_range.deadline.subject %}{{ day_range.deadline.subject.name }}{% else %}Учебная задача{% endif %}</small>
+                        {% else %}
+                            <strong>Свободное окно</strong><span>Срочных событий нет</span><small>Спокойный ритм дня</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+        </aside>
+    </section>
 
-    <article class="dashboard-card dashboard-rhythm-card">
-        <header class="dashboard-section-heading">
-            <span class="dashboard-panel-icon icon-violet" aria-hidden="true">⌁</span>
-            <h2>Ритм</h2>
-        </header>
-        <div class="dashboard-rhythm-layout">
-            <svg class="dashboard-rhythm-wave" viewBox="0 0 320 100" role="img" aria-label="График учебного ритма">
-                <defs>
-                    <linearGradient id="rhythmLine" x1="0" x2="1">
-                        <stop offset="0" stop-color="#6366f1"/>
-                        <stop offset="0.55" stop-color="#a855f7"/>
-                        <stop offset="1" stop-color="#8b5cf6"/>
-                    </linearGradient>
-                    <filter id="rhythmGlow">
-                        <feGaussianBlur stdDeviation="4" result="blur"/>
-                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                    </filter>
-                </defs>
-                <path d="M8 62 C38 62 38 28 66 28 S98 80 126 80 S158 42 186 42 S218 72 246 72 S274 18 312 18" fill="none" stroke="url(#rhythmLine)" stroke-width="3" filter="url(#rhythmGlow)"/>
-                <path d="M8 62 H312" fill="none" stroke="rgba(148,163,184,.14)" stroke-width="1"/>
-            </svg>
-            <div class="dashboard-rhythm-copy">
-                <strong>{{ streak.days }}</strong>
-                <span>{% if streak.days == 1 %}день подряд{% else %}дней подряд{% endif %}</span>
-                <p>{{ streak.message }}</p>
+    <section class="dashboard-lower-grid" aria-label="Учебная сводка">
+        <article class="dashboard-surface dashboard-summary-card" data-dashboard-lower style="--card-index: 0">
+            <header>{{ dashboard_icon('calendar') }}<h2>Расписание</h2><a href="/schedule" aria-label="Открыть расписание">{{ dashboard_icon('arrow') }}</a></header>
+            <div class="dashboard-summary-body">
+                {% if today_schedule %}{% for item in today_schedule[:3] %}<a href="/schedule" class="dashboard-summary-row"><time>{{ item.start_time.strftime('%H:%M') }}</time><span><strong>{{ item.subject.name }}</strong><small>{{ item.lesson_type or schedule_terms.singular|capitalize }}{% if item.room %} · {{ item.room }}{% endif %}</small></span></a>{% endfor %}
+                {% else %}{{ empty_state('schedule', 'Занятий сегодня нет', 'День свободен для задач и повторения.', variant='compact') }}{% endif %}
+            </div><a class="dashboard-summary-footer" href="/schedule">Всё расписание <span>→</span></a>
+        </article>
+
+        <article class="dashboard-surface dashboard-summary-card" id="dashboardQuickTaskCard" data-dashboard-lower style="--card-index: 1">
+            <header>{{ dashboard_icon('task') }}<h2>Ближайшие задачи</h2><a href="/tasks" aria-label="Открыть задачи">{{ dashboard_icon('arrow') }}</a></header>
+            <div class="dashboard-summary-body">
+                {% if today_focus_tasks %}{% for task in today_focus_tasks[:3] %}<a href="/tasks?task={{ task.id }}" class="dashboard-summary-row is-task{% if task.deadline and task.deadline < now %} is-danger{% endif %}"><i></i><span><strong>{{ task.title }}</strong><small>{% if task.subject %}{{ task.subject.name }} · {% endif %}{% if task.deadline %}{{ task.deadline.strftime('%d.%m %H:%M') }}{% else %}Без дедлайна{% endif %}</small></span><b>{{ level_label(task.priority) }}</b></a>{% endfor %}
+                {% else %}{{ empty_state('tasks', 'Нет ближайших задач', 'Можно добавить новый фокус дня.', variant='compact') }}{% endif %}
             </div>
-        </div>
-        <a class="dashboard-card-footer" href="/profile">Подробнее о ритме <span>→</span></a>
-    </article>
-</section>
+            <form method="post" action="/tasks/quick-add" class="dashboard-quick-form" id="dashboardQuickTaskForm" data-skip-scroll-restore="true">{{ csrf_input(request) }}<label class="visually-hidden" for="dashboard-quick-task-title">Название задачи</label><input type="text" id="dashboard-quick-task-title" name="title" placeholder="Быстро добавить задачу" autocomplete="off" required><button type="submit">Добавить</button><span class="dashboard-quick-status" id="dashboardQuickTaskStatus" aria-live="polite"></span></form>
+        </article>
+
+        <article class="dashboard-surface dashboard-summary-card" data-dashboard-lower style="--card-index: 2">
+            <header>{{ dashboard_icon('bell') }}<h2>Напоминания</h2><a href="/calendar" aria-label="Открыть напоминания">{{ dashboard_icon('arrow') }}</a></header>
+            <div class="dashboard-summary-body">
+                {% if today_reminders %}{% for reminder in today_reminders[:3] %}<a href="{{ reminder.url }}" class="dashboard-summary-row is-reminder"><time>{{ reminder.time_label }}</time><span><strong>{{ reminder.title }}</strong><small>{{ reminder.meta }}</small></span></a>{% endfor %}
+                {% else %}{{ empty_state('reminders', 'Важных напоминаний нет', 'Новые дедлайны появятся здесь.', variant='compact') }}{% endif %}
+            </div><a class="dashboard-summary-footer" href="/calendar">Все напоминания <span>→</span></a>
+        </article>
+
+        <article class="dashboard-surface dashboard-summary-card" data-dashboard-lower style="--card-index: 3">
+            <header>{{ dashboard_icon('note') }}<h2>Последние записи</h2><a href="/notes" aria-label="Открыть заметки">{{ dashboard_icon('arrow') }}</a></header>
+            <div class="dashboard-summary-body">
+                {% if today_notes %}{% for note in today_notes[:2] %}<a href="/notes" class="dashboard-note-row"><strong>{{ note.title }}</strong><p>{% if note.content %}{{ note.content[:92] }}{% if note.content|length > 92 %}…{% endif %}{% elif note.link %}{{ note.link }}{% else %}Без текста{% endif %}</p><time>{{ note.created_at.strftime('%d.%m %H:%M') }}</time></a>{% endfor %}
+                {% else %}{{ empty_state('notes', 'Пока нет заметок', 'Конспекты и ссылки появятся здесь.', variant='compact') }}{% endif %}
+            </div><a class="dashboard-summary-footer" href="/notes">Все заметки <span>→</span></a>
+        </article>
+    </section>
+</main>
 {% endblock %}
+
 {% block page_scripts %}
-<script src="/static/js/dashboard.js?v=20260917-live-hero-v3"></script>
-<script src="/static/js/onboarding-chat.js?v=20260612-onboarding-palette-v1"></script>
+<link rel="stylesheet" href="/static/css/pages/dashboard-center.css?v=20260922-center">
+<script src="/static/js/dashboard.js?v=20260922-center"></script>
+<script src="/static/js/onboarding-chat.js?v=20260922-graphite"></script>
 {% endblock %}

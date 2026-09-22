@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import unittest
+from datetime import time
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -10,7 +11,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base, get_db
 from app.main import app
-from app.models import User
+from app.models import Note, ScheduleItem, Subject, Task, User
 
 
 class LocalStartTests(unittest.TestCase):
@@ -89,6 +90,51 @@ class LocalStartTests(unittest.TestCase):
         response = self.client.get('/dashboard', follow_redirects=False)
         self.assertEqual(response.status_code, 200)
         self.assertIn('Максим', response.text)
+
+    def test_logout_clears_device_autologin_without_deleting_data(self):
+        self._create_local_profile()
+        with self.SessionLocal() as db:
+            user = db.query(User).one()
+            subject = Subject(user_id=user.id, name='Математика')
+            db.add(subject)
+            db.flush()
+            db.add_all([
+                Task(user_id=user.id, subject_id=subject.id, title='Подготовиться'),
+                Note(user_id=user.id, subject_id=subject.id, title='Конспект', content='Материал'),
+                ScheduleItem(user_id=user.id, subject_id=subject.id, weekday=0,
+                             start_time=time(9), end_time=time(10, 30)),
+            ])
+            db.commit()
+
+        def snapshot():
+            with self.engine.connect() as connection:
+                return {
+                    table.name: connection.execute(table.select()).mappings().all()
+                    for table in Base.metadata.sorted_tables
+                }
+
+        profile = self.client.get('/profile')
+        before = snapshot()
+        response = self.client.post('/logout', data={'csrf_token': self._csrf(profile.text)},
+                                    follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers['location'], '/')
+        self.assertNotIn('sa_device_profile', self.client.cookies)
+        self.assertNotIn('session', self.client.cookies)
+        self.assertEqual(snapshot(), before)
+
+        for _ in range(2):
+            landing = self.client.get('/', follow_redirects=False)
+            self.assertEqual(landing.status_code, 200)
+            self.assertIn('entry-v3-page', landing.text)
+        self.assertEqual(self.client.get('/dashboard', follow_redirects=False).status_code, 302)
+
+    def test_logout_requires_csrf_and_preserves_login_on_rejection(self):
+        self._create_local_profile()
+        response = self.client.post('/logout', follow_redirects=False)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn('sa_device_profile', self.client.cookies)
+        self.assertEqual(self.client.get('/', follow_redirects=False).headers['location'], '/dashboard')
 
     def test_start_rejects_blank_name(self):
         landing = self.client.get('/')

@@ -1,0 +1,24 @@
+.profile-page .profile-logout-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1.1rem;
+    border: 1px solid rgb(var(--danger-rgb) / 0.28);
+    border-radius: var(--radius-control);
+    background: rgb(var(--danger-rgb) / 0.08);
+    color: var(--danger);
+    font: inherit;
+    font-weight: 700;
+    transition: background 180ms ease, border-color 180ms ease;
+}
+
+.profile-page .profile-logout-button:hover {
+    border-color: rgb(var(--danger-rgb) / 0.45);
+    background: rgb(var(--danger-rgb) / 0.14);
+}
+
+.profile-page .profile-logout-button svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}

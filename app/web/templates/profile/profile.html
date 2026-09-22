@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Настройки профиля{% endblock %}
-{% block theme_color %}#070b1a{% endblock %}
+{% block theme_color %}#0D0F12{% endblock %}
 {% block body_class %}dashboard-page profile-page profile-settings-page{% endblock %}
 
 {% macro icon(name) -%}
@@ -176,7 +176,7 @@
                     <div class="profile-simple-accent">
                         <span class="profile-settings-label">Цвет акцента</span>
                         <div class="profile-accent-options" aria-label="Выбор цвета акцента">
-                            {% for accent, label in [('purple', 'Фиолетовый'), ('blue', 'Синий'), ('pink', 'Розовый'), ('green', 'Зелёный'), ('orange', 'Оранжевый'), ('cyan', 'Голубой')] %}
+                            {% for accent, label in [('purple', 'Ледяной синий'), ('blue', 'Синий'), ('pink', 'Розовый'), ('green', 'Зелёный'), ('orange', 'Оранжевый'), ('cyan', 'Голубой')] %}
                             <button type="button" class="profile-accent-option" data-accent-option="{{ accent }}" aria-label="{{ label }}" title="{{ label }}" aria-pressed="false"></button>
                             {% endfor %}
                         </div>
@@ -460,14 +460,6 @@
                         <span><strong>Изменить пароль</strong><small>Обновить данные для входа</small></span>
                         {{ icon('arrow') }}
                     </a>
-                    <form method="post" action="/logout">
-                        {{ csrf_input(request) }}
-                        <button type="submit" class="profile-simple-action">
-                            <span>{{ icon('logout') }}</span>
-                            <span><strong>Выйти из аккаунта</strong><small>Завершить текущую сессию</small></span>
-                            {{ icon('arrow') }}
-                        </button>
-                    </form>
                 </div>
                 {% else %}
                 <div class="profile-simple-device-note">
@@ -533,11 +525,19 @@
                     </form>
                 </div>
             </details>
+            <form method="post" action="/logout" id="profileLogoutForm" data-skip-toast="true">
+                {{ csrf_input(request) }}
+                <button type="submit" class="profile-logout-button" data-testid="settings-logout">
+                    {{ icon('logout') }} Выйти
+                </button>
+            </form>
         </main>
     </div>
 </div>
 {% endblock %}
 
 {% block page_scripts %}
+<link rel="stylesheet" href="/static/css/pages/profile-logout.css?v=20260922-logout">
+<script src="/static/js/profile-logout.js?v=20260922-logout"></script>
 <script src="/static/js/profile-telegram.js?v=20260614-notifications-v1"></script>
 {% endblock %}

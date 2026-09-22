@@ -570,4 +570,13 @@ def reset_password(
 @router.post('/logout')
 def logout(request: Request, _: None = Depends(validate_csrf)):
     request.session.clear()
-    return RedirectResponse('/', status_code=302)
+    response = RedirectResponse('/', status_code=302)
+    # Otherwise get_current_user would restore the session on the landing page.
+    response.delete_cookie(
+        LOCAL_PROFILE_COOKIE,
+        path='/',
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite='lax',
+    )
+    return response

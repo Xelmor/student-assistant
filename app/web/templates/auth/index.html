@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Student Assistant — учёба без хаоса{% endblock %}
-{% block theme_color %}#060817{% endblock %}
+{% block theme_color %}#0D0F12{% endblock %}
 {% block body_class %}public-landing-page entry-page entry-v3-page{% endblock %}
 {% block meta_description %}Student Assistant — расписание, задачи, дедлайны и заметки без email и пароля.{% endblock %}
 
@@ -382,9 +382,19 @@
         <span class="entry-v3-section-kicker">ГОТОВ К СТАРТУ</span>
         <h2>Открой своё пространство<br>для учёбы.</h2>
         <p>Имя, пара деталей — и Student Assistant готов к работе.</p>
-        <a class="entry-v3-primary entry-v3-primary-large" href="#start" data-entry-open>
-            <span>Начать сейчас</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"></path></svg>
+        <a class="entry-v3-primary entry-v3-primary-large" href="#start" data-entry-open data-entry-morph
+           role="button" aria-label="Начать сейчас" aria-haspopup="dialog" aria-controls="entrySetup">
+            <span class="entry-cta-label">Начать сейчас</span>
+            <svg class="entry-cta-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"></path></svg>
+            <span class="entry-cta-loader" aria-hidden="true">
+                <svg class="entry-cta-ring" viewBox="0 0 64 64">
+                    <circle class="entry-cta-ring-track" cx="32" cy="32" r="25"/>
+                    <circle class="entry-cta-ring-progress" cx="32" cy="32" r="25" pathLength="100"/>
+                </svg>
+                <span class="entry-cta-dot"></span>
+                <span class="entry-cta-symbol">SA</span>
+            </span>
+            <span class="entry-cta-wave" aria-hidden="true"></span>
         </a>
     </section>
 
@@ -468,5 +478,6 @@
 {% endblock %}
 
 {% block page_scripts %}
-<script src="/static/js/entry.js?v=20260921-telegram-v4"></script>
+<link rel="stylesheet" href="/static/css/pages/entry-cta.css?v=20260922-morph">
+<script src="/static/js/entry.js?v=20260922-morph"></script>
 {% endblock %}
