@@ -84,6 +84,13 @@ class MigrationTests(unittest.TestCase):
                 column['name']
                 for column in inspector.get_columns('telegram_deadline_reminder_logs')
             }
+            workspace_columns = {
+                column['name'] for column in inspector.get_columns('workspaces')
+            }
+            self.assertEqual(
+                {'public_id', 'user_id', 'recovery_key_hash', 'is_active'} - workspace_columns,
+                set(),
+            )
             user_indexes = {
                 index['name']: bool(index.get('unique'))
                 for index in inspector.get_indexes('users')
@@ -164,12 +171,22 @@ class MigrationTests(unittest.TestCase):
                     '20260920_01_add_users_local_profile_fields',
                     '20260614_01_add_users_telegram_digest_fields',
                     '20260614_02_add_telegram_deadline_reminders',
+                    '20260922_01_add_workspace_device_sync',
                 },
             )
             self.assertTrue(onboarding_completed)
             self.assertTrue(populated_chat_completed)
             self.assertFalse(empty_chat_completed)
             self.assertEqual(display_name, 'legacy-user')
+            with engine.connect() as connection:
+                self.assertEqual(
+                    connection.execute(text('SELECT COUNT(*) FROM workspaces')).scalar_one(),
+                    2,
+                )
+                self.assertEqual(
+                    connection.execute(text('SELECT title FROM tasks WHERE id = 1')).scalar_one(),
+                    'Legacy task',
+                )
         finally:
             engine.dispose()
             if db_path.exists():

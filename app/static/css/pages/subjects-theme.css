@@ -40,6 +40,7 @@ body.subjects-page {
 .subjects-overview,
 .subjects-panel,
 .subjects-stat-card {
+    position: relative;
     border: 1px solid var(--subjects-border);
     background:
         var(--surface);
@@ -146,6 +147,20 @@ body.subjects-page {
     transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
 
+.subjects-stat-card::before {
+    position: absolute;
+    inset: 0.8rem auto 0.8rem 0;
+    width: 3px;
+    border-radius: 0 99px 99px 0;
+    content: "";
+    background: var(--stat-tone, var(--accent));
+}
+
+.subjects-stat-card.is-total { --stat-tone: var(--color-blue); border-color: rgb(var(--color-blue-rgb) / 0.24); background: var(--tint-blue); }
+.subjects-stat-card.is-teacher { --stat-tone: var(--color-mint); border-color: rgb(var(--color-mint-rgb) / 0.24); background: var(--tint-mint); }
+.subjects-stat-card.is-room { --stat-tone: var(--color-violet); border-color: rgb(var(--color-violet-rgb) / 0.24); background: var(--tint-violet); }
+.subjects-stat-card.is-notes { --stat-tone: var(--color-amber); border-color: rgb(var(--color-amber-rgb) / 0.24); background: var(--tint-amber); }
+
 .subjects-stat-card:hover {
     transform: translateY(-2px);
     border-color: var(--subjects-border-hover);
@@ -158,22 +173,33 @@ body.subjects-page {
     border-radius: 12px;
 }
 
+.subjects-stat-card.is-total:hover { border-color: rgb(var(--color-blue-rgb) / 0.46); background: rgb(var(--color-blue-rgb) / 0.1); }
+.subjects-stat-card.is-teacher:hover { border-color: rgb(var(--color-mint-rgb) / 0.46); background: rgb(var(--color-mint-rgb) / 0.09); }
+.subjects-stat-card.is-room:hover { border-color: rgb(var(--color-violet-rgb) / 0.46); background: rgb(var(--color-violet-rgb) / 0.09); }
+.subjects-stat-card.is-notes:hover { border-color: rgb(var(--color-amber-rgb) / 0.46); background: rgb(var(--color-amber-rgb) / 0.09); }
+
+.subjects-stat-card.is-total .subjects-stat-icon {
+    color: var(--color-blue);
+    border-color: rgb(var(--color-blue-rgb) / 0.24);
+    background: rgb(var(--color-blue-rgb) / 0.1);
+}
+
 .subjects-stat-card.is-teacher .subjects-stat-icon {
     color: var(--success);
     border-color: rgb(var(--success-rgb) / 0.17);
-    background: rgb(var(--success-rgb) / 0.24);
+    background: rgb(var(--success-rgb) / 0.1);
 }
 
 .subjects-stat-card.is-room .subjects-stat-icon {
-    color: var(--accent);
-    border-color: rgb(var(--accent-rgb) / 0.18);
-    background: rgb(var(--accent-rgb) / 0.25);
+    color: var(--violet);
+    border-color: rgb(var(--violet-rgb) / 0.24);
+    background: rgb(var(--violet-rgb) / 0.1);
 }
 
 .subjects-stat-card.is-notes .subjects-stat-icon {
     color: var(--warning);
     border-color: rgb(var(--warning-rgb) / 0.16);
-    background: rgb(var(--warning-rgb) / 0.28);
+    background: rgb(var(--warning-rgb) / 0.1);
 }
 
 .subjects-stat-card div {

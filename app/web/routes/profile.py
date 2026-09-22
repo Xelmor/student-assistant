@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from ...core.config import settings
 from ...core.database import get_db
+from ...core.time import current_time
 from ...core.validation import normalize_bounded_text
 from ...models import User
 from ...services.telegram_bot import (
@@ -21,6 +22,7 @@ from ...services.telegram_bot import (
 )
 from ...services.telegram_digest import build_morning_digest_message
 from ...services.telegram_notifications import VALID_DEADLINE_REMINDER_HOURS
+from ...services.workspace_sync import ensure_workspace
 from .auth import normalize_account_identity, normalize_profile_metadata, normalize_username_lookup
 from ..dependencies import (
     SCHEDULE_UNIT_OPTIONS,
@@ -47,6 +49,22 @@ TELEGRAM_DIGEST_TIMEZONES = (
     'UTC',
 )
 
+
+def _device_activity_label(last_seen_at: datetime) -> str:
+    seconds = max(0, int((current_time() - last_seen_at).total_seconds()))
+    if seconds < 90:
+        return 'Сейчас'
+    minutes = seconds // 60
+    if minutes < 60:
+        return f'{minutes} мин. назад'
+    hours = minutes // 60
+    if hours < 24:
+        return f'{hours} ч. назад'
+    days = hours // 24
+    if days == 1:
+        return 'Вчера'
+    return f'{days} дн. назад'
+
 def _build_profile_context(
     request: Request,
     user: User,
@@ -56,7 +74,23 @@ def _build_profile_context(
     data_success=None,
     data_error=None,
     telegram_status=None,
+    device_status=None,
+    device_error=None,
 ):
+    workspace = user.workspace
+    devices = []
+    if workspace:
+        devices = [
+            {
+                'record': device,
+                'activity_label': _device_activity_label(device.last_seen_at),
+            }
+            for device in sorted(
+                (item for item in workspace.devices if item.revoked_at is None),
+                key=lambda item: item.last_seen_at,
+                reverse=True,
+            )
+        ]
     return {
         'user': user,
         'error': error,
@@ -76,6 +110,11 @@ def _build_profile_context(
             else None
         ),
         'telegram_deadline_reminder_hours_options': VALID_DEADLINE_REMINDER_HOURS,
+        'workspace': workspace,
+        'workspace_devices': devices,
+        'current_workspace_device_id': request.session.get('workspace_device_id'),
+        'device_status': device_status,
+        'device_error': device_error,
     }
 
 
@@ -84,9 +123,16 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
     data_success = request.query_params.get('data_success')
     data_error = request.query_params.get('data_error')
     telegram_status = request.query_params.get('telegram_status')
+    device_status = request.query_params.get('device_status')
+    device_error = request.query_params.get('device_error')
     user = require_user(request, db)
     if not user:
         return RedirectResponse('/login', status_code=302)
+
+    if not user.workspace:
+        ensure_workspace(db, user)
+        db.commit()
+        db.refresh(user)
 
     return templates.TemplateResponse(
         request,
@@ -97,6 +143,8 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
             data_success=data_success,
             data_error=data_error,
             telegram_status=telegram_status,
+            device_status=device_status,
+            device_error=device_error,
         ),
     )
 

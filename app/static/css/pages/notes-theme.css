@@ -5,12 +5,12 @@ body.notes-page {
     --notes-border: var(--border);
     --notes-text: var(--text);
     --notes-muted: var(--text-secondary);
-    --notes-purple: var(--accent);
-    --notes-purple-bright: var(--accent);
-    --notes-blue: var(--accent);
-    --notes-green: var(--success);
-    --notes-orange: var(--warning);
-    --notes-red: var(--danger);
+    --notes-purple: var(--color-violet);
+    --notes-purple-bright: var(--color-violet);
+    --notes-blue: var(--color-blue);
+    --notes-green: var(--color-mint);
+    --notes-orange: var(--color-amber);
+    --notes-red: var(--color-coral);
     color: var(--notes-text);
 }
 
@@ -133,7 +133,7 @@ body.notes-page {
     border: 1px solid rgb(var(--danger-rgb) / 0.28);
     border-radius: 14px;
     color: var(--danger);
-    background: rgb(var(--danger-rgb) / 0.25);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 .notes-workspace {
@@ -439,22 +439,22 @@ body.notes-page {
     border: 1px solid var(--border);
     border-radius: 15px;
     background:
-        radial-gradient(circle at 0 50%, color-mix(in srgb, var(--note-color) 7%, transparent), transparent 24%),
+        radial-gradient(circle at 0 50%, rgb(var(--note-rgb) / 0.11), transparent 30%),
         var(--bg-secondary);
     box-shadow: var(--shadow);
     transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .notes-item:hover {
-    border-color: color-mix(in srgb, var(--note-color) 40%, rgb(var(--accent-rgb) / 0.4));
-    box-shadow: var(--shadow);
+    border-color: rgb(var(--note-rgb) / 0.5);
+    box-shadow: 0 12px 28px rgb(var(--note-rgb) / 0.08);
     transform: translateY(-2px);
 }
 
 .notes-item.is-pinned {
-    border-color: color-mix(in srgb, var(--note-color) 46%, rgb(var(--accent-rgb) / 0.45));
+    border-color: rgb(var(--note-rgb) / 0.52);
     background:
-        radial-gradient(circle at 0 50%, color-mix(in srgb, var(--note-color) 12%, transparent), transparent 28%),
+        radial-gradient(circle at 0 50%, rgb(var(--note-rgb) / 0.15), transparent 34%),
         var(--bg-secondary);
 }
 
@@ -478,10 +478,10 @@ body.notes-page {
     width: 3.25rem;
     height: 3.25rem;
     place-items: center;
-    border: 1px solid color-mix(in srgb, var(--note-color) 30%, transparent);
+    border: 1px solid rgb(var(--note-rgb) / 0.3);
     border-radius: 12px;
-    color: color-mix(in srgb, var(--note-color) 75%, var(--text));
-    background: color-mix(in srgb, var(--note-color) 17%, var(--surface));
+    color: var(--note-color);
+    background: rgb(var(--note-rgb) / 0.12);
 }
 
 .notes-item-icon svg {
@@ -531,8 +531,8 @@ body.notes-page {
 
 .notes-pin-button:hover,
 .notes-item.is-pinned .notes-pin-button {
-    color: var(--text);
-    background: rgb(var(--accent-rgb) / 0.13);
+    color: var(--note-color);
+    background: rgb(var(--note-rgb) / 0.13);
 }
 
 .notes-item-content > p {
@@ -592,10 +592,10 @@ body.notes-page {
     align-items: center;
     min-height: 1.4rem;
     padding: 0.24rem 0.5rem;
-    border: 1px solid color-mix(in srgb, var(--note-color) 28%, transparent);
+    border: 1px solid rgb(var(--note-rgb) / 0.28);
     border-radius: 999px;
-    color: color-mix(in srgb, var(--note-color) 72%, var(--text));
-    background: color-mix(in srgb, var(--note-color) 13%, transparent);
+    color: var(--note-color);
+    background: rgb(var(--note-rgb) / 0.1);
     font-size: 0.56rem;
     font-weight: 750;
 }
@@ -646,7 +646,7 @@ body.notes-page {
 .notes-action-button.is-delete:hover {
     color: var(--danger);
     border-color: rgb(var(--danger-rgb) / 0.36);
-    background: rgb(var(--danger-rgb) / 0.22);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 .notes-item > [id^="note-edit-"] {

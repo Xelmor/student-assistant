@@ -247,6 +247,8 @@ body.navbar-modal-open {
 .global-search-actions a,
 .global-search-result,
 .notification-item {
+    --notification-tone: var(--accent);
+    --notification-rgb: var(--accent-rgb);
     text-decoration: none;
 }
 
@@ -256,7 +258,8 @@ body.navbar-modal-open {
     align-items: center;
     min-width: 0;
     padding: 0.7rem;
-    border: 1px solid var(--border);
+    border: 1px solid rgb(var(--notification-rgb) / 0.2);
+    border-left: 3px solid var(--notification-tone);
     border-radius: 13px;
     color: var(--text);
     background: var(--navbar-tool-surface-soft);
@@ -513,8 +516,7 @@ body.navbar-modal-open {
     border: 1px solid var(--border);
     border-radius: 15px;
     color: var(--text) !important;
-    background:
-        var(--surface) !important;
+    background: linear-gradient(90deg, rgb(var(--notification-rgb) / 0.055), transparent 48%), var(--surface) !important;
     box-shadow: var(--shadow);
     transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
 }
@@ -526,16 +528,15 @@ body.navbar-modal-open {
     width: 0.38rem;
     height: 0.38rem;
     border-radius: 50%;
-    background: var(--accent);
+    background: var(--notification-tone);
     content: "";
 }
 
 .notification-item:hover,
 .notification-item:focus-visible {
-    border-color: rgb(var(--accent-rgb) / 0.42);
+    border-color: rgb(var(--notification-rgb) / 0.42);
     color: var(--text) !important;
-    background:
-        var(--surface) !important;
+    background: linear-gradient(90deg, rgb(var(--notification-rgb) / 0.09), transparent 52%), var(--surface) !important;
     box-shadow: var(--shadow);
     outline: none;
     transform: translateY(-1px);
@@ -562,28 +563,40 @@ body.navbar-modal-open {
     font-weight: 900;
 }
 
+.notification-item.is-class { --notification-tone: var(--success); --notification-rgb: var(--success-rgb); }
+.notification-item.is-task { --notification-tone: var(--warning); --notification-rgb: var(--warning-rgb); }
+.notification-item.is-exam,
+.notification-item.is-overdue { --notification-tone: var(--danger); --notification-rgb: var(--danger-rgb); }
+.notification-item.is-change { --notification-tone: var(--violet); --notification-rgb: var(--violet-rgb); }
+
 .notification-item.is-class .notification-item-icon {
-    color: var(--accent);
-    border-color: rgb(var(--accent-rgb) / 0.25);
-    background: rgb(var(--accent-rgb) / 0.2);
+    color: var(--success);
+    border-color: rgb(var(--success-rgb) / 0.25);
+    background: rgb(var(--success-rgb) / 0.1);
+}
+
+.notification-item.is-task .notification-item-icon {
+    color: var(--warning);
+    border-color: rgb(var(--warning-rgb) / 0.25);
+    background: rgb(var(--warning-rgb) / 0.1);
 }
 
 .notification-item.is-exam .notification-item-icon {
-    color: var(--accent);
-    border-color: rgb(var(--accent-rgb) / 0.25);
-    background: rgb(var(--accent-rgb) / 0.2);
+    color: var(--danger);
+    border-color: rgb(var(--danger-rgb) / 0.25);
+    background: rgb(var(--danger-rgb) / 0.1);
 }
 
 .notification-item.is-change .notification-item-icon {
-    color: var(--warning);
-    border-color: rgb(var(--warning-rgb) / 0.25);
-    background: rgb(var(--warning-rgb) / 0.2);
+    color: var(--violet);
+    border-color: rgb(var(--violet-rgb) / 0.25);
+    background: rgb(var(--violet-rgb) / 0.1);
 }
 
 .notification-item.is-overdue .notification-item-icon {
     color: var(--danger);
     border-color: rgb(var(--danger-rgb) / 0.28);
-    background: rgb(var(--danger-rgb) / 0.25);
+    background: rgb(var(--danger-rgb) / 0.1);
 }
 
 .notification-item-text {

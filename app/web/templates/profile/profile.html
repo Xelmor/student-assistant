@@ -79,6 +79,7 @@
                 <a href="#profile-appearance">{{ icon('palette') }} Внешний вид</a>
                 <a href="#profile-time">{{ icon('clock') }} Регион и время</a>
                 <a href="#profile-telegram">{{ icon('telegram') }} Telegram-бот</a>
+                <a href="#profile-devices">{{ icon('shield') }} Устройства</a>
                 <a href="#profile-security">{{ icon('shield') }} Аккаунт</a>
                 <a href="#profile-data">{{ icon('database') }} Резервная копия</a>
             </nav>
@@ -444,6 +445,55 @@
                 </div>
             </section>
 
+            <section class="profile-simple-card profile-devices-card" id="profile-devices">
+                <div class="profile-simple-card-heading">
+                    <span class="profile-simple-card-icon">{{ icon('shield') }}</span>
+                    <div>
+                        <h2>Синхронизация устройств</h2>
+                        <p>Одно пространство, общие задачи, расписание, заметки и настройки.</p>
+                    </div>
+                </div>
+
+                {% if device_status == 'revoked' %}<div class="alert alert-success profile-alert">Устройство отключено.</div>{% endif %}
+                {% if device_error == 'not-found' %}<div class="alert alert-danger profile-alert">Устройство не найдено или уже отключено.</div>{% endif %}
+                {% if device_error == 'confirm-current' %}<div class="alert alert-danger profile-alert">Для отключения текущего устройства требуется явное подтверждение.</div>{% endif %}
+
+                <div class="profile-devices-summary">
+                    <div><span>Подключено устройств</span><strong>{{ workspace_devices|length }}</strong></div>
+                    <button type="button" class="profile-primary-button" id="profileConnectDevice" data-link-session-url="{{ request.url_for('create_device_link_session') }}">+ Подключить устройство</button>
+                </div>
+
+                <div class="profile-device-list">
+                    {% for item in workspace_devices %}
+                    {% set device = item.record %}
+                    <article class="profile-device-item{% if device.id == current_workspace_device_id %} is-current{% endif %}">
+                        <span class="profile-device-icon">{{ icon('shield') }}</span>
+                        <div>
+                            <strong>{{ device.device_name }}</strong>
+                            {% if device.id == current_workspace_device_id %}<span>Это устройство</span>{% endif %}
+                            <small>Последняя активность: {{ item.activity_label }}</small>
+                        </div>
+                        <form method="post" action="/profile/devices/{{ device.id }}/revoke" data-device-confirm data-device-confirm-title="Отключить устройство «{{ device.device_name|e }}»?" data-device-confirm-description="На этом устройстве будет завершён доступ к пространству. Данные останутся на остальных устройствах." data-device-confirm-label="Отключить">
+                            {{ csrf_input(request) }}
+                            {% if device.id == current_workspace_device_id %}<input type="hidden" name="confirm_current" value="">{% endif %}
+                            <button type="submit" class="profile-device-revoke">{% if device.id == current_workspace_device_id %}Отключить это устройство{% else %}Отключить{% endif %}</button>
+                        </form>
+                    </article>
+                    {% endfor %}
+                </div>
+
+                <div class="profile-recovery-row">
+                    <div>
+                        <strong>Восстановление</strong>
+                        <small>{% if workspace and workspace.recovery_key_hash %}Ключ восстановления сохранён{% else %}Для этого пространства ещё нет ключа восстановления{% endif %}</small>
+                    </div>
+                    <form method="post" action="/profile/recovery-key/rotate" data-device-confirm data-device-confirm-title="Создать новый ключ восстановления?" data-device-confirm-description="Старый ключ сразу перестанет работать. Новый ключ будет показан только один раз." data-device-confirm-label="Создать ключ">
+                        {{ csrf_input(request) }}
+                        <button type="submit" class="profile-secondary-button">{% if workspace and workspace.recovery_key_hash %}Создать новый ключ{% else %}Создать ключ{% endif %}</button>
+                    </form>
+                </div>
+            </section>
+
             <section class="profile-simple-card" id="profile-security">
                 <div class="profile-simple-card-heading">
                     <span class="profile-simple-card-icon">{{ icon('shield') }}</span>
@@ -534,10 +584,32 @@
         </main>
     </div>
 </div>
+
+<section class="device-link-modal" id="deviceLinkModal" hidden aria-labelledby="deviceLinkModalTitle">
+    <button type="button" class="device-link-modal__backdrop" data-device-modal-close aria-label="Закрыть"></button>
+    <div class="device-link-modal__card" role="dialog" aria-modal="true">
+        <button type="button" class="device-link-modal__close" data-device-modal-close aria-label="Закрыть">×</button>
+        <h2 id="deviceLinkModalTitle">Подключить устройство</h2>
+        <p>Откройте Student Assistant на новом устройстве и отсканируйте QR-код или введите код вручную.</p>
+        <div class="device-link-modal__loading" data-device-link-loading>Создаём защищённый одноразовый код…</div>
+        <div data-device-link-content hidden>
+            <img class="device-link-modal__qr" data-device-link-qr alt="QR-код для подключения нового устройства">
+            <output class="device-link-modal__code" data-device-link-code></output>
+            <span class="device-link-modal__timer">Действует ещё <b data-device-link-countdown>5:00</b></span>
+            <ol class="device-link-modal__steps">
+                <li>На новом устройстве откройте страницу Student Assistant.</li>
+                <li>Выберите «У меня уже есть пространство».</li>
+                <li>Введите код или отсканируйте QR-код.</li>
+            </ol>
+        </div>
+        <div class="device-link-modal__error" data-device-link-error hidden></div>
+    </div>
+</section>
 {% endblock %}
 
 {% block page_scripts %}
 <link rel="stylesheet" href="/static/css/pages/profile-logout.css?v=20260922-logout">
 <script src="/static/js/profile-logout.js?v=20260922-logout"></script>
 <script src="/static/js/profile-telegram.js?v=20260614-notifications-v1"></script>
+<script src="/static/js/device-sync.js?v=20260922-sync-v1"></script>
 {% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Сохраните ключ восстановления — Student Assistant{% endblock %}
+{% block body_class %}device-connect-page recovery-key-page{% endblock %}
+
+{% block content %}
+<main class="device-connect-shell">
+    <a class="device-connect-brand" href="{{ continue_href }}"><span>SA</span><strong>Student Assistant</strong></a>
+    <section class="device-connect-card recovery-key-card">
+        <span class="device-connect-kicker">ПОКАЗЫВАЕМ ОДИН РАЗ</span>
+        <h1>{% if is_initial %}Пространство готово{% else %}Новый ключ создан{% endif %}</h1>
+        <p>Сохраните ключ в надёжном месте. Он вернёт доступ, если вы потеряете все подключённые устройства.</p>
+        <div class="recovery-key-warning"><strong>Важно:</strong> Student Assistant не хранит исходный ключ и не сможет показать его снова.</div>
+        <output class="recovery-key-value" data-recovery-key>{{ recovery_key }}</output>
+        <div class="recovery-key-actions">
+            <button type="button" data-copy-recovery>Копировать</button>
+            <button type="button" data-download-recovery>Скачать .txt</button>
+        </div>
+        <a class="device-connect-button" href="{{ continue_href }}">Я сохранил ключ <span>→</span></a>
+    </section>
+</main>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="/static/js/device-sync.js?v=20260922-sync-v1"></script>
+{% endblock %}

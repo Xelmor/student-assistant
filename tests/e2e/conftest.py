@@ -40,6 +40,36 @@ def _wait_for_server(url: str, process: subprocess.Popen, log_path: Path) -> Non
     pytest.fail(f'E2E server did not become ready at {url} within 30 seconds.')
 
 
+def _stop_server(process: subprocess.Popen) -> None:
+    if process.poll() is not None:
+        return
+    if os.name == 'nt':
+        subprocess.run(
+            ['taskkill', '/PID', str(process.pid), '/T', '/F'],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    else:
+        process.terminate()
+    try:
+        process.wait(timeout=8)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+
+
+def _unlink_with_retry(path: Path) -> None:
+    for attempt in range(20):
+        try:
+            path.unlink(missing_ok=True)
+            return
+        except PermissionError:
+            if attempt == 19:
+                raise
+            time.sleep(0.1)
+
+
 @pytest.fixture(scope='session')
 def e2e_runtime(tmp_path_factory):
     runtime_directory = tmp_path_factory.mktemp('student-assistant-e2e')
@@ -105,18 +135,13 @@ def e2e_runtime(tmp_path_factory):
                 'server_log_path': server_log_path,
             }
         finally:
-            process.terminate()
-            try:
-                process.wait(timeout=8)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
+            _stop_server(process)
             for database_file in (
                 database_path,
                 Path(f'{database_path}-shm'),
                 Path(f'{database_path}-wal'),
             ):
-                database_file.unlink(missing_ok=True)
+                _unlink_with_retry(database_file)
 
 
 @pytest.fixture(scope='session')

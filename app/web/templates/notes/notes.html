@@ -133,12 +133,30 @@
             {% if notes %}
             <div class="notes-list" id="notesList">
                 {% for note in notes %}
+                {% set note_search_text = (note.title ~ ' ' ~ (note.content or ''))|lower %}
+                {% if 'важн' in note_search_text or 'срочн' in note_search_text or 'urgent' in note_search_text or 'important' in note_search_text %}
+                    {% set note_category = 'important' %}
+                    {% set note_tone = 'coral' %}
+                {% elif 'напомн' in note_search_text or 'remind' in note_search_text %}
+                    {% set note_category = 'reminder' %}
+                    {% set note_tone = 'amber' %}
+                {% elif 'иде' in note_search_text or 'idea' in note_search_text %}
+                    {% set note_category = 'idea' %}
+                    {% set note_tone = 'mint' %}
+                {% elif note.subject_id %}
+                    {% set note_category = 'study' %}
+                    {% set note_tone = 'blue' %}
+                {% else %}
+                    {% set note_category = 'personal' %}
+                    {% set note_tone = 'violet' %}
+                {% endif %}
                 <article
-                    class="notes-item"
+                    class="notes-item is-category-{{ note_category }}"
                     id="note-card-{{ note.id }}"
-                    style="--note-color: {{ note.safe_subject_color }};"
+                    style="--note-color: var(--color-{{ note_tone }}); --note-rgb: var(--color-{{ note_tone }}-rgb);"
                     data-note-item
                     data-note-id="{{ note.id }}"
+                    data-note-category="{{ note_category }}"
                     data-note-subject="{{ note.subject_id or 'none' }}"
                     data-note-types="{% if note.content %}text {% endif %}{% if note.safe_link %}link{% endif %}"
                     data-note-created="{{ note.created_at.strftime('%Y-%m-%dT%H:%M:%S') }}"

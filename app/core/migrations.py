@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Callable
+from uuid import uuid4
 
 from sqlalchemy import inspect, text
 from sqlalchemy.engine import Connection, Engine
@@ -323,6 +324,67 @@ def _add_telegram_deadline_reminder_settings(connection: Connection) -> None:
     )
 
 
+def _add_workspace_device_sync(connection: Connection) -> None:
+    for table_name in ('workspaces', 'workspace_devices', 'device_link_sessions'):
+        Base.metadata.tables[table_name].create(bind=connection, checkfirst=True)
+
+    if 'users' not in inspect(connection).get_table_names():
+        return
+
+    users = connection.execute(
+        text(
+            'SELECT id, username, display_name, is_local_profile, local_access_token_hash '
+            'FROM users ORDER BY id'
+        )
+    ).mappings().all()
+    for user in users:
+        workspace_id = connection.execute(
+            text('SELECT id FROM workspaces WHERE user_id = :user_id'),
+            {'user_id': user['id']},
+        ).scalar_one_or_none()
+        if workspace_id is None:
+            connection.execute(
+                text(
+                    'INSERT INTO workspaces '
+                    '(public_id, user_id, display_name, recovery_key_hash, is_active, created_at, updated_at) '
+                    'VALUES (:public_id, :user_id, :display_name, NULL, :is_active, '
+                    'CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
+                ),
+                {
+                    'public_id': str(uuid4()),
+                    'user_id': user['id'],
+                    'display_name': (user['display_name'] or user['username'])[:80],
+                    'is_active': True,
+                },
+            )
+            workspace_id = connection.execute(
+                text('SELECT id FROM workspaces WHERE user_id = :user_id'),
+                {'user_id': user['id']},
+            ).scalar_one()
+
+        legacy_token_hash = user['local_access_token_hash']
+        if user['is_local_profile'] and legacy_token_hash:
+            existing_device = connection.execute(
+                text('SELECT id FROM workspace_devices WHERE token_hash = :token_hash'),
+                {'token_hash': legacy_token_hash},
+            ).scalar_one_or_none()
+            if existing_device is None:
+                connection.execute(
+                    text(
+                        'INSERT INTO workspace_devices '
+                        '(workspace_id, device_id, device_name, token_hash, created_at, last_seen_at) '
+                        'VALUES (:workspace_id, :device_id, :device_name, :token_hash, '
+                        'CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
+                    ),
+                    {
+                        'workspace_id': workspace_id,
+                        'device_id': str(uuid4()),
+                        'device_name': 'Существующее устройство',
+                        'token_hash': legacy_token_hash,
+                    },
+                )
+
+
 MIGRATIONS = [
     Migration(
         version='20260430_01_add_users_schedule_unit',
@@ -378,6 +440,11 @@ MIGRATIONS = [
         version='20260614_02_add_telegram_deadline_reminders',
         description='Add Telegram deadline reminder settings and delivery log.',
         upgrade=_add_telegram_deadline_reminder_settings,
+    ),
+    Migration(
+        version='20260922_01_add_workspace_device_sync',
+        description='Add workspaces, per-device access, pairing, and recovery metadata.',
+        upgrade=_add_workspace_device_sync,
     ),
 ]
 

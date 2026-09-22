@@ -72,7 +72,7 @@
 
 <main class="dashboard-center" id="dashboardCenter" data-testid="dashboard-page" data-day-start="{{ range_start }}" data-day-end="{{ range_end }}" data-now-minutes="{{ current_minutes }}">
     <section class="dashboard-center-intro" aria-labelledby="dashboardGreeting">
-        <div class="dashboard-center-welcome" data-dashboard-reveal="welcome">
+        <div class="dashboard-center-welcome{% if overdue_count %} has-overdue{% endif %}" data-dashboard-reveal="welcome">
             <span class="dashboard-center-kicker">Твой центр продуктивности</span>
             <h1 id="dashboardGreeting">Добрый день, <strong data-testid="current-user-name">{{ user.display_name or user.username }}</strong></h1>
             <time datetime="{{ now.strftime('%Y-%m-%d') }}">{{ weekdays[now.weekday()] }}, {{ now.day }} {{ month_genitive[now.month - 1] }}</time>
@@ -152,7 +152,7 @@
             <article class="dashboard-surface dashboard-local-time">
                 <header><div><span class="dashboard-center-kicker">Местное время</span><time id="dashboard-live-clock" data-initial-time="{{ now.strftime('%H:%M:%S') }}">{{ now.strftime('%H:%M:%S') }}</time></div><span class="dashboard-time-icon">{{ dashboard_icon('clock') }}</span></header>
                 <span class="dashboard-next-label">Ближайшее событие</span>
-                <div class="dashboard-next-event" data-nearest-event>
+                <div class="dashboard-next-event{% if not active_schedule_item and not next_schedule_item and day_range.deadline %} is-deadline{% endif %}" data-nearest-event>
                     <span class="dashboard-event-icon">{{ dashboard_icon('calendar') }}</span>
                     <div>
                         {% if active_schedule_item %}

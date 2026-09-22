@@ -1525,3 +1525,73 @@
 .profile-simple-device-note small { display: block; }
 .profile-simple-device-note strong { color: var(--text); font-size: 0.72rem; }
 .profile-simple-device-note small { margin-top: 0.2rem; color: var(--text-secondary); font-size: 0.62rem; line-height: 1.45; }
+
+/* Semantic section accents: settings stay graphite, their meaning carries the color. */
+.profile-simple-card {
+    position: relative;
+}
+
+.profile-simple-card::before {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    border-radius: 0 99px 99px 0;
+    content: "";
+    background: var(--profile-section-color, var(--accent));
+}
+
+#profile-main { --profile-section-color: var(--color-blue); background-image: radial-gradient(circle at 0 0, var(--tint-blue), transparent 35%); }
+#profile-appearance { --profile-section-color: var(--color-violet); background-image: radial-gradient(circle at 0 0, var(--tint-violet), transparent 38%); }
+#profile-time { --profile-section-color: var(--color-amber); background-image: radial-gradient(circle at 0 0, var(--tint-amber), transparent 38%); }
+#profile-telegram { --profile-section-color: var(--color-blue); }
+#profile-security { --profile-section-color: var(--color-coral); background-image: radial-gradient(circle at 0 0, var(--tint-coral), transparent 35%); }
+#profile-data { --profile-section-color: var(--color-mint); background-image: radial-gradient(circle at 0 0, var(--tint-mint), transparent 35%); }
+
+#profile-main .profile-simple-card-icon { color: var(--color-blue); border-color: rgb(var(--color-blue-rgb) / 0.28); background: var(--tint-blue); }
+#profile-appearance .profile-simple-card-icon { color: var(--color-violet); border-color: rgb(var(--color-violet-rgb) / 0.28); background: var(--tint-violet); }
+#profile-time .profile-simple-card-icon { color: var(--color-amber); border-color: rgb(var(--color-amber-rgb) / 0.28); background: var(--tint-amber); }
+#profile-security .profile-simple-card-icon { color: var(--color-coral); border-color: rgb(var(--color-coral-rgb) / 0.28); background: var(--tint-coral); }
+#profile-data .profile-simple-card-icon { color: var(--color-mint); border-color: rgb(var(--color-mint-rgb) / 0.28); background: var(--tint-mint); }
+
+.profile-telegram-card {
+    border-color: rgb(var(--color-blue-rgb) / 0.28);
+    background: radial-gradient(circle at 94% 8%, rgb(var(--color-blue-rgb) / 0.08), transparent 38%), linear-gradient(145deg, var(--surface), var(--bg-secondary));
+}
+
+.profile-telegram-connected {
+    border-color: rgb(var(--success-rgb) / 0.3);
+    background: rgb(var(--success-rgb) / 0.08);
+}
+
+.profile-telegram-notifications-form {
+    border-color: rgb(var(--warning-rgb) / 0.25);
+    background: radial-gradient(circle at 0 0, rgb(var(--warning-rgb) / 0.07), transparent 34%), var(--surface);
+}
+
+.profile-telegram-setting-panel {
+    border-color: rgb(var(--warning-rgb) / 0.2);
+    background: rgb(var(--warning-rgb) / 0.035);
+}
+
+.profile-telegram-setting-heading > span {
+    color: var(--warning);
+    border-color: rgb(var(--warning-rgb) / 0.28);
+    background: rgb(var(--warning-rgb) / 0.1);
+}
+
+.profile-telegram-switch input:checked + i {
+    border-color: rgb(var(--warning-rgb) / 0.55);
+    background: var(--warning);
+}
+
+.profile-telegram-settings-footer button {
+    border-color: rgb(var(--warning-rgb) / 0.45);
+    color: var(--bg);
+    background: var(--warning);
+}
+
+.profile-telegram-settings-footer button:hover,
+.profile-telegram-settings-footer button:focus-visible {
+    border-color: var(--warning);
+    background: var(--warning);
+}

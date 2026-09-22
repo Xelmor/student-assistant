@@ -7,13 +7,13 @@ body.tasks-page {
     --tasks-border-hover: var(--border-hover);
     --tasks-text: var(--text);
     --tasks-muted: var(--text-secondary);
-    --tasks-purple: var(--accent);
-    --tasks-purple-bright: var(--accent);
-    --tasks-indigo: var(--accent);
-    --tasks-blue: var(--accent);
-    --tasks-red: var(--danger);
-    --tasks-green: var(--success);
-    --tasks-amber: var(--warning);
+    --tasks-purple: var(--color-violet);
+    --tasks-purple-bright: var(--color-violet);
+    --tasks-indigo: var(--color-violet);
+    --tasks-blue: var(--color-blue);
+    --tasks-red: var(--color-coral);
+    --tasks-green: var(--color-mint);
+    --tasks-amber: var(--color-amber);
 }
 
 .tasks-page .content-wrap {
@@ -140,6 +140,7 @@ body.tasks-page {
 }
 
 .tasks-stat-card {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -148,6 +149,23 @@ body.tasks-page {
     border-radius: var(--radius-lg);
     transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
+
+.tasks-stat-card::before {
+    position: absolute;
+    inset: 0.6rem auto 0.6rem 0;
+    width: 3px;
+    border-radius: 0 999px 999px 0;
+    background: var(--accent);
+    content: "";
+}
+
+.tasks-stat-card.is-critical { border-color: rgb(var(--danger-rgb) / 0.22); background: var(--tint-coral); }
+.tasks-stat-card.is-critical::before { background: var(--danger); }
+.tasks-stat-card.is-today { border-color: rgb(var(--warning-rgb) / 0.22); background: var(--tint-amber); }
+.tasks-stat-card.is-today::before { background: var(--warning); }
+.tasks-stat-card.is-no-deadline { border-color: rgb(var(--violet-rgb) / 0.2); background: var(--tint-violet); }
+.tasks-stat-card.is-no-deadline::before { background: var(--violet); }
+.tasks-stat-card.is-active { border-color: rgb(var(--accent-rgb) / 0.2); background: var(--tint-blue); }
 
 .tasks-stat-card:hover {
     z-index: 1;
@@ -165,7 +183,7 @@ body.tasks-page {
 .tasks-stat-card.is-critical .tasks-stat-icon {
     color: var(--danger);
     border-color: rgb(var(--danger-rgb) / 0.2);
-    background: rgb(var(--danger-rgb) / 0.42);
+    background: rgb(var(--danger-rgb) / 0.08);
 }
 
 .tasks-stat-card.is-today .tasks-stat-icon {
@@ -173,15 +191,20 @@ body.tasks-page {
 }
 
 .tasks-stat-card.is-no-deadline .tasks-stat-icon {
-    color: var(--warning);
-    border-color: rgb(var(--warning-rgb) / 0.16);
-    background: rgb(var(--warning-rgb) / 0.3);
+    color: var(--violet);
+    border-color: rgb(var(--violet-rgb) / 0.2);
+    background: rgb(var(--violet-rgb) / 0.09);
 }
+
+.tasks-stat-card.is-critical:hover { border-color: rgb(var(--danger-rgb) / 0.46); background: rgb(var(--danger-rgb) / 0.09); }
+.tasks-stat-card.is-today:hover { border-color: rgb(var(--warning-rgb) / 0.46); background: rgb(var(--warning-rgb) / 0.09); }
+.tasks-stat-card.is-no-deadline:hover { border-color: rgb(var(--violet-rgb) / 0.44); background: rgb(var(--violet-rgb) / 0.09); }
+.tasks-stat-card.is-active:hover { border-color: rgb(var(--accent-rgb) / 0.44); background: rgb(var(--accent-rgb) / 0.1); }
 
 .tasks-stat-card.is-active .tasks-stat-icon {
     color: var(--accent);
     border-color: rgb(var(--accent-rgb) / 0.18);
-    background: rgb(var(--accent-rgb) / 0.26);
+    background: rgb(var(--accent-rgb) / 0.08);
 }
 
 .tasks-stat-card div {
@@ -218,7 +241,7 @@ body.tasks-page {
     border: 1px solid rgb(var(--danger-rgb) / 0.28);
     border-radius: 14px;
     color: var(--danger);
-    background: rgb(var(--danger-rgb) / 0.24);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 .tasks-workspace {
@@ -692,6 +715,26 @@ body.tasks-page {
     transition: background 160ms ease, border-color 160ms ease;
 }
 
+.tasks-task-row::before {
+    position: absolute;
+    inset: 0.48rem auto 0.48rem 0;
+    width: 3px;
+    border-radius: 0 999px 999px 0;
+    background: var(--accent);
+    content: "";
+    opacity: 0.9;
+}
+
+.tasks-task-row[data-task-priority="3"]::before { background: var(--danger); }
+.tasks-task-row[data-task-priority="2"]::before { background: var(--warning); }
+.tasks-task-row[data-task-priority="1"]::before { background: var(--accent); }
+.tasks-task-row.is-completed::before { background: var(--success); }
+.tasks-task-row.is-selected { box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / 0.32); }
+.tasks-task-row[data-task-priority="3"]:hover { background: var(--tint-coral); }
+.tasks-task-row[data-task-priority="2"]:hover { background: var(--tint-amber); }
+.tasks-task-row[data-task-priority="1"]:hover { background: var(--tint-blue); }
+.tasks-task-row.is-completed:hover { background: var(--tint-mint); }
+
 .tasks-task-row:hover,
 .tasks-task-row.is-selected {
     background: rgb(var(--accent-rgb) / 0.06);
@@ -720,14 +763,15 @@ body.tasks-page {
 }
 
 .tasks-check-button:hover {
-    border-color: var(--tasks-purple);
-    box-shadow: var(--shadow);
+    border-color: var(--success);
+    background: rgb(var(--success-rgb) / 0.08);
+    box-shadow: var(--mint-glow);
 }
 
 .tasks-task-row.is-completed .tasks-check-button {
     border-color: rgb(var(--success-rgb) / 0.42);
     color: var(--success);
-    background: rgb(var(--success-rgb) / 0.14);
+    background: rgb(var(--success-rgb) / 0.07);
 }
 
 .tasks-check-button svg {
@@ -796,25 +840,29 @@ body.tasks-page {
 
 .tasks-status-badge.is-done {
     color: var(--success);
-    background: rgb(var(--success-rgb) / 0.14);
+    border: 1px solid rgb(var(--success-rgb) / 0.2);
+    background: rgb(var(--success-rgb) / 0.07);
 }
 
 .tasks-status-badge.is-neutral,
 .tasks-status-badge.is-safe,
 .tasks-status-badge.is-watch {
-    color: var(--text);
-    background: rgba(71, 85, 105, 0.28);
+    color: var(--accent);
+    border: 1px solid rgb(var(--accent-rgb) / 0.18);
+    background: rgb(var(--accent-rgb) / 0.08);
 }
 
 .tasks-status-badge.is-overdue,
 .tasks-status-badge.is-danger {
     color: var(--danger);
-    background: rgb(var(--danger-rgb) / 0.16);
+    border: 1px solid rgb(var(--danger-rgb) / 0.2);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 .tasks-status-badge.is-warn {
     color: var(--warning);
-    background: rgb(var(--warning-rgb) / 0.17);
+    border: 1px solid rgb(var(--warning-rgb) / 0.2);
+    background: rgb(var(--warning-rgb) / 0.07);
 }
 
 .tasks-task-deadline,
@@ -852,17 +900,20 @@ body.tasks-page {
 
 .tasks-priority-badge.is-high {
     color: var(--danger);
-    background: rgb(var(--danger-rgb) / 0.18);
+    border: 1px solid rgb(var(--danger-rgb) / 0.2);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 .tasks-priority-badge.is-medium {
     color: var(--warning);
-    background: rgb(var(--warning-rgb) / 0.18);
+    border: 1px solid rgb(var(--warning-rgb) / 0.2);
+    background: rgb(var(--warning-rgb) / 0.07);
 }
 
 .tasks-priority-badge.is-low {
     color: var(--accent);
-    background: rgb(var(--accent-rgb) / 0.22);
+    border: 1px solid rgb(var(--accent-rgb) / 0.2);
+    background: rgb(var(--accent-rgb) / 0.08);
 }
 
 .tasks-task-actions {
@@ -901,13 +952,13 @@ body.tasks-page {
 .tasks-action-button.is-complete {
     color: var(--success);
     border-color: rgb(var(--success-rgb) / 0.08);
-    background: rgb(var(--success-rgb) / 0.23);
+    background: rgb(var(--success-rgb) / 0.07);
 }
 
 .tasks-action-button.is-delete {
     color: var(--danger);
     border-color: rgb(var(--danger-rgb) / 0.08);
-    background: rgb(var(--danger-rgb) / 0.24);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 .tasks-edit-panel {

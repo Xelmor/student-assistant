@@ -4,6 +4,7 @@ from .about import router as about_router
 from .auth import router as auth_router
 from .calendar import router as calendar_router
 from .dashboard import router as dashboard_router
+from .device_sync import router as device_sync_router
 from .data import router as data_router
 from .notes import router as notes_router
 from .profile import router as profile_router
@@ -19,6 +20,7 @@ router.include_router(auth_router)
 router.include_router(profile_router)
 router.include_router(data_router)
 router.include_router(dashboard_router)
+router.include_router(device_sync_router)
 router.include_router(calendar_router)
 router.include_router(subjects_router)
 router.include_router(tasks_router)

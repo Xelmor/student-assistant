@@ -16,10 +16,10 @@
     const accents = {
         purple: { base: '#6C8EFF', hover: '#82A0FF', soft: 'rgba(108, 142, 255, 0.10)', border: 'rgba(108, 142, 255, 0.28)', glow: 'rgba(108, 142, 255, 0.06)' },
         blue: { base: '#6C8EFF', hover: '#82A0FF', soft: 'rgba(108, 142, 255, 0.10)', border: 'rgba(108, 142, 255, 0.28)', glow: 'rgba(108, 142, 255, 0.06)' },
-        pink: { base: '#B77F9F', hover: '#C993B1', soft: 'rgba(183, 127, 159, 0.10)', border: 'rgba(183, 127, 159, 0.28)', glow: 'rgba(183, 127, 159, 0.06)' },
-        green: { base: '#59A881', hover: '#71B996', soft: 'rgba(89, 168, 129, 0.10)', border: 'rgba(89, 168, 129, 0.28)', glow: 'rgba(89, 168, 129, 0.06)' },
-        orange: { base: '#C99A55', hover: '#D6AE72', soft: 'rgba(201, 154, 85, 0.10)', border: 'rgba(201, 154, 85, 0.28)', glow: 'rgba(201, 154, 85, 0.06)' },
-        cyan: { base: '#70A7B8', hover: '#87BBCA', soft: 'rgba(112, 167, 184, 0.10)', border: 'rgba(112, 167, 184, 0.28)', glow: 'rgba(112, 167, 184, 0.06)' },
+        pink: { base: '#D87373', hover: '#E18686', soft: 'rgba(216, 115, 115, 0.07)', border: 'rgba(216, 115, 115, 0.20)', glow: 'rgba(216, 115, 115, 0.08)' },
+        green: { base: '#55BFA3', hover: '#6BCAB0', soft: 'rgba(85, 191, 163, 0.07)', border: 'rgba(85, 191, 163, 0.20)', glow: 'rgba(85, 191, 163, 0.08)' },
+        orange: { base: '#D6A85F', hover: '#DFB873', soft: 'rgba(214, 168, 95, 0.07)', border: 'rgba(214, 168, 95, 0.20)', glow: 'rgba(214, 168, 95, 0.08)' },
+        cyan: { base: '#8B7CF6', hover: '#9E91F8', soft: 'rgba(139, 124, 246, 0.07)', border: 'rgba(139, 124, 246, 0.20)', glow: 'rgba(139, 124, 246, 0.08)' },
     };
     const allowedTimezones = new Set(['system', 'Europe/Moscow', 'Europe/Vienna', 'Europe/London', 'Asia/Shanghai', 'UTC']);
     const allowedTimeFormats = new Set(['24', '12']);

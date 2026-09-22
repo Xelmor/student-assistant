@@ -1,30 +1,60 @@
-/* Graphite + Ice Blue. Shared palette; page-prefixed tokens are compatibility aliases.
+/* Graphite semantic color system. Page-prefixed tokens remain compatibility aliases.
    Geometry, typography sizes and animation timelines stay in their existing files. */
 :root {
-    --bg: #0D0F12;
-    --bg-secondary: #111419;
-    --surface: #15181D;
-    --surface-elevated: #1A1E24;
-    --border: #272B32;
-    --border-hover: #343A44;
-    --text: #F2F4F7;
-    --text-secondary: #8D96A3;
-    --text-muted: #69717D;
-    --accent: #6C8EFF;
-    --accent-hover: #82A0FF;
+    --color-bg: #0D0F12;
+    --color-bg-secondary: #111419;
+    --color-surface: #15181D;
+    --color-surface-elevated: #1A1E24;
+    --color-border: #272B32;
+    --color-border-hover: #343A44;
+    --color-text: #F2F4F7;
+    --color-text-secondary: #8D96A3;
+    --color-text-muted: #69717D;
+    --color-blue: #6C8EFF;
+    --color-blue-hover: #82A0FF;
+    --color-mint: #55BFA3;
+    --color-amber: #D6A85F;
+    --color-coral: #D87373;
+    --color-violet: #8B7CF6;
+    --color-blue-rgb: 108 142 255;
+    --color-mint-rgb: 85 191 163;
+    --color-amber-rgb: 214 168 95;
+    --color-coral-rgb: 216 115 115;
+    --color-violet-rgb: 139 124 246;
+    --color-success: var(--color-mint);
+    --color-warning: var(--color-amber);
+    --color-danger: var(--color-coral);
+
+    /* Compatibility layer for existing component styles. */
+    --bg: var(--color-bg);
+    --bg-secondary: var(--color-bg-secondary);
+    --surface: var(--color-surface);
+    --surface-elevated: var(--color-surface-elevated);
+    --border: var(--color-border);
+    --border-hover: var(--color-border-hover);
+    --text: var(--color-text);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-muted);
+    --accent: var(--color-blue);
+    --accent-hover: var(--color-blue-hover);
     --accent-rgb: 108 142 255;
-    --palette-ice: #6C8EFF;
-    --palette-rose: #B77F9F;
-    --palette-cyan: #70A7B8;
-    --accent-soft: rgba(108, 142, 255, 0.10);
-    --accent-border: rgba(108, 142, 255, 0.28);
-    --accent-glow: rgba(108, 142, 255, 0.06);
-    --success: #59A881;
-    --success-rgb: 89 168 129;
-    --warning: #C99A55;
-    --warning-rgb: 201 154 85;
-    --danger: #C76767;
-    --danger-rgb: 199 103 103;
+    --mint-rgb: var(--color-mint-rgb);
+    --amber-rgb: var(--color-amber-rgb);
+    --coral-rgb: var(--color-coral-rgb);
+    --violet-rgb: var(--color-violet-rgb);
+    --palette-ice: var(--color-blue);
+    --palette-rose: var(--color-coral);
+    --palette-cyan: var(--color-violet);
+    --accent-soft: rgb(var(--color-blue-rgb) / 0.10);
+    --accent-border: rgb(var(--color-blue-rgb) / 0.28);
+    --accent-glow: rgb(var(--color-blue-rgb) / 0.10);
+    --success: var(--color-success);
+    --success-rgb: var(--color-mint-rgb);
+    --warning: var(--color-warning);
+    --warning-rgb: var(--color-amber-rgb);
+    --danger: var(--color-danger);
+    --danger-rgb: var(--color-coral-rgb);
+    --violet: var(--color-violet);
     --info: var(--accent);
     --surface-strong: var(--surface-elevated);
     --surface-muted: var(--bg-secondary);
@@ -33,7 +63,19 @@
     --primary: var(--accent);
     --primary-dark: var(--accent-hover);
     --accent-strong: var(--accent-hover);
-    --danger-soft: rgb(var(--danger-rgb) / 0.10);
+    --success-soft: rgb(var(--success-rgb) / 0.07);
+    --warning-soft: rgb(var(--warning-rgb) / 0.07);
+    --danger-soft: rgb(var(--danger-rgb) / 0.07);
+    --violet-soft: rgb(var(--violet-rgb) / 0.07);
+    --tint-blue: rgb(var(--color-blue-rgb) / 0.06);
+    --tint-mint: rgb(var(--color-mint-rgb) / 0.05);
+    --tint-amber: rgb(var(--color-amber-rgb) / 0.05);
+    --tint-coral: rgb(var(--color-coral-rgb) / 0.05);
+    --tint-violet: rgb(var(--color-violet-rgb) / 0.05);
+    --blue-glow: 0 0 24px rgb(var(--color-blue-rgb) / 0.10);
+    --mint-glow: 0 0 24px rgb(var(--color-mint-rgb) / 0.08);
+    --amber-glow: 0 0 24px rgb(var(--color-amber-rgb) / 0.08);
+    --coral-glow: 0 0 24px rgb(var(--color-coral-rgb) / 0.08);
     --shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
     --shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.16);
     --radius-xl: 14px;
@@ -75,7 +117,7 @@ body .brand-mark { background: var(--accent) !important; color: white !important
 body :is(.btn, [class$="-primary-button"], .auth-submit-button, .entry-v3-primary,
 .entry-v3-ghost, .public-register-btn, .calendar-form-submit) { border-radius: var(--radius-control); }
 body :is(.btn-primary, [class$="-primary-button"], .auth-submit-button, .entry-v3-primary,
-.public-register-btn, .calendar-action.is-primary, .calendar-form-submit:not(.is-secondary),
+.public-register-btn, .password-recovery-submit, .calendar-action.is-primary, .calendar-form-submit:not(.is-secondary),
 .about-button--primary) {
     color: #fff !important;
     background: var(--accent) !important;
@@ -83,7 +125,7 @@ body :is(.btn-primary, [class$="-primary-button"], .auth-submit-button, .entry-v
     box-shadow: none !important;
 }
 body :is(.btn-primary, [class$="-primary-button"], .auth-submit-button, .entry-v3-primary,
-.public-register-btn, .calendar-action.is-primary, .calendar-form-submit:not(.is-secondary),
+.public-register-btn, .password-recovery-submit, .calendar-action.is-primary, .calendar-form-submit:not(.is-secondary),
 .about-button--primary):hover {
     background: var(--accent-hover) !important;
     border-color: var(--accent-hover) !important;
@@ -103,6 +145,7 @@ body :is(.btn-outline-primary, .btn-outline-secondary, .btn-outline-light,
 }
 body .btn-danger, body .btn-outline-danger:hover { background: var(--danger); border-color: var(--danger); }
 body .btn-success, body .btn-outline-success:hover { background: var(--success); border-color: var(--success); }
+body .btn-warning, body .btn-outline-warning:hover { background: var(--warning); border-color: var(--warning); }
 body :is(.form-control, .form-select, input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]), textarea) {
     color: var(--text);
     background-color: var(--bg-secondary);
@@ -114,6 +157,9 @@ body :is(.form-control, .form-select, input, textarea):focus {
 }
 body input::placeholder, body textarea::placeholder { color: var(--text-muted) !important; }
 body :is(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+body :is(.btn-success, .btn-outline-success, .is-success-button):focus-visible { outline-color: var(--success); box-shadow: 0 0 0 3px rgb(var(--success-rgb) / 0.1) !important; }
+body :is(.btn-warning, .btn-outline-warning, .is-warning-button):focus-visible { outline-color: var(--warning); box-shadow: 0 0 0 3px rgb(var(--warning-rgb) / 0.1) !important; }
+body :is(.btn-danger, .btn-outline-danger, .is-danger-button):focus-visible { outline-color: var(--danger); box-shadow: 0 0 0 3px rgb(var(--danger-rgb) / 0.1) !important; }
 body :is(.card, .hero-panel, .feature-panel, .auth-panel) {
     background: var(--surface);
     border-color: var(--border);
@@ -153,19 +199,56 @@ body :is(.dashboard-card, .tasks-panel, .tasks-stat-card, .subjects-panel,
     box-shadow: var(--shadow-hover);
 }
 .empty-state__glow { background: var(--accent-glow); opacity: 0.35; }
-body :is(.tasks-stat-card.is-today, .tasks-stat-card.is-active) .tasks-stat-icon {
-    color: var(--text-secondary);
-    background: var(--surface-elevated);
+body .tasks-stat-card.is-today .tasks-stat-icon {
+    color: var(--warning);
+    border-color: rgb(var(--warning-rgb) / 0.24);
+    background: rgb(var(--warning-rgb) / 0.1);
+}
+body .tasks-stat-card.is-active .tasks-stat-icon {
+    color: var(--accent);
+    border-color: rgb(var(--accent-rgb) / 0.24);
+    background: rgb(var(--accent-rgb) / 0.1);
 }
 
-/* Saved accent preferences retain their muted palette and matching tint. */
-:root[data-accent="pink"] { --accent-rgb: 183 127 159; }
-:root[data-accent="green"] { --accent-rgb: 89 168 129; }
-:root[data-accent="orange"] { --accent-rgb: 201 154 85; }
-:root[data-accent="cyan"] { --accent-rgb: 112 167 184; }
+/* Saved accent names remain compatible with localStorage and use the new palette. */
+:root[data-accent="pink"] { --accent-rgb: var(--color-coral-rgb); }
+:root[data-accent="green"] { --accent-rgb: var(--color-mint-rgb); }
+:root[data-accent="orange"] { --accent-rgb: var(--color-amber-rgb); }
+:root[data-accent="cyan"] { --accent-rgb: var(--color-violet-rgb); }
 
 /* PWA actions use the same quiet button states as the application. */
 body #installAction { background: var(--accent); border-color: var(--accent); box-shadow: none; }
 body #installAction:is(:hover, :focus-visible) { background: var(--accent-hover); box-shadow: none; }
 body #installLater, body .install-sheet-close { background: transparent; border-color: var(--border-hover); color: var(--text-secondary); }
 body #installLater:is(:hover, :focus-visible), body .install-sheet-close:hover { background: var(--surface-elevated); border-color: var(--border-hover); color: var(--text); }
+
+/* Shared badges: color communicates state while the surface stays graphite. */
+body :is(.badge-blue, .badge-mint, .badge-amber, .badge-coral, .badge-violet) {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid transparent;
+}
+body .badge-blue { color: var(--color-blue); border-color: rgb(var(--color-blue-rgb) / 0.20); background: rgb(var(--color-blue-rgb) / 0.08); }
+body .badge-mint { color: var(--color-mint); border-color: rgb(var(--color-mint-rgb) / 0.20); background: rgb(var(--color-mint-rgb) / 0.07); }
+body .badge-amber { color: var(--color-amber); border-color: rgb(var(--color-amber-rgb) / 0.20); background: rgb(var(--color-amber-rgb) / 0.07); }
+body .badge-coral { color: var(--color-coral); border-color: rgb(var(--color-coral-rgb) / 0.20); background: rgb(var(--color-coral-rgb) / 0.07); }
+body .badge-violet { color: var(--color-violet); border-color: rgb(var(--color-violet-rgb) / 0.20); background: rgb(var(--color-violet-rgb) / 0.07); }
+body .badge-blue:hover { border-color: rgb(var(--color-blue-rgb) / 0.34); background: rgb(var(--color-blue-rgb) / 0.12); }
+body .badge-mint:hover { border-color: rgb(var(--color-mint-rgb) / 0.34); background: rgb(var(--color-mint-rgb) / 0.11); }
+body .badge-amber:hover { border-color: rgb(var(--color-amber-rgb) / 0.34); background: rgb(var(--color-amber-rgb) / 0.11); }
+body .badge-coral:hover { border-color: rgb(var(--color-coral-rgb) / 0.34); background: rgb(var(--color-coral-rgb) / 0.11); }
+body .badge-violet:hover { border-color: rgb(var(--color-violet-rgb) / 0.34); background: rgb(var(--color-violet-rgb) / 0.11); }
+
+body :is(.icon-success, .is-success-icon) { color: var(--success); background: var(--tint-mint); border-color: rgb(var(--success-rgb) / 0.24); }
+body :is(.icon-warning, .is-warning-icon) { color: var(--warning); background: var(--tint-amber); border-color: rgb(var(--warning-rgb) / 0.24); }
+body :is(.icon-danger, .is-danger-icon) { color: var(--danger); background: var(--tint-coral); border-color: rgb(var(--danger-rgb) / 0.24); }
+body :is(.icon-active, .is-active-icon) { color: var(--accent); background: var(--tint-blue); border-color: rgb(var(--accent-rgb) / 0.24); }
+body :is(.icon-analytics, .is-analytics-icon) { color: var(--violet); background: var(--tint-violet); border-color: rgb(var(--violet-rgb) / 0.24); }
+
+/* Optional semantic tints for important or large cards only. */
+body :is(.is-blue-card, .is-mint-card, .is-amber-card, .is-coral-card, .is-violet-card) { background-color: var(--surface); }
+body .is-blue-card { background-image: radial-gradient(circle at 90% 10%, rgb(var(--color-blue-rgb) / 0.08), transparent 40%); }
+body .is-mint-card { background-image: radial-gradient(circle at 90% 10%, rgb(var(--color-mint-rgb) / 0.07), transparent 40%); }
+body .is-amber-card { background-image: radial-gradient(circle at 90% 10%, rgb(var(--color-amber-rgb) / 0.07), transparent 40%); }
+body .is-coral-card { background-image: radial-gradient(circle at 90% 10%, rgb(var(--color-coral-rgb) / 0.07), transparent 40%); }
+body .is-violet-card { background-image: radial-gradient(circle at 90% 10%, rgb(var(--color-violet-rgb) / 0.07), transparent 40%); }

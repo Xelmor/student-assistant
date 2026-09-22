@@ -478,12 +478,12 @@ body.profile-page {
 .profile-quick-icon.is-green,
 .profile-security-item-icon.is-green {
     color: var(--success);
-    background: rgb(var(--success-rgb) / 0.14);
+    background: rgb(var(--success-rgb) / 0.07);
 }
 
 .profile-quick-icon.is-orange {
     color: var(--warning);
-    background: rgb(var(--warning-rgb) / 0.14);
+    background: rgb(var(--warning-rgb) / 0.07);
 }
 
 .profile-quick-icon.is-cyan {
@@ -626,7 +626,7 @@ body.profile-page {
 .profile-page .profile-alert.alert-success {
     border: 1px solid rgb(var(--success-rgb) / 0.23);
     color: var(--success);
-    background: rgb(var(--success-rgb) / 0.22);
+    background: rgb(var(--success-rgb) / 0.07);
 }
 
 .profile-activity-heading {
@@ -733,19 +733,19 @@ body.profile-page {
 
 .profile-chart-bars .is-classes,
 .profile-chart-legend .is-classes i {
-    background: var(--accent);
+    background: var(--success);
     box-shadow: var(--shadow);
 }
 
 .profile-chart-bars .is-notes,
 .profile-chart-legend .is-notes i {
-    background: var(--accent);
+    background: var(--violet);
     box-shadow: var(--shadow);
 }
 
 .profile-chart-bars .is-deadlines,
 .profile-chart-legend .is-deadlines i {
-    background: var(--accent);
+    background: var(--warning);
     box-shadow: var(--shadow);
 }
 
@@ -969,7 +969,7 @@ body.profile-page {
 
 .profile-history-icon.is-complete {
     color: var(--success);
-    background: rgb(var(--success-rgb) / 0.14);
+    background: rgb(var(--success-rgb) / 0.07);
 }
 
 .profile-history-icon.is-event {
@@ -979,7 +979,7 @@ body.profile-page {
 
 .profile-history-icon.is-profile {
     color: var(--warning);
-    background: rgb(var(--warning-rgb) / 0.14);
+    background: rgb(var(--warning-rgb) / 0.07);
 }
 
 .profile-history-item b,
@@ -1116,7 +1116,7 @@ body.profile-page {
 .profile-data-icon.is-import {
     border: 1px solid rgb(var(--success-rgb) / 0.2);
     color: var(--success);
-    background: rgb(var(--success-rgb) / 0.13);
+    background: rgb(var(--success-rgb) / 0.07);
 }
 
 .profile-data-card h3 {

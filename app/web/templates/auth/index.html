@@ -31,10 +31,15 @@
 
                 <div class="entry-v3-actions">
                     <a class="entry-v3-primary" href="#start" data-entry-open>
-                        <span>Начать</span>
+                        <span>Начать сейчас</span>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"></path></svg>
                     </a>
                     <a class="entry-v3-ghost" href="#product-demo">Посмотреть возможности</a>
+                </div>
+                <div class="entry-space-access entry-space-access--hero">
+                    <a href="/connect-device">У меня уже есть пространство</a>
+                    <i aria-hidden="true"></i>
+                    <a href="/recover">Восстановить доступ</a>
                 </div>
 
                 <div class="entry-v3-benefits" aria-label="Преимущества Student Assistant">
@@ -396,6 +401,11 @@
             </span>
             <span class="entry-cta-wave" aria-hidden="true"></span>
         </a>
+        <div class="entry-space-access">
+            <a href="/connect-device">У меня уже есть пространство</a>
+            <i aria-hidden="true"></i>
+            <a href="/recover">Восстановить доступ</a>
+        </div>
     </section>
 
     <footer class="entry-v3-footer">
@@ -412,6 +422,7 @@
 
             <form method="post" action="/start" id="entryStartForm" novalidate>
                 {{ csrf_input(request) }}
+                <input type="hidden" name="show_recovery" value="1">
                 <section class="entry-v3-step is-active" data-entry-step="1">
                     <span class="entry-v3-step-index">01 / 02</span>
                     <h2 id="entrySetupTitle">Как тебя называть?</h2>
@@ -466,6 +477,7 @@
             <h2>Быстрый старт</h2>
             <form method="post" action="/start">
                 {{ csrf_input(request) }}
+                <input type="hidden" name="show_recovery" value="1">
                 <input type="text" name="display_name" maxlength="40" placeholder="Имя" required>
                 <input type="text" name="group_name" maxlength="50" placeholder="Группа (необязательно)">
                 <input type="number" name="course" min="1" max="12" placeholder="Курс">

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'student-assistant-v57-graphite';
+const CACHE_NAME = 'student-assistant-v60-device-sync';
 const APP_SHELL = [
   '/static/css/theme.css?v=20260922-graphite',
   '/static/vendor/bootstrap/bootstrap.min.css',
@@ -32,6 +32,7 @@ const APP_SHELL = [
   '/static/css/pages/error-pages.css?v=20260922-graphite',
   '/static/css/pages/about.css?v=20260922-graphite',
   '/static/css/pages/entry.css?v=20260922-graphite',
+  '/static/css/pages/device-sync.css?v=20260922-sync-v1',
   '/static/js/user-preferences.js?v=20260922-graphite',
   '/static/js/base.js?v=20260611-motion-v1',
   '/static/js/actions-feedback.js?v=20260612-telegram-v1',
@@ -42,6 +43,7 @@ const APP_SHELL = [
   '/static/js/password-recovery.js?v=20260611-password-recovery-v1',
   '/static/js/error-page.js?v=20260612-error-pages-v1',
   '/static/js/entry.js?v=20260920-entry-v3',
+  '/static/js/device-sync.js?v=20260922-sync-v1',
   '/static/js/dashboard.js?v=20260612-onboarding-chat-v1',
   '/static/js/onboarding-chat.js?v=20260922-graphite',
   '/static/js/tasks.js?v=20260611-motion-v1',

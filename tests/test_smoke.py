@@ -11,7 +11,9 @@ class AppSmokeTests(unittest.TestCase):
         return Path(templates.env.loader.searchpath[0])
 
     def test_expected_routes_exist(self):
-        paths = {route.path for route in app.routes}
+        paths = set(app.openapi()['paths']) | {
+            route.path for route in app.routes if hasattr(route, 'path')
+        }
         expected = {
             '/',
             '/login',
@@ -31,6 +33,10 @@ class AppSmokeTests(unittest.TestCase):
             '/onboarding/chat/restart',
             '/manifest.webmanifest',
             '/service-worker.js',
+            '/connect-device',
+            '/link-device',
+            '/recover',
+            '/profile/devices/link-session',
         }
         self.assertTrue(expected.issubset(paths))
 
@@ -47,6 +53,8 @@ class AppSmokeTests(unittest.TestCase):
             'auth/register.html',
             'auth/forgot_password.html',
             'auth/reset_password.html',
+            'auth/connect_device.html',
+            'auth/recovery_key.html',
             'about/about.html',
             'dashboard/dashboard.html',
             'subjects/subjects.html',
@@ -98,6 +106,7 @@ class AppSmokeTests(unittest.TestCase):
             'error-pages.css',
             'about.css',
             'entry.css',
+            'device-sync.css',
         }
 
         self.assertTrue(expected_core_css.issubset({path.name for path in (css_dir / 'core').iterdir()}))

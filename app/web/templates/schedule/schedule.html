@@ -204,8 +204,9 @@
                         {% for item in items %}
                         {% set type_lower = (item.lesson_type or '')|lower %}
                         {% set type_group = 'lecture' if 'лекц' in type_lower or 'lecture' in type_lower else 'practice' if 'практ' in type_lower or 'practice' in type_lower else 'lab' if 'лаб' in type_lower or 'laboratory' in type_lower or type_lower == 'lab' else 'other' %}
+                        {% set type_tone = 'exam' if 'экзам' in type_lower or 'exam' in type_lower else 'deadline' if 'дедлайн' in type_lower or 'deadline' in type_lower else type_group %}
                         <article
-                            class="schedule-event-row"
+                            class="schedule-event-row is-{{ type_tone }}"
                             id="schedule-row-{{ item.id }}"
                             style="--event-color: {{ item.safe_subject_color }};"
                             data-schedule-item
@@ -217,7 +218,7 @@
                             <span class="schedule-event-stripe"></span>
                             <div class="schedule-event-time"><span class="schedule-cell-label">Время</span><strong>{{ item.start_time.strftime('%H:%M') }} —<br>{{ item.end_time.strftime('%H:%M') }}</strong></div>
                             <div class="schedule-event-subject"><span class="schedule-cell-label">Предмет</span><strong>{{ item.subject.name }}</strong></div>
-                            <div class="schedule-event-type"><span class="schedule-cell-label">Тип</span><span class="schedule-type-badge is-{{ type_group }}">{{ item.lesson_type or 'Другое' }}</span></div>
+                            <div class="schedule-event-type"><span class="schedule-cell-label">Тип</span><span class="schedule-type-badge is-{{ type_tone }}">{{ item.lesson_type or 'Другое' }}</span></div>
                             <div class="schedule-event-room"><span class="schedule-cell-label">Аудитория</span><span>{{ item.room or '—' }}</span></div>
                             <div class="schedule-event-teacher"><span class="schedule-cell-label">Преподаватель</span><span>{{ item.subject.teacher or 'Не указан' }}</span></div>
                             <div class="schedule-event-actions">

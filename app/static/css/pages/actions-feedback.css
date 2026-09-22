@@ -138,10 +138,16 @@ body.feedback-modal-open {
 }
 
 .confirm-dialog__button--confirm {
-    border: 1px solid rgb(var(--danger-rgb) / 0.15);
+    border: 1px solid rgb(var(--danger-rgb) / 0.42);
     color: var(--text);
-    background: var(--accent);
+    background: var(--danger);
     box-shadow: var(--shadow);
+}
+
+.confirm-dialog__button--confirm:hover,
+.confirm-dialog__button--confirm:focus-visible {
+    border-color: var(--danger);
+    background: rgb(var(--danger-rgb) / 0.86);
 }
 
 .confirm-dialog__button--confirm:disabled {
@@ -176,7 +182,8 @@ body.feedback-modal-open {
     align-items: start;
     padding: 0.9rem 0.9rem 0.8rem;
     overflow: hidden;
-    border: 1px solid var(--border);
+    border: 1px solid color-mix(in srgb, var(--toast-accent) 34%, var(--border));
+    border-left: 3px solid var(--toast-accent);
     border-radius: 17px;
     color: var(--text);
     background:

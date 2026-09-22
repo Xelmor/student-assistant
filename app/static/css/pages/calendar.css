@@ -4,13 +4,13 @@ body.calendar-page {
     --calendar-border: var(--border);
     --calendar-text: var(--text);
     --calendar-muted: var(--text-secondary);
-    --calendar-purple: var(--accent);
-    --calendar-purple-bright: var(--accent);
-    --calendar-blue: var(--accent);
-    --calendar-cyan: var(--accent);
-    --calendar-green: var(--success);
-    --calendar-orange: var(--warning);
-    --calendar-pink: var(--danger);
+    --calendar-purple: var(--color-violet);
+    --calendar-purple-bright: var(--color-violet);
+    --calendar-blue: var(--color-blue);
+    --calendar-cyan: var(--color-coral);
+    --calendar-green: var(--color-mint);
+    --calendar-orange: var(--color-amber);
+    --calendar-pink: var(--color-coral);
     color: var(--calendar-text);
 }
 
@@ -124,7 +124,7 @@ body.calendar-page {
     border: 1px solid rgb(var(--danger-rgb) / 0.28);
     border-radius: 14px;
     color: var(--danger);
-    background: rgb(var(--danger-rgb) / 0.25);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 .calendar-stat-grid {
@@ -141,6 +141,7 @@ body.calendar-page {
 }
 
 .calendar-stat-card {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.85rem;
@@ -149,6 +150,24 @@ body.calendar-page {
     border-radius: var(--radius-lg);
     transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
+
+.calendar-stat-card::before {
+    position: absolute;
+    inset: 0.6rem auto 0.6rem 0;
+    width: 3px;
+    border-radius: 0 999px 999px 0;
+    background: var(--warning);
+    content: "";
+}
+
+.calendar-stat-card.is-tasks { border-color: rgb(var(--warning-rgb) / 0.22); background: var(--tint-amber); }
+.calendar-stat-card.is-tasks .calendar-stat-icon { color: var(--warning); border-color: rgb(var(--warning-rgb) / 0.22); background: rgb(var(--warning-rgb) / 0.09); }
+.calendar-stat-card.is-classes { border-color: rgb(var(--success-rgb) / 0.22); background: var(--tint-mint); }
+.calendar-stat-card.is-classes::before { background: var(--success); }
+.calendar-stat-card.is-exams { border-color: rgb(var(--danger-rgb) / 0.22); background: var(--tint-coral); }
+.calendar-stat-card.is-exams::before { background: var(--danger); }
+.calendar-stat-card.is-changes { border-color: rgb(var(--violet-rgb) / 0.22); background: var(--tint-violet); }
+.calendar-stat-card.is-changes::before { background: var(--violet); }
 
 .calendar-stat-card:hover,
 .calendar-panel:hover {
@@ -179,19 +198,19 @@ body.calendar-page {
 .calendar-stat-card.is-classes .calendar-stat-icon {
     color: var(--success);
     border-color: rgb(var(--success-rgb) / 0.22);
-    background: rgb(var(--success-rgb) / 0.3);
+    background: rgb(var(--success-rgb) / 0.07);
 }
 
 .calendar-stat-card.is-exams .calendar-stat-icon {
-    color: var(--accent);
-    border-color: rgb(var(--accent-rgb) / 0.22);
-    background: rgb(var(--accent-rgb) / 0.27);
+    color: var(--danger);
+    border-color: rgb(var(--danger-rgb) / 0.22);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 .calendar-stat-card.is-changes .calendar-stat-icon {
-    color: var(--warning);
-    border-color: rgb(var(--warning-rgb) / 0.22);
-    background: rgb(var(--warning-rgb) / 0.3);
+    color: var(--violet);
+    border-color: rgb(var(--violet-rgb) / 0.22);
+    background: rgb(var(--violet-rgb) / 0.09);
 }
 
 .calendar-stat-card > div {
@@ -351,8 +370,8 @@ body.calendar-page {
 .calendar-mini-day i {
     position: absolute;
     bottom: 0.17rem;
-    width: 0.22rem;
-    height: 0.22rem;
+    width: 0.3rem;
+    height: 0.3rem;
     border-radius: 50%;
 }
 
@@ -470,25 +489,31 @@ body.calendar-page {
     font-size: 0.66rem;
 }
 
-.is-class,
-.is-lecture {
-    background: var(--accent);
+.calendar-page .is-class,
+.calendar-page .is-lecture {
+    background: var(--success);
 }
 
-.is-practice {
-    background: var(--accent);
+.calendar-stat-card.is-tasks:hover { border-color: rgb(var(--warning-rgb) / 0.46); background: rgb(var(--warning-rgb) / 0.09); }
+.calendar-stat-card.is-classes:hover { border-color: rgb(var(--success-rgb) / 0.46); background: rgb(var(--success-rgb) / 0.09); }
+.calendar-stat-card.is-exams:hover { border-color: rgb(var(--danger-rgb) / 0.46); background: rgb(var(--danger-rgb) / 0.09); }
+.calendar-stat-card.is-changes:hover { border-color: rgb(var(--violet-rgb) / 0.46); background: rgb(var(--violet-rgb) / 0.09); }
+
+.calendar-page .is-practice {
+    background: var(--success);
 }
 
-.is-deadline {
+.calendar-page .is-deadline {
+    background: var(--warning);
+}
+
+.calendar-page .is-exam {
     background: var(--danger);
 }
 
-.is-exam {
-    background: var(--accent);
-}
-
-.is-change {
-    background: var(--warning);
+.calendar-page .is-change,
+.calendar-page .is-personal {
+    background: var(--violet);
 }
 
 .calendar-timeline-panel {
@@ -700,28 +725,41 @@ body.calendar-page {
     line-height: 1.2;
 }
 
+.calendar-timeline-event.is-class,
+.calendar-timeline-event.is-lecture {
+    border-color: rgb(var(--success-rgb) / 0.22);
+    border-left-color: var(--success);
+    background: rgb(var(--success-rgb) / 0.08);
+}
+
 .calendar-timeline-event.is-practice {
-    border-color: rgb(var(--accent-rgb) / 0.18);
-    border-left-color: var(--accent);
-    background: var(--accent-soft);
+    border-color: rgb(var(--success-rgb) / 0.2);
+    border-left-color: var(--success);
+    background: rgb(var(--success-rgb) / 0.07);
 }
 
 .calendar-timeline-event.is-deadline {
-    border-color: rgb(var(--danger-rgb) / 0.2);
-    border-left-color: var(--danger);
-    background: var(--accent-soft);
+    border-color: rgb(var(--warning-rgb) / 0.2);
+    border-left-color: var(--warning);
+    background: rgb(var(--warning-rgb) / 0.07);
 }
 
 .calendar-timeline-event.is-exam {
-    border-color: rgb(var(--accent-rgb) / 0.22);
-    border-left-color: var(--accent);
-    background: var(--accent-soft);
+    border-color: rgb(var(--danger-rgb) / 0.22);
+    border-left-color: var(--danger);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 .calendar-timeline-event.is-change {
-    border-color: rgb(var(--warning-rgb) / 0.24);
-    border-left-color: var(--warning);
-    background: var(--accent-soft);
+    border-color: rgb(var(--violet-rgb) / 0.24);
+    border-left-color: var(--violet);
+    background: rgb(var(--violet-rgb) / 0.08);
+}
+
+.calendar-timeline-event.is-personal {
+    border-color: rgb(var(--violet-rgb) / 0.24);
+    border-left-color: var(--violet);
+    background: rgb(var(--violet-rgb) / 0.08);
 }
 
 .calendar-mobile-week {
@@ -775,15 +813,15 @@ body.calendar-page {
 }
 
 .calendar-card-icon.is-deadline {
-    color: var(--danger);
-    border-color: rgb(var(--danger-rgb) / 0.2);
-    background: rgb(var(--danger-rgb) / 0.28);
+    color: var(--warning);
+    border-color: rgb(var(--warning-rgb) / 0.2);
+    background: rgb(var(--warning-rgb) / 0.07);
 }
 
 .calendar-card-icon.is-exam {
-    color: var(--accent);
-    border-color: rgb(var(--accent-rgb) / 0.2);
-    background: rgb(var(--accent-rgb) / 0.26);
+    color: var(--danger);
+    border-color: rgb(var(--danger-rgb) / 0.2);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 .calendar-compact-list {
@@ -912,7 +950,7 @@ body.calendar-page {
 }
 
 .calendar-agenda-item.event-task {
-    border-left-color: var(--calendar-pink);
+    border-left-color: var(--calendar-orange);
 }
 
 .calendar-agenda-item.event-academic {
@@ -921,7 +959,7 @@ body.calendar-page {
 
 .calendar-agenda-item.event-schedule-change,
 .calendar-agenda-item.event-override {
-    border-left-color: var(--calendar-orange);
+    border-left-color: var(--violet);
 }
 
 .calendar-agenda-item time {
@@ -1413,23 +1451,23 @@ body.calendar-page {
         padding: 0.5rem 0.55rem;
         border-left: 2px solid var(--accent);
         border-radius: 7px;
-        background: rgb(var(--accent-rgb) / 0.18);
+        background: rgb(var(--accent-rgb) / 0.08);
     }
 
     .calendar-mobile-event.event-task {
-        border-left-color: var(--calendar-pink);
-        background: rgb(var(--danger-rgb) / 0.16);
+        border-left-color: var(--calendar-orange);
+        background: rgb(var(--warning-rgb) / 0.07);
     }
 
     .calendar-mobile-event.event-academic {
         border-left-color: var(--calendar-cyan);
-        background: rgb(var(--accent-rgb) / 0.16);
+        background: rgb(var(--danger-rgb) / 0.07);
     }
 
     .calendar-mobile-event.event-schedule-change,
     .calendar-mobile-event.event-override {
-        border-left-color: var(--calendar-orange);
-        background: rgb(var(--warning-rgb) / 0.16);
+        border-left-color: var(--violet);
+        background: rgb(var(--violet-rgb) / 0.07);
     }
 
     .calendar-mobile-event time {

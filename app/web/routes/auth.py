@@ -13,6 +13,7 @@ from ...core.config import settings
 from ...core.rate_limit import auth_rate_limiter, enforce_rate_limit, rate_limit_key
 from ...core.security import (
     LOCAL_PROFILE_COOKIE,
+    establish_user_session,
     get_current_user,
     hash_local_profile_token,
     hash_password,
@@ -27,6 +28,7 @@ from ...services.password_reset_service import (
     send_password_reset_email,
     validate_password_reset_token,
 )
+from ...services.workspace_sync import create_device, create_workspace, infer_device_name
 from ..dependencies import templates, validate_csrf
 
 router = APIRouter()
@@ -119,15 +121,6 @@ def build_password_reset_url(request: Request, token: str) -> str:
     return f'{request.base_url.scheme}://{request.base_url.netloc}{reset_path}?{query}'
 
 
-def establish_user_session(request: Request, user: User) -> None:
-    display_name = user.display_name or user.username
-    request.session.clear()
-    request.session['csrf_token'] = secrets.token_urlsafe(32)
-    request.session['user_id'] = user.id
-    request.session['username'] = display_name
-    request.session['username_initial'] = (display_name[:1] or 'U').upper()
-
-
 @router.get('/', response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
@@ -143,6 +136,7 @@ def start_local_profile(
     group_name: str = Form(''),
     course: str = Form(''),
     schedule_unit: str = Form('pair'),
+    show_recovery: str = Form('0'),
     _: None = Depends(validate_csrf),
     db: Session = Depends(get_db),
 ):
@@ -196,7 +190,7 @@ def start_local_profile(
     if schedule_unit not in {'pair', 'class', 'lesson'}:
         schedule_unit = 'pair'
 
-    raw_token = secrets.token_urlsafe(32)
+    raw_token = secrets.token_urlsafe(48)
     identity = secrets.token_hex(8)
     user = User(
         username=f'local_{identity}',
@@ -214,11 +208,39 @@ def start_local_profile(
         onboarding_calendar_opened=False,
     )
     db.add(user)
+    db.flush()
+    workspace, recovery_key = create_workspace(
+        db,
+        user,
+        display_name=f'Пространство {normalized_display_name}',
+    )
+    device, _ = create_device(
+        db,
+        workspace,
+        device_name=infer_device_name(request.headers.get('user-agent')),
+        user_agent=request.headers.get('user-agent'),
+        raw_token=raw_token,
+    )
     db.commit()
     db.refresh(user)
-    establish_user_session(request, user)
+    establish_user_session(request, user, device)
 
-    response = RedirectResponse('/dashboard?welcome=1', status_code=302)
+    if show_recovery == '1':
+        response = templates.TemplateResponse(
+            request,
+            'auth/recovery_key.html',
+            {
+                'recovery_key': recovery_key,
+                'is_initial': True,
+                'continue_href': '/dashboard?welcome=1',
+            },
+            status_code=201,
+        )
+        response.headers['Cache-Control'] = 'no-store, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Referrer-Policy'] = 'no-referrer'
+    else:
+        response = RedirectResponse('/dashboard?welcome=1', status_code=302)
     response.set_cookie(
         LOCAL_PROFILE_COOKIE,
         raw_token,

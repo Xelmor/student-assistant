@@ -3,12 +3,12 @@ body.schedule-page {
     --schedule-border: var(--border);
     --schedule-text: var(--text);
     --schedule-muted: var(--text-secondary);
-    --schedule-purple: var(--accent);
-    --schedule-purple-bright: var(--accent);
-    --schedule-blue: var(--accent);
-    --schedule-green: var(--success);
-    --schedule-amber: var(--warning);
-    --schedule-red: var(--danger);
+    --schedule-purple: var(--color-violet);
+    --schedule-purple-bright: var(--color-violet);
+    --schedule-blue: var(--color-blue);
+    --schedule-green: var(--color-mint);
+    --schedule-amber: var(--color-amber);
+    --schedule-red: var(--color-coral);
 }
 
 .schedule-page .content-wrap {
@@ -131,6 +131,7 @@ body.schedule-page {
 }
 
 .schedule-stat-card {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -139,6 +140,24 @@ body.schedule-page {
     border-radius: var(--radius-lg);
     transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
+
+.schedule-stat-card::before {
+    position: absolute;
+    inset: 0.6rem auto 0.6rem 0;
+    width: 3px;
+    border-radius: 0 999px 999px 0;
+    background: var(--violet);
+    content: "";
+}
+
+.schedule-stat-card.is-total { border-color: rgb(var(--violet-rgb) / 0.22); background: var(--tint-violet); }
+.schedule-stat-card.is-total .schedule-stat-icon { color: var(--violet); border-color: rgb(var(--violet-rgb) / 0.22); background: rgb(var(--violet-rgb) / 0.09); }
+.schedule-stat-card.is-subject { border-color: rgb(var(--accent-rgb) / 0.22); background: var(--tint-blue); }
+.schedule-stat-card.is-subject::before { background: var(--accent); }
+.schedule-stat-card.is-room { border-color: rgb(var(--warning-rgb) / 0.22); background: var(--tint-amber); }
+.schedule-stat-card.is-room::before { background: var(--warning); }
+.schedule-stat-card.is-gap { border-color: rgb(var(--success-rgb) / 0.22); background: var(--tint-mint); }
+.schedule-stat-card.is-gap::before { background: var(--success); }
 
 .schedule-stat-card:hover {
     transform: translateY(-2px);
@@ -155,19 +174,24 @@ body.schedule-page {
 .schedule-stat-card.is-subject .schedule-stat-icon {
     color: var(--accent);
     border-color: rgb(var(--accent-rgb) / 0.2);
-    background: rgb(var(--accent-rgb) / 0.27);
+    background: rgb(var(--accent-rgb) / 0.08);
 }
 
 .schedule-stat-card.is-room .schedule-stat-icon {
-    color: var(--success);
-    border-color: rgb(var(--success-rgb) / 0.18);
-    background: rgb(var(--success-rgb) / 0.28);
+    color: var(--warning);
+    border-color: rgb(var(--warning-rgb) / 0.2);
+    background: rgb(var(--warning-rgb) / 0.09);
 }
 
+.schedule-stat-card.is-total:hover { border-color: rgb(var(--violet-rgb) / 0.46); background: rgb(var(--violet-rgb) / 0.09); }
+.schedule-stat-card.is-subject:hover { border-color: rgb(var(--accent-rgb) / 0.46); background: rgb(var(--accent-rgb) / 0.1); }
+.schedule-stat-card.is-room:hover { border-color: rgb(var(--warning-rgb) / 0.46); background: rgb(var(--warning-rgb) / 0.09); }
+.schedule-stat-card.is-gap:hover { border-color: rgb(var(--success-rgb) / 0.46); background: rgb(var(--success-rgb) / 0.09); }
+
 .schedule-stat-card.is-gap .schedule-stat-icon {
-    color: var(--warning);
-    border-color: rgb(var(--warning-rgb) / 0.18);
-    background: rgb(var(--warning-rgb) / 0.3);
+    color: var(--success);
+    border-color: rgb(var(--success-rgb) / 0.18);
+    background: rgb(var(--success-rgb) / 0.07);
 }
 
 .schedule-stat-card div {
@@ -204,7 +228,7 @@ body.schedule-page {
     border: 1px solid rgb(var(--danger-rgb) / 0.28);
     border-radius: 14px;
     color: var(--danger);
-    background: rgb(var(--danger-rgb) / 0.24);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 .schedule-workspace {
@@ -479,7 +503,7 @@ body.schedule-page {
     border: 1px solid rgb(var(--warning-rgb) / 0.2);
     border-radius: 11px;
     color: var(--warning);
-    background: rgb(var(--warning-rgb) / 0.18);
+    background: rgb(var(--warning-rgb) / 0.07);
     font-size: 0.75rem;
 }
 
@@ -717,6 +741,21 @@ body.schedule-page {
     background: rgb(var(--accent-rgb) / 0.055);
 }
 
+.schedule-event-row.is-lecture { --event-tone: var(--accent); --event-tint: var(--tint-blue); --event-border-rgb: var(--accent-rgb); }
+.schedule-event-row.is-practice { --event-tone: var(--success); --event-tint: var(--tint-mint); --event-border-rgb: var(--success-rgb); }
+.schedule-event-row.is-lab { --event-tone: var(--violet); --event-tint: var(--tint-violet); --event-border-rgb: var(--violet-rgb); }
+.schedule-event-row.is-exam { --event-tone: var(--danger); --event-tint: var(--tint-coral); --event-border-rgb: var(--danger-rgb); }
+.schedule-event-row.is-deadline { --event-tone: var(--warning); --event-tint: var(--tint-amber); --event-border-rgb: var(--warning-rgb); }
+
+.schedule-event-row:is(.is-lecture, .is-practice, .is-lab, .is-exam, .is-deadline) .schedule-event-stripe {
+    background: var(--event-tone);
+}
+
+.schedule-event-row:is(.is-lecture, .is-practice, .is-lab, .is-exam, .is-deadline):hover {
+    background: var(--event-tint);
+    box-shadow: inset 0 0 0 1px rgb(var(--event-border-rgb) / 0.12);
+}
+
 .schedule-event-stripe {
     position: absolute;
     inset: 0.55rem auto 0.55rem 0.48rem;
@@ -780,23 +819,39 @@ body.schedule-page {
 }
 
 .schedule-type-badge.is-lecture {
-    color: var(--text);
-    background: rgb(var(--accent-rgb) / 0.22);
+    color: var(--accent);
+    border: 1px solid rgb(var(--accent-rgb) / 0.2);
+    background: rgb(var(--accent-rgb) / 0.08);
 }
 
 .schedule-type-badge.is-practice {
-    color: var(--accent);
-    background: rgb(var(--accent-rgb) / 0.25);
+    color: var(--success);
+    border: 1px solid rgb(var(--success-rgb) / 0.2);
+    background: rgb(var(--success-rgb) / 0.07);
 }
 
 .schedule-type-badge.is-lab {
-    color: var(--success);
-    background: rgb(var(--success-rgb) / 0.17);
+    color: var(--violet);
+    border: 1px solid rgb(var(--violet-rgb) / 0.2);
+    background: rgb(var(--violet-rgb) / 0.07);
+}
+
+.schedule-type-badge.is-exam {
+    color: var(--danger);
+    border: 1px solid rgb(var(--danger-rgb) / 0.2);
+    background: rgb(var(--danger-rgb) / 0.07);
+}
+
+.schedule-type-badge.is-deadline {
+    color: var(--warning);
+    border: 1px solid rgb(var(--warning-rgb) / 0.2);
+    background: rgb(var(--warning-rgb) / 0.07);
 }
 
 .schedule-type-badge.is-other {
-    color: var(--text);
-    background: rgba(71, 85, 105, 0.28);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    background: var(--surface-elevated);
 }
 
 .schedule-event-actions {
@@ -839,7 +894,7 @@ body.schedule-page {
 .schedule-action-button.is-delete {
     color: var(--danger);
     border-color: rgb(var(--danger-rgb) / 0.08);
-    background: rgb(var(--danger-rgb) / 0.24);
+    background: rgb(var(--danger-rgb) / 0.07);
 }
 
 [id^="schedule-edit-"] {

@@ -5,6 +5,7 @@ from .subject import Subject
 from .task import Task
 from .telegram_deadline_reminder_log import TelegramDeadlineReminderLog
 from .user import User
+from .workspace import DeviceLinkSession, Workspace, WorkspaceDevice
 
 __all__ = [
     'User',
@@ -14,4 +15,7 @@ __all__ = [
     'Note',
     'AcademicEvent',
     'TelegramDeadlineReminderLog',
+    'Workspace',
+    'WorkspaceDevice',
+    'DeviceLinkSession',
 ]

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == 'recovery' %}Восстановление пространства{% else %}Подключение устройства{% endif %} — Student Assistant{% endblock %}
+{% block body_class %}device-connect-page{% endblock %}
+
+{% block content %}
+<main class="device-connect-shell">
+    <a class="device-connect-brand" href="/" aria-label="Student Assistant — на главную"><span>SA</span><strong>Student Assistant</strong></a>
+    <section class="device-connect-card">
+        {% if mode == 'recovery' %}
+        <span class="device-connect-kicker">ВОССТАНОВЛЕНИЕ</span>
+        <h1>Вернуть доступ к пространству</h1>
+        <p>Введите ключ, который вы сохранили при создании пространства. Мы подключим этот браузер как новое устройство.</p>
+        {% if error %}<div class="device-connect-error" role="alert">{{ error }}</div>{% endif %}
+        <form method="post" action="/recover" class="device-connect-form">
+            {{ csrf_input(request) }}
+            <label><span>Ключ восстановления</span><input type="text" name="recovery_key" value="{{ recovery_key }}" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="SA-XXXX-XXXX-XXXX-XXXX-XXXX" required data-recovery-input></label>
+            <label><span>Название устройства</span><input type="text" name="device_name" value="{{ default_device_name }}" maxlength="80" autocomplete="off" required></label>
+            <button type="submit">Восстановить доступ <span>→</span></button>
+        </form>
+        <p class="device-connect-switch">Есть активное устройство? <a href="/connect-device">Введите код подключения</a></p>
+        {% elif mode == 'token' %}
+        <span class="device-connect-kicker">QR-ПОДКЛЮЧЕНИЕ</span>
+        {% if link_token_valid %}
+        <h1>Подключить это устройство</h1>
+        <p>После подтверждения здесь появятся те же задачи, расписание, заметки и настройки.</p>
+        <form method="post" action="/link-device/confirm" class="device-connect-form">
+            {{ csrf_input(request) }}
+            <input type="hidden" name="token" value="{{ link_token }}">
+            <label><span>Название устройства</span><input type="text" name="device_name" value="{{ default_device_name }}" maxlength="80" autocomplete="off" required autofocus></label>
+            <button type="submit">Подключить устройство <span>→</span></button>
+        </form>
+        <p class="device-connect-note">Ссылка одноразовая и действует 5 минут.</p>
+        {% else %}
+        <h1>Ссылка больше не действует</h1>
+        <div class="device-connect-error" role="alert">{{ error }}</div>
+        <a class="device-connect-button" href="/connect-device">Ввести шестизначный код</a>
+        {% endif %}
+        {% else %}
+        <span class="device-connect-kicker">НОВОЕ УСТРОЙСТВО</span>
+        <h1>Подключиться к пространству</h1>
+        <p>На уже подключённом устройстве откройте «Профиль → Устройства», создайте код и введите его здесь.</p>
+        {% if error %}<div class="device-connect-error" role="alert">{{ error }}</div>{% endif %}
+        <form method="post" action="/connect-device/code" class="device-connect-form">
+            {{ csrf_input(request) }}
+            <label><span>Код подключения</span><input class="device-code-input" type="text" name="code" value="{{ code }}" inputmode="numeric" autocomplete="one-time-code" maxlength="7" pattern="[0-9 ]{6,7}" placeholder="000 000" required autofocus data-pairing-code></label>
+            <label><span>Название устройства</span><input type="text" name="device_name" value="{{ default_device_name }}" maxlength="80" autocomplete="off" required></label>
+            <button type="submit">Подключить устройство <span>→</span></button>
+        </form>
+        <p class="device-connect-note">Код одноразовый и действует 5 минут.</p>
+        <p class="device-connect-switch">Нет доступа к другим устройствам? <a href="/recover">Использовать ключ восстановления</a></p>
+        {% endif %}
+    </section>
+    <a class="device-connect-home" href="/">← На главную</a>
+</main>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="/static/js/device-sync.js?v=20260922-sync-v1"></script>
+{% endblock %}

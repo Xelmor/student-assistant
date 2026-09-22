@@ -4,7 +4,7 @@ import logging
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi.exception_handlers import http_exception_handler
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
@@ -118,6 +118,14 @@ def create_app() -> FastAPI:
         request: Request,
         exc: StarletteHTTPException,
     ):
+        wants_json = 'application/json' in request.headers.get('accept', '').lower()
+        if wants_json:
+            detail = exc.detail if isinstance(exc.detail, str) else 'Не удалось выполнить запрос.'
+            return JSONResponse(
+                {'error': detail},
+                status_code=exc.status_code,
+                headers=exc.headers,
+            )
         if exc.status_code in {403, 404}:
             return render_error_page(request, exc.status_code)
         return await http_exception_handler(request, exc)
@@ -130,6 +138,11 @@ def create_app() -> FastAPI:
             request.url.path,
             exc_info=(type(exc), exc, exc.__traceback__),
         )
+        if 'application/json' in request.headers.get('accept', '').lower():
+            return JSONResponse(
+                {'error': 'Внутренняя ошибка сервера. Попробуйте ещё раз.'},
+                status_code=500,
+            )
         return render_error_page(request, 500)
 
     @app.middleware('http')
