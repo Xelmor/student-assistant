@@ -4,7 +4,7 @@
 
 [Live Demo](https://student-assistant-beby.onrender.com) · [Telegram Bot](https://t.me/student_assistant_max_bot) · [License](LICENSE)
 
-![Главная панель Student Assistant](docs/images/dashboard.png)
+![Главная страница Student Assistant](docs/images/dashboard.png)
 
 > Скриншот пока не добавлен. Поместите изображение главной панели в `docs/images/dashboard.png`.
 
