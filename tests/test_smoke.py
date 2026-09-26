@@ -74,19 +74,18 @@ class AppSmokeTests(unittest.TestCase):
         css_dir = Path('app/static/css')
         self.assertTrue(css_dir.exists())
         self.assertTrue((css_dir / 'style.css').exists())
-        self.assertTrue((css_dir / 'core').exists())
         self.assertTrue((css_dir / 'pages').exists())
 
-        expected_core_css = {
+        expected_root_css = {
             'base.css',
             'responsive.css',
             'mobile.css',
+            'dashboard.css',
+            'entities.css',
         }
         expected_page_css = {
-            'dashboard.css',
             'onboarding.css',
             'onboarding-chat.css',
-            'entities.css',
             'profile.css',
             'calendar.css',
             'landing.css',
@@ -109,7 +108,7 @@ class AppSmokeTests(unittest.TestCase):
             'device-sync.css',
         }
 
-        self.assertTrue(expected_core_css.issubset({path.name for path in (css_dir / 'core').iterdir()}))
+        self.assertTrue(expected_root_css.issubset({path.name for path in css_dir.iterdir()}))
         self.assertTrue(expected_page_css.issubset({path.name for path in (css_dir / 'pages').iterdir()}))
 
     def test_templates_compile(self):

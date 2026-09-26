@@ -16,3 +16,9 @@ screenshots/
 *.db
 .idea/
 .vscode/
+
+.sa_patch_backups/
+*.bak
+*.before-*
+**pycache**/
+.DS_Store

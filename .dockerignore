@@ -14,3 +14,7 @@ __pycache__
 .pytest_cache
 pytest-cache-files-*
 tests/.tmp
+
+.sa_patch_backups
+*.bak
+*.before-*

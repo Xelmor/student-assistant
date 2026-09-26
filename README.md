@@ -65,6 +65,32 @@ python run.py
 
 После запуска приложение обычно доступно по адресу `http://127.0.0.1:8000`.
 
+## Установка зависимостей
+
+Development:
+
+```bash
+pip install -r requirements.txt
+```
+
+Reproducible/production:
+
+```bash
+pip install -r requirements.lock.txt
+```
+
+Lock — снимок рабочего окружения Python 3.14.5 на macOS, включая установленные
+инструменты тестирования и аудита. Совместимость с другими ОС и версиями Python
+нужно проверять отдельно.
+
+Release ZIP после коммита cleanup создавайте через Git:
+
+```bash
+git archive --format=zip --output=../student-assistant-release.zip HEAD
+```
+
+В архив не попадают локальный `.git`, игнорируемые backup-файлы и `.env`.
+
 ## Минимальная настройка `.env`
 
 Основные переменные:
