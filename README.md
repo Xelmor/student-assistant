@@ -1,7 +1,7 @@
 # Student Assistant
 
 Настройка Telegram-компаньона описана в
-[TELEGRAM_BOT_SETUP.md](TELEGRAM_BOT_SETUP.md).
+[TELEGRAM_BOT_SETUP.md](docs/integrations/TELEGRAM_BOT_SETUP.md).
 
 Student Assistant это веб-приложение для учебы и личного планирования. В одном месте собраны задачи, заметки, расписание, календарь и профиль пользователя.
 
@@ -123,6 +123,8 @@ docker compose up --build
 python -m pytest
 ```
 
+Браузерные тесты: [инструкция E2E](docs/testing/E2E_TESTING.md).
+
 ## Production
 
 Для production рекомендуется:
@@ -151,6 +153,8 @@ RELOAD=false
 ## Деплой
 
 Подробные шаги по развертыванию вынесены отдельно: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+
+Отчёт по безопасности: [SECURITY_AUDIT.md](docs/security/SECURITY_AUDIT.md).
 
 ## Примечание
 

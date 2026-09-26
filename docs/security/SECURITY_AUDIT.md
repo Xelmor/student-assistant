@@ -281,7 +281,7 @@ Upload читается целиком без лимита. Количество
 
 Изменённые файлы:
 
-- `SECURITY_AUDIT.md`
+- `docs/security/SECURITY_AUDIT.md`
 - `.dockerignore`
 - `.env.example`
 - `app/core/config.py`
