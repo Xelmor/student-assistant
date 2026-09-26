@@ -1,161 +1,128 @@
 # Student Assistant
 
-Настройка Telegram-компаньона описана в
-[TELEGRAM_BOT_SETUP.md](docs/integrations/TELEGRAM_BOT_SETUP.md).
+Умный студенческий планировщик для задач, расписания, заметок и дедлайнов.
 
-Student Assistant это веб-приложение для учебы и личного планирования. В одном месте собраны задачи, заметки, расписание, календарь и профиль пользователя.
+[Live Demo](https://student-assistant-beby.onrender.com) · [Telegram Bot](https://t.me/student_assistant_max_bot) · [License](LICENSE)
 
-## Для чего нужен проект
+![Главная панель Student Assistant](docs/images/dashboard.png)
 
-Приложение помогает держать под контролем учебную нагрузку и не распыляться между разными сервисами. Оно подходит для локального использования и для развертывания на сервере.
+> Скриншот пока не добавлен. Поместите изображение главной панели в `docs/images/dashboard.png`.
 
-## Основные возможности
+## Возможности
 
-- быстрый профиль без обязательного email и пароля
-- автоматический возврат в профиль на этом устройстве
-- управление задачами с дедлайнами, приоритетами и повторениями
-- ведение заметок
-- расписание занятий
-- календарь с объединением задач и расписания
-- профиль пользователя
-- экспорт и импорт данных
-- установка как PWA на телефон или компьютер
+- **Задачи и дедлайны** — приоритеты, сроки и повторяющиеся задачи.
+- **Расписание** — учебные занятия и план на неделю.
+- **Календарь** — задачи и занятия в одном представлении.
+- **Заметки** — учебные материалы и личные записи.
+- **Telegram-уведомления** — напоминания о дедлайнах и ежедневная сводка при настроенном боте.
+- **Синхронизация устройств** — подключение телефона или компьютера через QR-код или одноразовый код.
+- **Без email и пароля** — создание пространства и доступ с доверенного устройства.
+- **Recovery key** — ключ восстановления доступа при потере устройств.
 
+## Как это работает
 
-## Вход без регистрации по email
+1. Создаёшь пространство и сохраняешь ключ восстановления.
+2. Добавляешь задачи и расписание.
+3. Подключаешь телефон через QR-код или код из профиля.
+4. Данные синхронизируются между устройствами в общем пространстве.
 
-Новый пользователь нажимает **«Начать»**, указывает имя и при желании группу/курс. Приложение создаёт профиль устройства и сохраняет долгоживущий случайный токен доступа в `HttpOnly` cookie. Сам токен в базе не хранится — сохраняется только SHA-256 хеш.
+## Технологии
 
-Старые маршруты входа оставлены только для совместимости с уже созданными аккаунтами. Публичной ссылки на регистрацию больше нет.
-
-## Синхронизация устройств
-
-Профиль хранится в общем `Workspace`, поэтому ноутбук и телефон работают с одними задачами, предметами, расписанием, заметками, календарём и настройками. Новое устройство подключается в профиле через одноразовый шестизначный код или QR-ссылку; код действует 5 минут. Для случая потери всех устройств при создании пространства один раз показывается ключ восстановления.
-
-Токены устройств, коды подключения и ключ восстановления сохраняются в базе только как хеши. Устройства можно просматривать и отзывать в разделе «Профиль → Устройства».
-
-## Что нужно для запуска
-
-- Python 3.12 или новее
-- `pip`
-- для локального запуска достаточно SQLite
-- для production рекомендуется PostgreSQL
+| Область | Технологии |
+| --- | --- |
+| Backend | Python, FastAPI, Jinja2 |
+| База данных | PostgreSQL / SQLite |
+| Интерфейс | JavaScript, HTML/CSS |
+| Уведомления | Telegram Bot API |
+| Развёртывание | Docker, Render |
 
 ## Быстрый запуск
 
-### Windows PowerShell
-
-```powershell
-python -m venv venv
-venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-Copy-Item .env.example .env
-python run.py
-```
-
-### Linux / macOS
+Нужны Python 3.12+ и Git. Для локального запуска достаточно SQLite.
 
 ```bash
-python3 -m venv venv
+git clone https://github.com/Xelmor/student-assistant.git
+cd student-assistant
+python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
 python run.py
 ```
 
-После запуска приложение обычно доступно по адресу `http://127.0.0.1:8000`.
+В Windows PowerShell вместо `source venv/bin/activate`:
 
-## Установка зависимостей
-
-Development:
-
-```bash
-pip install -r requirements.txt
+```powershell
+.\venv\Scripts\Activate.ps1
 ```
 
-Reproducible/production:
+Приложение доступно по адресу [http://127.0.0.1:8000](http://127.0.0.1:8000).
+Если команда `python` недоступна в Linux/macOS, используйте `python3`.
+
+Для установки зафиксированных версий:
 
 ```bash
 pip install -r requirements.lock.txt
 ```
 
-Lock — снимок рабочего окружения Python 3.14.5 на macOS, включая установленные
-инструменты тестирования и аудита. Совместимость с другими ОС и версиями Python
-нужно проверять отдельно.
+Lock-файл — снимок окружения Python 3.14.5 на macOS, включая инструменты
+разработки. Совместимость с целевой ОС и версией Python нужно проверять отдельно.
 
-Release ZIP после коммита cleanup создавайте через Git:
+## Переменные окружения
+
+[.env.example](.env.example) содержит шаблон настроек. Для своей конфигурации
+скопируйте его в `.env` и задайте нужные значения:
 
 ```bash
-git archive --format=zip --output=../student-assistant-release.zip HEAD
+cp .env.example .env
 ```
 
-В архив не попадают локальный `.git`, игнорируемые backup-файлы и `.env`.
+В Windows PowerShell: `Copy-Item .env.example .env`.
 
-## Минимальная настройка `.env`
+Основные настройки: `DATABASE_URL`, `SECRET_KEY`, `APP_ENV`, `HOST` и `PORT`.
+Для production также настройте `COOKIE_SECURE`, `ALLOWED_HOSTS` и `PUBLIC_BASE_URL`.
+Telegram настраивается отдельно по инструкции ниже. Не публикуйте `.env`,
+токены и ключи доступа.
 
-Основные переменные:
+## Структура проекта
 
-| Переменная | Для чего нужна | Пример |
-| --- | --- | --- |
-| `APP_ENV` | режим приложения | `development` |
-| `SECRET_KEY` | ключ для сессий | длинная случайная строка |
-| `DATABASE_URL` | подключение к базе данных | `sqlite:///./data/student_assistant.db` |
-| `HOST` | адрес запуска | `0.0.0.0` |
-| `ALLOWED_HOSTS` | разрешённые Host-заголовки | `localhost,127.0.0.1` |
-| `PUBLIC_BASE_URL` | публичный HTTPS origin для reset-ссылок | `https://example.com` |
-| `PORT` | порт запуска | `8000` |
-| `RELOAD` | автоперезапуск в разработке | `false` |
-| `COOKIE_SECURE` | защищенные cookie | `false` |
-| `SESSION_MAX_AGE_SECONDS` | срок session-cookie в секундах | `43200` |
-| `APP_TIMEZONE` | часовой пояс | `Europe/Moscow` |
-
-SMTP-переменные нужны только для старого legacy-входа. Основной сценарий создания профиля email не использует.
-
-## Запуск через Docker
-
-```powershell
-docker compose up --build
+```text
+app/           — приложение, маршруты, шаблоны и статические файлы
+telegram_bot/  — Telegram-интеграция и отправка уведомлений
+tests/         — автоматические тесты и E2E-сценарии
+docs/          — документация по запуску, тестированию и безопасности
+scripts/       — вспомогательные скрипты запуска
 ```
 
 ## Тесты
 
-```powershell
-python -m pytest
+Установите зависимости для разработки:
+
+```bash
+pip install -r requirements-dev.txt
 ```
 
-Браузерные тесты: [инструкция E2E](docs/testing/E2E_TESTING.md).
+Основной набор тестов:
 
-## Production
-
-Для production рекомендуется:
-
-- использовать PostgreSQL
-- задать уникальный длинный `SECRET_KEY`
-- включить `COOKIE_SECURE=true`
-- использовать `APP_ENV=production`
-- не хардкодить порт, а брать его из `PORT`
-
-Минимальный пример:
-
-```env
-APP_ENV=production
-SECRET_KEY=replace_with_a_unique_random_string_at_least_32_chars_long
-COOKIE_SECURE=true
-SESSION_MAX_AGE_SECONDS=43200
-DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME
-HOST=0.0.0.0
-ALLOWED_HOSTS=student-assistant.example.com
-PUBLIC_BASE_URL=https://student-assistant.example.com
-PORT=8000
-RELOAD=false
+```bash
+pytest
 ```
 
-## Деплой
+Браузерные E2E-тесты запускаются отдельно:
 
-Подробные шаги по развертыванию вынесены отдельно: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+```bash
+python -m playwright install chromium
+pytest tests/e2e
+```
 
-Отчёт по безопасности: [SECURITY_AUDIT.md](docs/security/SECURITY_AUDIT.md).
+Команды выполняются из корня проекта с активированным виртуальным окружением.
 
-## Примечание
+## Документация
 
-В этом `README` намеренно нет описания внутренней архитектуры, приватных настроек и служебных деталей реализации. Здесь оставлена только информация, которая нужна для запуска, использования и базового развертывания проекта.
+- [E2E-тестирование](docs/testing/E2E_TESTING.md)
+- [Аудит безопасности](docs/security/SECURITY_AUDIT.md)
+- [Настройка Telegram-бота](docs/integrations/TELEGRAM_BOT_SETUP.md)
+- [Развёртывание и production](docs/DEPLOYMENT.md)
+
+## License
+
+[MIT License](LICENSE).
