@@ -1,12 +1,15 @@
 window.toggleTaskEdit = function toggleTaskEdit(taskId) {
     const panel = document.getElementById(`task-edit-${taskId}`);
-    if (!panel) {
+    const row = document.getElementById(`task-row-${taskId}`);
+    if (!panel || !row) {
         return;
     }
 
     const shouldOpen = panel.classList.contains('d-none');
+
     document.querySelectorAll('[id^="task-edit-"]').forEach((element) => {
         element.classList.add('d-none');
+        element.closest('[data-task-item]')?.classList.remove('is-editing');
     });
 
     if (!shouldOpen) {
@@ -14,10 +17,13 @@ window.toggleTaskEdit = function toggleTaskEdit(taskId) {
     }
 
     panel.classList.remove('d-none');
-    const row = document.getElementById(`task-row-${taskId}`);
-    if (row) {
-        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
+
+    row.classList.add('is-editing');
+
+    row.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+    });
 };
 
 (() => {
@@ -27,20 +33,39 @@ window.toggleTaskEdit = function toggleTaskEdit(taskId) {
     const emptyState = document.getElementById('tasksEmptyFilter');
     const resetButton = document.getElementById('tasksResetFilters');
     const sortSelect = document.getElementById('taskSortSelect');
-    const filterButtons = [...document.querySelectorAll('[data-task-filter]')];
-    const viewButtons = [...document.querySelectorAll('[data-task-view]')];
+
+    const filterButtons = [
+        ...document.querySelectorAll('[data-task-filter]')
+    ];
+
+    const viewButtons = [
+        ...document.querySelectorAll('[data-task-view]')
+    ];
+
     let activeFilter = 'all';
 
-    const taskItems = () => [...document.querySelectorAll('[data-task-item]')];
-    const taskGroups = () => [...document.querySelectorAll('[data-task-group]')];
+    const taskItems = () => [
+        ...document.querySelectorAll('[data-task-item]')
+    ];
+
+    const taskGroups = () => [
+        ...document.querySelectorAll('[data-task-group]')
+    ];
 
     const updateGroupCount = (group) => {
-        const visibleItems = [...group.querySelectorAll('[data-task-item]')].filter((item) => !item.hidden);
+        const visibleItems = [
+            ...group.querySelectorAll('[data-task-item]')
+        ].filter((item) => !item.hidden);
+
         const count = group.querySelector('[data-group-count]');
+
         if (count) {
-            count.textContent = `${visibleItems.length} ${visibleItems.length === 1 ? 'задача' : 'задач'}`;
+            count.textContent =
+                `${visibleItems.length} ${visibleItems.length === 1 ? 'задача' : 'задач'}`;
         }
+
         group.hidden = visibleItems.length === 0;
+
         return visibleItems.length;
     };
 
@@ -49,104 +74,339 @@ window.toggleTaskEdit = function toggleTaskEdit(taskId) {
             return;
         }
 
-        const query = (searchInput?.value || '').trim().toLocaleLowerCase('ru');
+        const query = (searchInput?.value || '')
+            .trim()
+            .toLocaleLowerCase('ru');
+
         const revealedItems = [];
+
         taskItems().forEach((item) => {
-            const matchesFilter = activeFilter === 'all' || item.dataset.taskStatus === activeFilter;
-            const matchesQuery = !query || (item.dataset.taskTitle || '').includes(query);
-            const shouldShow = matchesFilter && matchesQuery;
+            const matchesFilter =
+                activeFilter === 'all' ||
+                item.dataset.taskStatus === activeFilter;
+
+            const matchesQuery =
+                !query ||
+                (item.dataset.taskTitle || '').includes(query);
+
+            const shouldShow =
+                matchesFilter &&
+                matchesQuery;
+
             if (item.hidden && shouldShow) {
                 revealedItems.push(item);
             }
+
             item.hidden = !shouldShow;
         });
 
-        const visibleCount = taskGroups().reduce((total, group) => total + updateGroupCount(group), 0);
+        const visibleCount = taskGroups().reduce(
+            (total, group) => total + updateGroupCount(group),
+            0
+        );
+
         const emptyWasHidden = emptyState?.hidden;
+
         if (emptyState) {
             emptyState.hidden = visibleCount !== 0;
         }
+
         if (groupsRoot) {
             groupsRoot.hidden = visibleCount === 0;
         }
-        if (emptyWasHidden && emptyState && !emptyState.hidden) {
+
+        if (
+            emptyWasHidden &&
+            emptyState &&
+            !emptyState.hidden
+        ) {
             revealedItems.push(emptyState);
         }
+
         window.animateMotionItems?.(revealedItems);
     };
 
     filterButtons.forEach((button) => {
         button.addEventListener('click', () => {
-            activeFilter = button.dataset.taskFilter || 'all';
-            filterButtons.forEach((item) => item.classList.toggle('is-active', item === button));
+            activeFilter =
+                button.dataset.taskFilter || 'all';
+
+            filterButtons.forEach((item) => {
+                item.classList.toggle(
+                    'is-active',
+                    item === button
+                );
+            });
+
             applyFilters();
         });
     });
 
-    searchInput?.addEventListener('input', applyFilters);
+    searchInput?.addEventListener(
+        'input',
+        applyFilters
+    );
 
     resetButton?.addEventListener('click', () => {
         activeFilter = 'all';
+
         if (searchInput) {
             searchInput.value = '';
         }
+
         if (sortSelect) {
             sortSelect.value = 'deadline';
         }
+
         filterButtons.forEach((button) => {
-            button.classList.toggle('is-active', button.dataset.taskFilter === 'all');
+            button.classList.toggle(
+                'is-active',
+                button.dataset.taskFilter === 'all'
+            );
         });
+
         applyFilters();
+
         searchInput?.focus();
     });
 
-    document.querySelectorAll('[data-task-group-toggle]').forEach((button) => {
-        button.addEventListener('click', () => {
-            const group = button.closest('[data-task-group]');
-            if (!group) {
-                return;
-            }
-            const isCollapsed = group.classList.toggle('is-collapsed');
-            button.setAttribute('aria-expanded', String(!isCollapsed));
+    document
+        .querySelectorAll('[data-task-group-toggle]')
+        .forEach((button) => {
+            button.addEventListener('click', () => {
+                const group =
+                    button.closest('[data-task-group]');
+
+                if (!group) {
+                    return;
+                }
+
+                const isCollapsed =
+                    group.classList.toggle('is-collapsed');
+
+                button.setAttribute(
+                    'aria-expanded',
+                    String(!isCollapsed)
+                );
+            });
         });
-    });
+
+    const TASK_VIEW_STORAGE_KEY =
+        'student-assistant.tasks.view';
+
+    const normalizeTaskView = (view) => {
+        return view === 'grid' || view === 'compact'
+            ? 'grid'
+            : 'list';
+    };
+
+    const applyTaskView = (
+        view,
+        save = true
+    ) => {
+        if (!listPanel) {
+            return;
+        }
+
+        const currentView =
+            normalizeTaskView(view);
+
+        listPanel.classList.toggle(
+            'is-grid-view',
+            currentView === 'grid'
+        );
+
+        listPanel.classList.toggle(
+            'is-list-view',
+            currentView === 'list'
+        );
+
+        listPanel.classList.remove(
+            'is-compact-view'
+        );
+
+        viewButtons.forEach((button) => {
+            const buttonView =
+                normalizeTaskView(
+                    button.dataset.taskView
+                );
+
+            const isActive =
+                buttonView === currentView;
+
+            button.classList.toggle(
+                'is-active',
+                isActive
+            );
+
+            button.setAttribute(
+                'aria-pressed',
+                String(isActive)
+            );
+
+            if (buttonView === 'grid') {
+                button.setAttribute(
+                    'title',
+                    'Карточки'
+                );
+
+                button.setAttribute(
+                    'aria-label',
+                    'Карточки'
+                );
+            } else {
+                button.setAttribute(
+                    'title',
+                    'Список'
+                );
+
+                button.setAttribute(
+                    'aria-label',
+                    'Список'
+                );
+            }
+        });
+
+        const heading =
+            listPanel.querySelector(
+                '.tasks-list-toolbar h2'
+            );
+
+        if (heading) {
+            heading.textContent =
+                currentView === 'grid'
+                    ? 'Карточки задач'
+                    : 'Список задач';
+        }
+
+        if (save) {
+            try {
+                localStorage.setItem(
+                    TASK_VIEW_STORAGE_KEY,
+                    currentView
+                );
+            } catch (_) {
+                // localStorage может быть недоступен
+            }
+        }
+
+        const visibleTasks =
+            taskItems().filter(
+                (item) => !item.hidden
+            );
+
+        window.animateMotionItems?.(
+            visibleTasks
+        );
+    };
 
     viewButtons.forEach((button) => {
         button.addEventListener('click', () => {
-            const compact = button.dataset.taskView === 'compact';
-            listPanel?.classList.toggle('is-compact-view', compact);
-            viewButtons.forEach((item) => item.classList.toggle('is-active', item === button));
+            applyTaskView(
+                button.dataset.taskView
+            );
         });
     });
 
-    const sortGroup = (group, mode) => {
-        const body = group.querySelector('.tasks-group-body');
+    let savedTaskView = 'list';
+
+    try {
+        savedTaskView =
+            localStorage.getItem(
+                TASK_VIEW_STORAGE_KEY
+            ) || 'list';
+    } catch (_) {
+        savedTaskView = 'list';
+    }
+
+    applyTaskView(
+        savedTaskView,
+        false
+    );
+
+    const sortGroup = (
+        group,
+        mode
+    ) => {
+        const body =
+            group.querySelector(
+                '.tasks-group-body'
+            );
+
         if (!body) {
             return;
         }
-        const rows = [...body.querySelectorAll(':scope > [data-task-item]')];
+
+        const rows = [
+            ...body.querySelectorAll(
+                ':scope > [data-task-item]'
+            )
+        ];
+
         rows.sort((left, right) => {
             if (mode === 'priority') {
-                return Number(right.dataset.taskPriority || 0) - Number(left.dataset.taskPriority || 0);
+                return (
+                    Number(
+                        right.dataset.taskPriority || 0
+                    ) -
+                    Number(
+                        left.dataset.taskPriority || 0
+                    )
+                );
             }
+
             if (mode === 'title') {
-                return (left.dataset.taskTitle || '').localeCompare(right.dataset.taskTitle || '', 'ru');
+                return (
+                    left.dataset.taskTitle || ''
+                ).localeCompare(
+                    right.dataset.taskTitle || '',
+                    'ru'
+                );
             }
-            return (left.dataset.taskDeadline || '').localeCompare(right.dataset.taskDeadline || '');
+
+            return (
+                left.dataset.taskDeadline || ''
+            ).localeCompare(
+                right.dataset.taskDeadline || ''
+            );
         });
-        rows.forEach((row) => body.appendChild(row));
+
+        rows.forEach((row) => {
+            body.appendChild(row);
+        });
     };
 
-    sortSelect?.addEventListener('change', () => {
-        taskGroups().forEach((group) => sortGroup(group, sortSelect.value));
-    });
+    sortSelect?.addEventListener(
+        'change',
+        () => {
+            taskGroups().forEach((group) => {
+                sortGroup(
+                    group,
+                    sortSelect.value
+                );
+            });
+        }
+    );
 
-    const selectedTaskNode = document.getElementById('selected-task-id');
-    const selectedTaskId = selectedTaskNode?.dataset.taskId;
+    const selectedTaskNode =
+        document.getElementById(
+            'selected-task-id'
+        );
+
+    const selectedTaskId =
+        selectedTaskNode?.dataset.taskId;
+
     if (selectedTaskId) {
-        const target = document.getElementById(`task-row-${selectedTaskId}`);
+        const target =
+            document.getElementById(
+                `task-row-${selectedTaskId}`
+            );
+
         if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
         }
     }
 })();

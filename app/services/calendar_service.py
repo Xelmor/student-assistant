@@ -1,4 +1,5 @@
 import calendar
+from math import ceil
 from datetime import date, datetime, timedelta
 
 from sqlalchemy.orm import Session
@@ -10,7 +11,7 @@ from ..services.task_schedule_links import get_task_calendar_event
 from ..web.dependencies import get_schedule_terms
 
 APP_TIMEZONE = settings.timezone
-VIEW_MODE_OPTIONS = {'month', 'week'}
+VIEW_MODE_OPTIONS = {'month', 'week', 'agenda'}
 TIMELINE_START_HOUR = 8
 TIMELINE_END_HOUR = 20
 ACADEMIC_EVENT_TYPE_LABELS = {
@@ -169,6 +170,7 @@ def build_day_snapshot(day: date, day_events, current_month: int | None = None):
         'in_month': current_month is None or day.month == current_month,
         'is_today': day == today,
         'event_count': len(day_events),
+        'events': sorted(day_events, key=lambda event: (calendar_event_has_time(event), event['start'])),
         'has_task': bool(task_events),
         'has_academic': bool(academic_events),
         'has_schedule': bool(schedule_events),
@@ -329,22 +331,47 @@ def build_calendar_event_map(user: User, db: Session, year: int, month: int):
     }
 
 
+def calendar_event_has_time(event):
+    if event.get('is_all_day'):
+        return False
+    if event['type'] in {'academic', 'schedule-change'}:
+        return bool(event.get('raw_start_time'))
+    return event.get('time_label') != 'На день'
+
+
+def week_timeline_bounds(event_map, selected_date):
+    week_start = selected_date - timedelta(days=selected_date.weekday())
+    events = [
+        event
+        for offset in range(7)
+        for event in event_map.get(week_start + timedelta(days=offset), [])
+        if calendar_event_has_time(event)
+    ]
+    start_hour = min([TIMELINE_START_HOUR] + [event['start'].hour for event in events])
+    end_minutes = [
+        min(1440, max(
+            (event['end'] - datetime.combine(event['start'].date(), datetime.min.time())).total_seconds() / 60,
+            event['start'].hour * 60 + event['start'].minute + 30,
+        ))
+        for event in events
+    ]
+    end_hour = max([TIMELINE_END_HOUR] + [ceil(minutes / 60) for minutes in end_minutes])
+    return start_hour, end_hour
+
+
 def build_week_days(event_map, selected_date: date):
     week_start = selected_date - timedelta(days=selected_date.weekday())
+    start_hour, end_hour = week_timeline_bounds(event_map, selected_date)
     week_days = []
     for offset in range(7):
         current_day = week_start + timedelta(days=offset)
         day_events = event_map.get(current_day, [])
         snapshot = build_day_snapshot(current_day, day_events)
-        snapshot['events'] = day_events
         snapshot['timeline_events'] = [
-            build_timeline_event(event)
-            for event in day_events
-            if not event.get('is_all_day')
-            and event['end'].hour * 60 + event['end'].minute > TIMELINE_START_HOUR * 60
-            and event['start'].hour * 60 + event['start'].minute < TIMELINE_END_HOUR * 60
+            build_timeline_event(event, start_hour, end_hour)
+            for event in day_events if calendar_event_has_time(event)
         ]
-        snapshot['all_day_events'] = [event for event in day_events if event.get('is_all_day')]
+        snapshot['all_day_events'] = [event for event in day_events if not calendar_event_has_time(event)]
         snapshot['is_selected'] = current_day == selected_date
         week_days.append(snapshot)
     return week_days
@@ -365,18 +392,20 @@ def get_timeline_visual_type(event):
     return 'lecture'
 
 
-def build_timeline_event(event):
-    timeline_start = TIMELINE_START_HOUR * 60
-    timeline_end = TIMELINE_END_HOUR * 60
+def build_timeline_event(event, start_hour=TIMELINE_START_HOUR, end_hour=TIMELINE_END_HOUR):
+    timeline_start = start_hour * 60
+    timeline_end = end_hour * 60
     timeline_duration = timeline_end - timeline_start
     event_start = event['start'].hour * 60 + event['start'].minute
-    event_end = event['end'].hour * 60 + event['end'].minute
+    event_end = (event['end'] - datetime.combine(event['start'].date(), datetime.min.time())).total_seconds() / 60
     visible_start = max(event_start, timeline_start)
     visible_end = min(max(event_end, visible_start + 30), timeline_end)
+    height = max(((visible_end - visible_start) / timeline_duration) * 100, 4.5)
+    top = min(((visible_start - timeline_start) / timeline_duration) * 100, 100 - height)
     return {
         **event,
-        'timeline_top': round(((visible_start - timeline_start) / timeline_duration) * 100, 4),
-        'timeline_height': round(max(((visible_end - visible_start) / timeline_duration) * 100, 4.5), 4),
+        'timeline_top': round(top, 4),
+        'timeline_height': round(height, 4),
         'visual_type': get_timeline_visual_type(event),
     }
 
@@ -459,7 +488,7 @@ def build_filtered_upcoming_events(event_map, selected_date: date, event_types: 
 
 
 def build_period_navigation(selected_date: date, view_mode: str):
-    if view_mode == 'week':
+    if view_mode in {'week', 'agenda'}:
         week_start = selected_date - timedelta(days=selected_date.weekday())
         week_end = week_start + timedelta(days=6)
         previous_date = selected_date - timedelta(days=7)
@@ -480,10 +509,10 @@ def build_period_navigation(selected_date: date, view_mode: str):
     return {
         'previous_year': previous_year,
         'previous_month': previous_month,
-        'previous_selected': None,
+        'previous_selected': date(previous_year, previous_month, min(selected_date.day, calendar.monthrange(previous_year, previous_month)[1])).isoformat(),
         'next_year': next_year,
         'next_month': next_month,
-        'next_selected': None,
+        'next_selected': date(next_year, next_month, min(selected_date.day, calendar.monthrange(next_year, next_month)[1])).isoformat(),
         'period_label': f"{MONTH_NAMES_RU[selected_date.month]} {selected_date.year}",
         'period_kind': 'Месяц',
     }
@@ -513,32 +542,39 @@ def build_calendar_page_context(
     selected_date_raw: str | None = None,
     view_mode: str = 'week',
 ):
-    safe_year, safe_month = normalize_calendar_period(year, month)
+    selected_date = iso_date_or_none(selected_date_raw)
+    safe_year, safe_month = normalize_calendar_period(
+        year if year is not None else (selected_date.year if selected_date else None),
+        month if month is not None else (selected_date.month if selected_date else None),
+    )
     month_context = build_calendar_event_map(user, db, safe_year, safe_month)
     schedule_terms = get_schedule_terms(user)
-    safe_view_mode = view_mode if view_mode in VIEW_MODE_OPTIONS else 'month'
-    selected_date = iso_date_or_none(selected_date_raw)
-    if selected_date is None or selected_date not in month_context['event_map']:
+    safe_view_mode = view_mode if view_mode in VIEW_MODE_OPTIONS else 'week'
+    if selected_date is None:
         today = current_date()
-        if today in month_context['event_map'] and today.month == safe_month and today.year == safe_year:
-            selected_date = today
-        else:
-            selected_date = next(iter(month_context['event_map'].keys()))
+        selected_date = today if (today.year, today.month) == (safe_year, safe_month) else date(safe_year, safe_month, 1)
 
-    selected_events = month_context['event_map'].get(selected_date, [])
+    # Browsing the mini-calendar must not discard the selected date or its week.
+    if (selected_date.year, selected_date.month) == (safe_year, safe_month):
+        selected_context = month_context
+    else:
+        selected_context = build_calendar_event_map(user, db, selected_date.year, selected_date.month)
+    event_map = selected_context['event_map']
+    selected_events = event_map.get(selected_date, [])
     weekly_schedule_count = db.query(ScheduleItem).filter(ScheduleItem.user_id == user.id).count()
     subjects = db.query(Subject).filter(Subject.user_id == user.id).order_by(Subject.name.asc()).all()
-    week_days = build_week_days(month_context['event_map'], selected_date)
-    upcoming_events = build_upcoming_events(month_context['event_map'], selected_date)
-    upcoming_deadlines = build_filtered_upcoming_events(month_context['event_map'], selected_date, {'task'}, limit=4)
-    upcoming_session_events = build_filtered_upcoming_events(month_context['event_map'], selected_date, {'academic'})
+    week_days = build_week_days(event_map, selected_date)
+    upcoming_events = build_upcoming_events(event_map, selected_date)
+    upcoming_deadlines = build_filtered_upcoming_events(event_map, selected_date, {'task'}, limit=4)
+    upcoming_session_events = build_filtered_upcoming_events(event_map, selected_date, {'academic'})
     upcoming_schedule_changes = build_filtered_upcoming_events(
-        month_context['event_map'],
+        event_map,
         selected_date,
         {'override', 'schedule-change'},
     )
     selected_summary = summarize_selected_day(selected_events)
-    navigation = build_period_navigation(selected_date, 'week')
+    navigation = build_period_navigation(selected_date, safe_view_mode)
+    timeline_start, timeline_end = week_timeline_bounds(event_map, selected_date)
     selected_day_override = next((event for event in selected_events if event['type'] == 'override'), None)
     month_events = [
         event
@@ -566,8 +602,9 @@ def build_calendar_page_context(
         'calendar_label': f"{MONTH_NAMES_RU[safe_month]} {safe_year}",
         'selected_month_name': MONTH_NAMES_RU_GENITIVE[selected_date.month],
         'week_period_label': format_week_period_label(selected_date),
-        'timeline_hours': [f'{hour:02d}:00' for hour in range(TIMELINE_START_HOUR, TIMELINE_END_HOUR)],
+        'timeline_hours': [f'{hour:02d}:00' for hour in range(timeline_start, timeline_end)],
         'calendar_weeks': month_context['weeks'],
+        'month_weeks': selected_context['weeks'],
         'selected_date': selected_date,
         'selected_iso': selected_date.isoformat(),
         'selected_events': selected_events,

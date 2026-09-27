@@ -15,6 +15,7 @@ from ...services.calendar_service import (
     ACADEMIC_EVENT_TYPE_LABELS,
     CALENDAR_EVENT_TYPE_OPTIONS,
     DAY_OVERRIDE_EVENT_TYPE,
+    VIEW_MODE_OPTIONS,
     build_calendar_page_context,
     build_ics_calendar,
     normalize_calendar_period,
@@ -43,7 +44,7 @@ def calendar_redirect(
     if selected:
         params.append(('selected', selected))
     if view:
-        params.append(('view', view if view in {'month', 'week'} else 'week'))
+        params.append(('view', view if view in VIEW_MODE_OPTIONS else 'week'))
     if error:
         params.append(('calendar_error', error))
     return f"/calendar?{urlencode(params)}" if params else '/calendar'

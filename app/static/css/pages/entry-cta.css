@@ -102,3 +102,42 @@ body .entry-v3-final [data-entry-morph].is-cta-running {
         transition: none !important;
     }
 }
+
+/* Lock only the onboarding background; preserve the landing's scroll position. */
+html.entry-modal-open {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+body.entry-v3-page.entry-modal-open {
+    position: fixed;
+    top: var(--entry-scroll-top);
+    left: var(--entry-scroll-left);
+    width: calc(100% - var(--entry-scrollbar-gap, 0px));
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+body.entry-v3-page > .entry-v3-setup {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+body.entry-v3-page > .entry-v3-setup .entry-v3-setup-panel {
+    box-sizing: border-box;
+    max-height: calc(100vh - 40px);
+    max-height: calc(100dvh - 40px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+@media (max-width: 760px) {
+    body.entry-v3-page > .entry-v3-setup .entry-v3-setup-panel {
+        max-height: calc(100vh - 20px);
+        max-height: calc(100dvh - 20px);
+    }
+}

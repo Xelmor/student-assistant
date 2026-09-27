@@ -25,8 +25,42 @@
     const finalCTA = root.querySelector('[data-entry-morph]');
     let finalTransition = null;
     let setupOpenedFromFinal = false;
-    let finalSetupScroll = null;
+    let scrollLock = null;
     let submitTimer = null;
+
+    // Keep fixed overlays outside the landing's transformed/animated ancestors.
+    if (setup) document.body.append(setup);
+    if (launch) document.body.append(launch);
+
+    const lockScroll = (position = { left: window.scrollX, top: window.scrollY }) => {
+        if (scrollLock) return;
+        const shell = document.querySelector('.page-shell');
+        scrollLock = {
+            ...position,
+            opener: document.activeElement, shell, wasInert: shell?.inert,
+        };
+        const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+        document.body.style.setProperty('--entry-scroll-top', `${-scrollLock.top}px`);
+        document.body.style.setProperty('--entry-scroll-left', `${-scrollLock.left}px`);
+        document.body.style.setProperty('--entry-scrollbar-gap', `${scrollbar}px`);
+        document.documentElement.classList.add('entry-modal-open');
+        document.body.classList.add('entry-modal-open');
+        if (shell) shell.inert = true;
+    };
+
+    const unlockScroll = () => {
+        if (!scrollLock) return;
+        const saved = scrollLock;
+        scrollLock = null;
+        document.documentElement.classList.remove('entry-modal-open');
+        document.body.classList.remove('entry-modal-open');
+        ['--entry-scroll-top', '--entry-scroll-left', '--entry-scrollbar-gap'].forEach((property) => {
+            document.body.style.removeProperty(property);
+        });
+        if (saved.shell) saved.shell.inert = saved.wasInert;
+        window.scrollTo({ left: saved.left, top: saved.top, behavior: 'instant' });
+        if (saved.opener?.isConnected) saved.opener.focus({ preventScroll: true });
+    };
 
     if (particles && !particles.childElementCount) {
         const fragment = document.createDocumentFragment();
@@ -48,7 +82,7 @@
     }
 
     const setStep = (step, focus = true) => {
-        root.querySelectorAll('[data-entry-step]').forEach((section) => {
+        setup.querySelectorAll('[data-entry-step]').forEach((section) => {
             const active = Number(section.dataset.entryStep) === step;
             section.classList.toggle('is-active', active);
             section.setAttribute('aria-hidden', String(!active));
@@ -56,15 +90,16 @@
         if (progress) progress.style.width = step === 1 ? '50%' : '100%';
         if (!focus) return;
         window.setTimeout(() => {
-            if (step === 1) nameInput?.focus();
-            else root.querySelector('[data-entry-step="2"] input:not([type="hidden"])')?.focus();
+            if (!setup?.classList.contains('is-open')) return;
+            if (step === 1) nameInput?.focus({ preventScroll: true });
+            else setup.querySelector('[data-entry-step="2"] input:not([type="hidden"])')?.focus({ preventScroll: true });
         }, reduceMotion ? 0 : 180);
     };
 
-    const openSetup = ({ focus = true } = {}) => {
+    const openSetup = ({ focus = true, scrollPosition } = {}) => {
+        lockScroll(scrollPosition);
         setup?.classList.add('is-open');
         setup?.setAttribute('aria-hidden', 'false');
-        document.body.classList.add('entry-modal-open');
         const hasError = Boolean(root.dataset.startError);
         setStep(hasError ? 2 : 1, focus);
     };
@@ -74,29 +109,19 @@
         cancelFinalTransition();
         setup?.classList.remove('is-open');
         setup?.setAttribute('aria-hidden', 'true');
-        document.body.classList.remove('entry-modal-open');
+        unlockScroll();
         if (window.location.hash === '#start') {
             window.history.replaceState({}, '', window.location.pathname);
         }
         if (setupOpenedFromFinal) {
-            if (finalSetupScroll) window.scrollTo({ ...finalSetupScroll, behavior: 'instant' });
             finalCTA?.focus({ preventScroll: true });
         }
         setupOpenedFromFinal = false;
-        finalSetupScroll = null;
     };
 
-    const enterExistingSetup = (focus = true) => {
-        if (setupOpenedFromFinal && !finalSetupScroll) {
-            finalSetupScroll = { left: window.scrollX, top: window.scrollY };
-        }
+    const enterExistingSetup = (focus = true, scrollPosition) => {
         window.history.replaceState({}, '', `${window.location.pathname}#start`);
-        openSetup({ focus });
-        if (setupOpenedFromFinal) {
-            // The landing's existing transform contains its fixed dialog. Center
-            // that dialog under the portal before revealing/focusing the form.
-            setup.querySelector('.entry-v3-setup-panel')?.scrollIntoView({ block: 'center', behavior: 'instant' });
-        }
+        openSetup({ focus, scrollPosition });
     };
 
     const cleanFinalTransition = (run) => {
@@ -129,6 +154,7 @@
         const run = {
             animations: [], portal: null, cancelled: false, cleaned: false,
             motion: window.matchMedia('(prefers-reduced-motion: reduce)'),
+            scrollPosition: { left: window.scrollX, top: window.scrollY },
         };
         finalTransition = run;
         const play = (element, keyframes, duration, options = {}) => {
@@ -144,7 +170,7 @@
             if (!run.motion.matches) return;
             cancelFinalTransition();
             setupOpenedFromFinal = true;
-            enterExistingSetup();
+            enterExistingSetup(true, run.scrollPosition);
         };
         run.motion.addEventListener('change', run.motionChanged);
         finalCTA.setAttribute('aria-disabled', 'true');
@@ -154,7 +180,7 @@
             if (run.motion.matches) {
                 await play(finalCTA, [{ opacity: 1 }, { opacity: 0.5 }], 120);
                 setupOpenedFromFinal = true;
-                enterExistingSetup(false);
+                enterExistingSetup(false, run.scrollPosition);
                 await play(setup.querySelector('.entry-v3-setup-panel'), [{ opacity: 0 }, { opacity: 1 }], 140);
             } else {
                 const box = finalCTA.getBoundingClientRect();
@@ -199,7 +225,7 @@
                 ], 540, { easing: 'cubic-bezier(.65,0,.25,1)' });
 
                 setupOpenedFromFinal = true;
-                enterExistingSetup(false);
+                enterExistingSetup(false, run.scrollPosition);
                 const panel = setup.querySelector('.entry-v3-setup-panel');
                 const field = setup.querySelector('.entry-v3-step.is-active .entry-v3-field');
                 play(portal, [{ opacity: 1 }, { opacity: 0 }], 260);
@@ -216,7 +242,7 @@
             // If animation support fails, the same onboarding remains available.
             if (!run.cancelled) {
                 setupOpenedFromFinal = true;
-                enterExistingSetup();
+                enterExistingSetup(true, run.scrollPosition);
             }
         } finally {
             cleanFinalTransition(run);
@@ -256,7 +282,7 @@
         });
     });
 
-    root.querySelectorAll('[data-entry-close]').forEach((control) => {
+    setup.querySelectorAll('[data-entry-close]').forEach((control) => {
         control.addEventListener('click', closeSetup);
     });
 
@@ -271,11 +297,11 @@
         }
     });
 
-    root.querySelectorAll('[data-unit]').forEach((button) => {
+    setup.querySelectorAll('[data-unit]').forEach((button) => {
         button.addEventListener('click', () => {
             const value = button.dataset.unit || 'pair';
             if (unitInput) unitInput.value = value;
-            root.querySelectorAll('[data-unit]').forEach((item) => {
+            setup.querySelectorAll('[data-unit]').forEach((item) => {
                 item.classList.toggle('is-selected', item === button);
             });
         });
@@ -333,60 +359,113 @@
             tasksDemo.classList.remove(...tasksStepClasses);
             if (step) tasksDemo.classList.add(`is-step-${step}`);
         };
-        const showTasksFinalState = () => {
-            tasksDemo.classList.add(
-                'is-in',
-                'is-form-visible',
-                'is-form-filled',
-                'is-created',
-                'is-details-visible',
-                'is-complete',
-                'is-toast-visible',
-            );
+        const formFloat = tasksDemo.querySelector('.entry-tasks-v2__form-float');
+        const addButton = tasksDemo.querySelector('.entry-tasks-v2__form-add');
+        const newTask = tasksDemo.querySelector('.entry-tasks-v2__new-slot');
+        let state = 'idle';
+        const setState = (value) => {
+            state = value;
+            tasksDemo.dataset.demoState = value;
         };
+        setState('idle');
+        newTask.setAttribute('aria-hidden', 'true');
+        const wait = (milliseconds) => new Promise(resolve => window.setTimeout(resolve, milliseconds));
+        const readyToAdd = () => {
+            if (state !== 'starting') return;
+            tasksDemo.classList.add('is-demo-ready');
+            formFloat.setAttribute('aria-hidden', 'false');
+            addButton.disabled = false;
+            setState('waiting-for-add');
+        };
+        const dismissForm = () => {
+            tasksDemo.classList.add('is-form-dismissed');
+            formFloat.setAttribute('aria-hidden', 'true');
+        };
+        const insertTask = () => {
+            dismissForm();
+            newTask.setAttribute('aria-hidden', 'false');
+            tasksDemo.classList.add('is-created', 'is-details-visible');
+            setTasksStep('create');
+        };
+        const completeCheckbox = () => {
+            tasksDemo.classList.add('is-checkbox-complete');
+        };
+        const completeTask = () => {
+            tasksDemo.classList.add('is-complete');
+            setTasksStep('complete');
+        };
+        const showToast = () => {
+            tasksDemo.classList.add('is-toast-visible');
+            setTasksStep(null);
+            setState('complete');
+        };
+        const continueTasksDemo = async () => {
+            tasksDemo.classList.add('is-add-pressed');
+            setTasksStep('add');
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                insertTask();
+                completeCheckbox();
+                completeTask();
+                showToast();
+                return;
+            }
+            await wait(150);
+            tasksDemo.classList.add('is-form-closing');
+            // Match the CSS duration, but never rely on animationend: animations
+            // can be cancelled/disabled by preferences, CSS or a hidden tab.
+            await wait(350);
+            insertTask();
+            await wait(650);
+            completeCheckbox();
+            await wait(350);
+            completeTask();
+            await wait(300);
+            showToast();
+        };
+        const handleDemoAdd = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (state !== 'waiting-for-add') return;
+            setState('completing');
+            console.debug('[tasks-demo] add clicked');
+            addButton.disabled = true;
+            tasksDemo.classList.remove('is-demo-ready');
+            void continueTasksDemo();
+        };
+        // This type=button exists in the parsed template; native Enter/Space
+        // dispatch the same click without submitting or contacting the backend.
+        addButton.addEventListener('click', handleDemoAdd);
 
+        const startTasksDemo = () => {
+            if (state !== 'idle') return;
+            setState('starting');
+            tasksDemo.dataset.demoPlayed = 'true';
+            tasksDemo.classList.add('is-in');
+            setTasksStep('dashboard');
+            if (reduceMotion) {
+                tasksDemo.classList.add('is-form-visible', 'is-form-filled');
+                setTasksStep('fill');
+                readyToAdd();
+                return;
+            }
+            window.setTimeout(() => {
+                tasksDemo.classList.add('is-form-visible');
+                setTasksStep('form');
+            }, 800);
+            window.setTimeout(() => {
+                tasksDemo.classList.add('is-form-filled');
+                setTasksStep('fill');
+            }, 1500);
+            window.setTimeout(readyToAdd, 2500);
+        };
         if (reduceMotion) {
-            showTasksFinalState();
+            startTasksDemo();
         } else {
             const tasksObserver = new IntersectionObserver((entries) => {
-                entries.forEach((entry) => {
-                    if (!entry.isIntersecting || tasksDemo.dataset.demoPlayed === 'true') return;
-
-                    tasksDemo.dataset.demoPlayed = 'true';
-                    tasksDemo.classList.add('is-in');
-                    setTasksStep('dashboard');
-                    tasksObserver.unobserve(tasksDemo);
-
-                    window.setTimeout(() => setTasksStep('tasks'), 800);
-                    window.setTimeout(() => {
-                        tasksDemo.classList.add('is-form-visible');
-                        setTasksStep('form');
-                    }, 1780);
-                    window.setTimeout(() => {
-                        tasksDemo.classList.add('is-form-filled');
-                        setTasksStep('fill');
-                    }, 2550);
-                    window.setTimeout(() => {
-                        tasksDemo.classList.add('is-add-pressed');
-                        setTasksStep('add');
-                    }, 3650);
-                    window.setTimeout(() => {
-                        tasksDemo.classList.add('is-created');
-                        setTasksStep('create');
-                    }, 4080);
-                    window.setTimeout(() => tasksDemo.classList.add('is-details-visible'), 4250);
-                    window.setTimeout(() => {
-                        tasksDemo.classList.add('is-complete');
-                        setTasksStep('complete');
-                    }, 4780);
-                    window.setTimeout(() => {
-                        tasksDemo.classList.add('is-toast-visible');
-                        setTasksStep('toast');
-                    }, 5220);
-                    window.setTimeout(() => setTasksStep(null), 5800);
-                });
+                if (!entries.some(entry => entry.isIntersecting)) return;
+                tasksObserver.unobserve(tasksDemo);
+                startTasksDemo();
             }, {threshold: 0.3, rootMargin: '0px 0px -8%'});
-
             tasksObserver.observe(tasksDemo);
         }
     }

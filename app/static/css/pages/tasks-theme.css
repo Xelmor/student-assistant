@@ -1323,3 +1323,305 @@ body.tasks-page {
         grid-template-columns: 1fr 1fr;
     }
 }
+.tasks-view-switch button {
+    cursor: pointer;
+    transition:
+        color 160ms ease,
+        background 160ms ease,
+        transform 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.tasks-view-switch button:hover {
+    transform: translateY(-1px);
+}
+
+.tasks-view-switch button.is-active {
+    color: var(--text);
+    background: rgb(var(--accent-rgb) / 0.28);
+    box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / 0.16);
+}
+
+.tasks-list-panel.is-grid-view .tasks-groups {
+    gap: 1rem;
+}
+
+.tasks-list-panel.is-grid-view .tasks-subject-group {
+    overflow: hidden;
+}
+
+.tasks-list-panel.is-grid-view .tasks-group-heading {
+    border-bottom: 1px solid var(--border);
+}
+
+.tasks-list-panel.is-grid-view .tasks-group-body {
+    align-items: start;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg);
+}
+
+.tasks-list-panel.is-grid-view .tasks-task-row {
+    position: relative;
+    display: grid;
+
+    grid-template-columns:
+        auto
+        minmax(0, 1fr)
+        auto;
+
+    grid-template-areas:
+        "check main status"
+        "deadline deadline priority"
+        "actions actions actions";
+
+    gap: 0.75rem;
+
+    align-items: start;
+
+    min-width: 0;
+    min-height: 11rem;
+
+    padding: 1rem;
+
+    border: 1px solid var(--border);
+    border-radius: 13px;
+
+    background: var(--surface);
+
+    transition:
+        transform 180ms ease,
+        border-color 180ms ease,
+        background 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.tasks-list-panel.is-grid-view .tasks-task-row.is-editing {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "main" "edit";
+}
+
+.tasks-list-panel.is-grid-view .tasks-task-row.is-editing > :is(
+    .tasks-check-form, .tasks-task-status, .tasks-task-deadline,
+    .tasks-task-priority, .tasks-task-actions
+) {
+    display: none;
+}
+
+.tasks-list-panel.is-grid-view .tasks-task-row:hover {
+    transform: translateY(-3px);
+
+    border-color:
+        rgb(var(--accent-rgb) / 0.42);
+
+    box-shadow:
+        var(--shadow);
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-row::before {
+    inset:
+        0.8rem
+        auto
+        0.8rem
+        0;
+
+    width: 3px;
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-check-form {
+    grid-area: check;
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-main {
+    grid-area: main;
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-main > strong {
+    font-size: 0.9rem;
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-main p {
+    display: -webkit-box;
+
+    margin-top: 0.3rem;
+
+    font-size: 0.68rem;
+    line-height: 1.45;
+
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-extra {
+    display: flex;
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-status {
+    grid-area: status;
+
+    justify-self: end;
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-deadline {
+    grid-area: deadline;
+
+    padding-top: 0.65rem;
+
+    border-top:
+        1px solid var(--border);
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-priority {
+    display: grid;
+
+    grid-area: priority;
+
+    justify-items: end;
+
+    padding-top: 0.65rem;
+
+    border-top:
+        1px solid var(--border);
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-cell-label {
+    display: block;
+
+    margin-bottom: 0.2rem;
+
+    color:
+        var(--text-secondary);
+
+    font-size: 0.58rem;
+
+    font-weight: 750;
+
+    text-transform: uppercase;
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-actions {
+    grid-area: actions;
+
+    justify-content: flex-start;
+
+    padding-top: 0.65rem;
+
+    border-top:
+        1px solid var(--border);
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-action-button {
+    width: 2.2rem;
+    height: 2.2rem;
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-edit-panel {
+    grid-area: edit;
+
+    width: 100%;
+    min-width: 0;
+}
+
+.tasks-list-panel.is-grid-view .tasks-edit-form,
+.tasks-list-panel.is-grid-view .tasks-edit-grid .tasks-field,
+.tasks-list-panel.is-grid-view .tasks-edit-grid :is(.form-control, .form-select) {
+    width: 100%;
+    min-width: 0;
+}
+
+.tasks-list-panel.is-grid-view .tasks-edit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.tasks-list-panel.is-grid-view .tasks-edit-grid .tasks-field.is-wide {
+    grid-column: 1 / -1;
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-row[data-task-priority="3"] {
+    background:
+        linear-gradient(
+            145deg,
+            rgb(var(--danger-rgb) / 0.04),
+            var(--surface) 42%
+        );
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-row[data-task-priority="2"] {
+    background:
+        linear-gradient(
+            145deg,
+            rgb(var(--warning-rgb) / 0.04),
+            var(--surface) 42%
+        );
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-row[data-task-priority="1"] {
+    background:
+        linear-gradient(
+            145deg,
+            rgb(var(--accent-rgb) / 0.04),
+            var(--surface) 42%
+        );
+}
+
+.tasks-list-panel.is-grid-view
+.tasks-task-row.is-completed {
+    background:
+        linear-gradient(
+            145deg,
+            rgb(var(--success-rgb) / 0.04),
+            var(--surface) 42%
+        );
+}
+
+@media (max-width: 1100px) {
+    .tasks-list-panel.is-grid-view
+    .tasks-group-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .tasks-list-panel.is-grid-view .tasks-group-body {
+        padding: 0.6rem;
+    }
+
+    .tasks-list-panel.is-grid-view .tasks-task-row:not(.is-editing) {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: "main" "status" "deadline" "priority" "actions";
+        min-height: auto;
+        padding: 0.85rem;
+    }
+
+    .tasks-list-panel.is-grid-view .tasks-task-status {
+        justify-self: start;
+    }
+
+    .tasks-list-panel.is-grid-view .tasks-task-priority {
+        justify-items: start;
+    }
+
+    .tasks-list-panel.is-grid-view .tasks-edit-grid,
+    .tasks-list-panel.is-grid-view .tasks-edit-actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

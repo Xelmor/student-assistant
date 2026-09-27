@@ -9,10 +9,10 @@
 @import url("/static/css/pages/dashboard-theme.css?v=20260922-graphite");
 @import url("/static/css/pages/onboarding.css?v=20260922-graphite");
 @import url("/static/css/pages/onboarding-chat.css?v=20260922-graphite");
-@import url("/static/css/pages/tasks-theme.css?v=20260922-graphite");
+@import url("/static/css/pages/tasks-theme.css?v=20260927-card-edit");
 @import url("/static/css/pages/subjects-theme.css?v=20260922-graphite");
 @import url("/static/css/pages/schedule-theme.css?v=20260922-graphite");
-@import url("/static/css/pages/calendar.css?v=20260922-graphite");
+@import url("/static/css/pages/calendar.css?v=20260927-views");
 @import url("/static/css/pages/notes-theme.css?v=20260922-graphite");
 @import url("/static/css/pages/profile.css?v=20260922-graphite");
 @import url("/static/css/pages/landing.css?v=20260922-graphite");
@@ -20,7 +20,7 @@
 @import url("/static/css/pages/navbar-tools.css?v=20260922-graphite");
 @import url("/static/css/pages/empty-state.css?v=20260922-graphite");
 @import url("/static/css/pages/actions-feedback.css?v=20260922-graphite");
-@import url("/static/css/pages/mobile-app.css?v=20260922-graphite");
+@import url("/static/css/pages/mobile-app.css?v=20260927-card-edit");
 @import url("/static/css/pages/motion-system.css?v=20260922-graphite");
 @import url("/static/css/pages/user-preferences.css?v=20260922-graphite");
 @import url("/static/css/pages/local-profile.css?v=20260922-graphite");
@@ -28,7 +28,7 @@
 @import url("/static/css/pages/password-recovery.css?v=20260922-graphite");
 @import url("/static/css/pages/error-pages.css?v=20260922-graphite");
 @import url("/static/css/pages/about.css?v=20260922-graphite");
-@import url("/static/css/pages/entry.css?v=20260922-graphite");
+@import url("/static/css/pages/entry.css?v=20260927-tasks-continuation");
 @import url("/static/css/pages/device-sync.css?v=20260922-sync-v1");
 
 @import url("/static/css/theme.css?v=20260922-graphite");

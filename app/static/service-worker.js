@@ -1,20 +1,25 @@
-const CACHE_NAME = 'student-assistant-v60-device-sync';
+const CACHE_NAME = 'student-assistant-v61-static-fix';
+
 const APP_SHELL = [
   '/static/css/theme.css?v=20260922-graphite',
   '/static/vendor/bootstrap/bootstrap.min.css',
   '/static/vendor/bootstrap/bootstrap.bundle.min.js',
+
   '/static/css/style.css?v=20260922-graphite',
   '/static/css/base.css?v=20260922-graphite',
   '/static/css/responsive.css?v=20260922-graphite',
   '/static/css/mobile.css?v=20260922-graphite',
   '/static/css/dashboard.css?v=20260922-graphite',
+
   '/static/css/pages/dashboard-theme.css?v=20260922-graphite',
   '/static/css/pages/onboarding.css?v=20260922-graphite',
   '/static/css/pages/onboarding-chat.css?v=20260922-graphite',
   '/static/css/pages/tasks-theme.css?v=20260922-graphite',
   '/static/css/pages/subjects-theme.css?v=20260922-graphite',
   '/static/css/pages/schedule-theme.css?v=20260922-graphite',
+
   '/static/css/entities.css?v=20260922-graphite',
+
   '/static/css/pages/profile.css?v=20260922-graphite',
   '/static/css/pages/calendar.css?v=20260922-graphite',
   '/static/css/pages/notes-theme.css?v=20260922-graphite',
@@ -33,6 +38,7 @@ const APP_SHELL = [
   '/static/css/pages/about.css?v=20260922-graphite',
   '/static/css/pages/entry.css?v=20260922-graphite',
   '/static/css/pages/device-sync.css?v=20260922-sync-v1',
+
   '/static/js/user-preferences.js?v=20260922-graphite',
   '/static/js/base.js?v=20260611-motion-v1',
   '/static/js/actions-feedback.js?v=20260612-telegram-v1',
@@ -51,23 +57,46 @@ const APP_SHELL = [
   '/static/js/schedule.js?v=20260611-motion-v1',
   '/static/js/calendar.js?v=20260612-onboarding-v1',
   '/static/js/notes.js?v=20260611-motion-v1',
+
   '/static/pwa/icon-app.svg?v=20260922-graphite',
   '/manifest.webmanifest?v=20260922-graphite',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).catch(() => Promise.resolve())
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await Promise.all(
+        APP_SHELL.map(async (url) => {
+          try {
+            const response = await fetch(url, {
+              cache: 'reload',
+            });
+
+            if (response.ok) {
+              await cache.put(url, response);
+            }
+          } catch (_) {
+            // Один недоступный ресурс не должен ломать установку SW.
+          }
+        }),
+      );
+    }),
   );
+
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
-    )
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key)),
+      ),
+    ),
   );
+
   self.clients.claim();
 });
 
@@ -77,31 +106,51 @@ self.addEventListener('fetch', (event) => {
   }
 
   const requestUrl = new URL(event.request.url);
-  const isStaticAsset = requestUrl.origin === self.location.origin && (
-    requestUrl.pathname.startsWith('/static/') ||
-    requestUrl.pathname === '/manifest.webmanifest'
-  );
+
+  const isStaticAsset =
+    requestUrl.origin === self.location.origin &&
+    (
+      requestUrl.pathname.startsWith('/static/') ||
+      requestUrl.pathname === '/manifest.webmanifest'
+    );
 
   if (!isStaticAsset) {
     return;
   }
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(event.request)
-        .then((networkResponse) => {
-          if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-            return networkResponse;
-          }
-
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone)).catch(() => {});
-          return networkResponse;
+    (async () => {
+      try {
+        // Сначала всегда пробуем получить свежий CSS/JS.
+        const networkResponse = await fetch(event.request, {
+          cache: 'no-store',
         });
-    })
+
+        if (
+          networkResponse &&
+          networkResponse.ok &&
+          networkResponse.type === 'basic'
+        ) {
+          const cache = await caches.open(CACHE_NAME);
+
+          await cache.put(
+            event.request,
+            networkResponse.clone(),
+          );
+        }
+
+        return networkResponse;
+      } catch (_) {
+        // Если сети нет — используем последнюю сохранённую версию.
+        const cachedResponse =
+          await caches.match(event.request);
+
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        throw _;
+      }
+    })(),
   );
 });

@@ -269,7 +269,6 @@ button {
     }
 
     .tasks-field-grid,
-    .tasks-edit-grid,
     .subjects-card-grid,
     .subjects-edit-grid,
     .schedule-row,
@@ -286,14 +285,12 @@ button {
         grid-template-columns: minmax(0, 1fr) !important;
     }
 
-    .tasks-field,
     .subjects-field,
     .schedule-field,
     .calendar-field,
     .notes-field,
     .profile-field,
     .auth-field,
-    .tasks-edit-grid .tasks-field.is-wide,
     .profile-field.is-wide {
         grid-column: auto !important;
         min-width: 0;
@@ -325,9 +322,12 @@ button {
         padding: 0.65rem;
     }
 
+    .tasks-list-panel:not(.is-grid-view) .tasks-task-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     .tasks-task-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) !important;
         gap: 0.65rem;
         width: 100%;
         padding: 0.85rem;
@@ -342,15 +342,17 @@ button {
         display: none;
     }
 
-    .tasks-task-main,
-    .tasks-task-status,
-    .tasks-task-deadline,
-    .tasks-task-priority,
-    .tasks-task-actions,
-    .tasks-edit-panel {
-        grid-column: 1 !important;
-        grid-row: auto !important;
+    .tasks-list-panel:not(.is-grid-view) :is(
+        .tasks-task-main, .tasks-task-status, .tasks-task-deadline,
+        .tasks-task-priority, .tasks-task-actions, .tasks-edit-panel
+    ) {
+        grid-column: 1;
+        grid-row: auto;
         min-width: 0;
+    }
+
+    .tasks-list-panel:not(.is-grid-view) .tasks-edit-grid {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .tasks-task-main > strong {

@@ -40,6 +40,10 @@
 {% endif %}
 {% endmacro %}
 
+{% macro event_group(event) -%}
+{{ 'classes' if event.type == 'schedule' else 'deadline' if event.type == 'task' else 'exam' if event.type == 'academic' else 'change' }}
+{%- endmacro %}
+
 {% block content %}
 {% if onboarding_calendar_completed %}
 <span id="onboardingCalendarCompleted" hidden></span>
@@ -96,8 +100,8 @@
                 <div class="calendar-mini-heading">
                     <strong>{{ calendar_label }}</strong>
                     <div>
-                        <a href="/calendar?year={{ previous_calendar_year }}&month={{ previous_calendar_month }}&view=week" aria-label="Предыдущий месяц">{{ icon('chevron-left') }}</a>
-                        <a href="/calendar?year={{ next_calendar_year }}&month={{ next_calendar_month }}&view=week" aria-label="Следующий месяц">{{ icon('chevron-right') }}</a>
+                        <a href="/calendar?year={{ previous_calendar_year }}&month={{ previous_calendar_month }}&selected={{ selected_iso }}&view={{ view_mode }}" aria-label="Предыдущий месяц">{{ icon('chevron-left') }}</a>
+                        <a href="/calendar?year={{ next_calendar_year }}&month={{ next_calendar_month }}&selected={{ selected_iso }}&view={{ view_mode }}" aria-label="Следующий месяц">{{ icon('chevron-right') }}</a>
                     </div>
                 </div>
                 <div class="calendar-mini-weekdays" aria-hidden="true">
@@ -107,7 +111,7 @@
                     {% for week in calendar_weeks %}
                         {% for cell in week %}
                         <a
-                            href="/calendar?year={{ cell.date.year }}&month={{ cell.date.month }}&selected={{ cell.iso_date }}&view=week"
+                            href="/calendar?year={{ cell.date.year }}&month={{ cell.date.month }}&selected={{ cell.iso_date }}&view={{ view_mode }}"
                             class="calendar-mini-day {% if not cell.in_month %}is-muted{% endif %} {% if cell.is_today %}is-today{% endif %} {% if selected_date == cell.date %}is-selected{% endif %}"
                             aria-label="{{ cell.iso_date }}, событий: {{ cell.event_count }}"
                         >
@@ -121,9 +125,9 @@
                 </div>
 
                 <div class="calendar-view-switch" role="group" aria-label="Вид календаря">
-                    <a href="#calendar-mini-panel">Месяц</a>
-                    <a href="/calendar?year={{ calendar_year }}&month={{ calendar_month }}&selected={{ selected_iso }}&view=week" class="is-active">Неделя</a>
-                    <a href="#selected-day-panel">Повестка</a>
+                    {% for mode, label in [('month', 'Месяц'), ('week', 'Неделя'), ('agenda', 'Повестка')] %}
+                    <a href="/calendar?year={{ calendar_year }}&month={{ calendar_month }}&selected={{ selected_iso }}&view={{ mode }}" data-calendar-view-link="{{ mode }}" {% if view_mode == mode %}class="is-active" aria-current="page"{% endif %}>{{ label }}</a>
+                    {% endfor %}
                 </div>
 
                 <div class="calendar-filter-section">
@@ -151,25 +155,74 @@
             <section class="calendar-panel calendar-timeline-panel">
                 <div class="calendar-timeline-toolbar">
                     <div class="calendar-period-navigation">
-                        <a href="/calendar?year={{ previous_year }}&month={{ previous_month }}{% if previous_selected %}&selected={{ previous_selected }}{% endif %}&view=week" aria-label="Предыдущая неделя">{{ icon('chevron-left') }}</a>
-                        <h2>{{ week_period_label }}</h2>
-                        <a href="/calendar?year={{ next_year }}&month={{ next_month }}{% if next_selected %}&selected={{ next_selected }}{% endif %}&view=week" aria-label="Следующая неделя">{{ icon('chevron-right') }}</a>
+                        <a href="/calendar?year={{ previous_year }}&month={{ previous_month }}{% if previous_selected %}&selected={{ previous_selected }}{% endif %}&view={{ view_mode }}" aria-label="{% if view_mode == 'month' %}Предыдущий месяц{% else %}Предыдущая неделя{% endif %}">{{ icon('chevron-left') }}</a>
+                        <h2>{{ period_label if view_mode == 'month' else week_period_label }}</h2>
+                        <a href="/calendar?year={{ next_year }}&month={{ next_month }}{% if next_selected %}&selected={{ next_selected }}{% endif %}&view={{ view_mode }}" aria-label="{% if view_mode == 'month' %}Следующий месяц{% else %}Следующая неделя{% endif %}">{{ icon('chevron-right') }}</a>
                     </div>
                     <div class="calendar-timeline-actions">
-                        <a href="/calendar?year={{ today_year }}&month={{ today_month }}&selected={{ today_iso }}&view=week">Сегодня</a>
+                        <a href="/calendar?year={{ today_year }}&month={{ today_month }}&selected={{ today_iso }}&view={{ view_mode }}">Сегодня</a>
                         <a href="#calendar-mini-panel" aria-label="Открыть мини-календарь">{{ icon('calendar') }}</a>
                     </div>
                 </div>
 
+                <div class="calendar-main-view" data-calendar-view="{{ view_mode }}">
+                {% if view_mode == 'month' %}
+                <div class="calendar-month-scroll">
+                    <div class="calendar-month-grid">
+                        {% for label in ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] %}<div class="calendar-month-weekday">{{ label }}</div>{% endfor %}
+                        {% for week in month_weeks %}{% for day in week %}
+                        <section class="calendar-month-cell {% if not day.in_month %}is-muted{% endif %} {% if day.is_today %}is-today{% endif %} {% if day.date == selected_date %}is-selected{% endif %}" data-calendar-month-day="{{ day.iso_date }}">
+                            <a class="calendar-month-date" href="/calendar?selected={{ day.iso_date }}&view={{ view_mode }}#selected-day-panel" aria-label="{{ day.iso_date }}">{{ day.day }}</a>
+                            <div class="calendar-month-events">
+                                {% for event in day.events %}
+                                <article class="calendar-month-event event-{{ event.type }}" data-calendar-event data-month-event data-event-group="{{ event_group(event) }}" {% if loop.index > 3 %}hidden{% endif %}>
+                                    <time>{{ event.time_label }}</time><strong>{{ event_title(event) }}</strong>
+                                </article>
+                                {% endfor %}
+                            </div>
+                            <a class="calendar-month-more" data-calendar-more href="/calendar?selected={{ day.iso_date }}&view={{ view_mode }}#selected-day-panel" {% if day.event_count <= 3 %}hidden{% endif %}>Ещё {{ day.event_count - 3 }}</a>
+                        </section>
+                        {% endfor %}{% endfor %}
+                    </div>
+                </div>
+                {% elif view_mode == 'agenda' %}
+                <div class="calendar-week-agenda">
+                    {% for day in week_days %}
+                    <section class="calendar-agenda-day" data-calendar-agenda-day="{{ day.iso_date }}" {% if not day.events %}hidden{% endif %}>
+                        <h3><a href="/calendar?selected={{ day.iso_date }}&view={{ view_mode }}#selected-day-panel">{{ weekdays[day.date.weekday()] }}, {{ day.date.strftime('%d.%m.%Y') }}</a></h3>
+                        {% for event in day.events %}
+                        <article class="calendar-agenda-item event-{{ event.type }}" data-calendar-event data-event-group="{{ event_group(event) }}">
+                            <time>{{ event.time_label }}</time>
+                            <div><strong>{{ event_title(event) }}</strong><small>{{ event.badge }}{% if event.subject %} · {{ event.subject }}{% endif %}{% if event.room %} · {{ event.room }}{% endif %}</small></div>
+                        </article>
+                        {% endfor %}
+                    </section>
+                    {% endfor %}
+                    <div data-calendar-period-empty {% if week_state.events %}hidden{% endif %}>
+                        {{ empty_state('calendar', 'На этот период событий нет', 'Выбери другую неделю или измени фильтры.', '+ Новое событие', '#calendar-event-form', variant='compact') }}
+                    </div>
+                </div>
+                {% else %}
                 <div class="calendar-timeline-scroll">
                     <div class="calendar-timeline" style="--timeline-hours: {{ timeline_hours|length }};">
                         <div class="calendar-timeline-corner"></div>
                         {% for day in week_days %}
-                        <a href="/calendar?year={{ day.date.year }}&month={{ day.date.month }}&selected={{ day.iso_date }}&view=week" class="calendar-day-header {% if day.is_selected %}is-selected{% endif %} {% if day.is_today %}is-today{% endif %}">
+                        <a href="/calendar?year={{ day.date.year }}&month={{ day.date.month }}&selected={{ day.iso_date }}&view={{ view_mode }}" class="calendar-day-header {% if day.is_selected %}is-selected{% endif %} {% if day.is_today %}is-today{% endif %}">
                             <span>{{ weekdays[day.date.weekday()][:2] }}</span>
                             <strong>{{ day.date.day }}</strong>
                             {% if day.all_day_events %}<i title="{{ day.all_day_events[0].title }}"></i>{% endif %}
                         </a>
+                        {% endfor %}
+
+                        <span class="calendar-all-day-label">Весь день / без времени</span>
+                        {% for day in week_days %}
+                        <div class="calendar-all-day-cell">
+                            {% for event in day.all_day_events %}
+                            <article class="calendar-all-day-event event-{{ event.type }}" data-calendar-event data-event-group="{{ event_group(event) }}">
+                                <small>{{ event.time_label }}</small><strong>{{ event_title(event) }}</strong>
+                            </article>
+                            {% endfor %}
+                        </div>
                         {% endfor %}
 
                         <div class="calendar-time-axis">
@@ -228,7 +281,7 @@
                     {% else %}
                     {% for day in week_days %}
                     <section class="calendar-mobile-day {% if day.is_selected %}is-selected{% endif %}">
-                        <a href="/calendar?year={{ day.date.year }}&month={{ day.date.month }}&selected={{ day.iso_date }}&view=week">
+                        <a href="/calendar?year={{ day.date.year }}&month={{ day.date.month }}&selected={{ day.iso_date }}&view={{ view_mode }}">
                             <span>{{ weekdays[day.date.weekday()] }}, {{ day.date.strftime('%d.%m') }}</span>
                             <strong>{{ day.event_count }} событий</strong>
                         </a>
@@ -254,6 +307,8 @@
                     </section>
                     {% endfor %}
                     {% endif %}
+                </div>
+                {% endif %}
                 </div>
             </section>
 
@@ -344,7 +399,7 @@
                         <input type="hidden" name="year" value="{{ calendar_year }}">
                         <input type="hidden" name="month" value="{{ calendar_month }}">
                         <input type="hidden" name="selected" value="{{ selected_iso }}">
-                        <input type="hidden" name="view" value="week">
+                        <input type="hidden" name="view" value="{{ view_mode }}">
                         <button type="submit">Снять</button>
                     </form>
                 </div>
@@ -366,7 +421,7 @@
                                     <input type="hidden" name="year" value="{{ calendar_year }}">
                                     <input type="hidden" name="month" value="{{ calendar_month }}">
                                     <input type="hidden" name="selected" value="{{ selected_iso }}">
-                                    <input type="hidden" name="view" value="week">
+                                    <input type="hidden" name="view" value="{{ view_mode }}">
                                     <label><span>Тип</span><select name="event_type" class="form-select">{% for option in calendar_event_type_options %}<option value="{{ option.value }}" {% if event.event_type == option.value %}selected{% endif %}>{{ option.label }}</option>{% endfor %}</select></label>
                                     <label><span>Предмет</span><select name="subject_id" class="form-select"><option value="">Без предмета</option>{% for subject in subjects %}<option value="{{ subject.id }}" {% if event.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>{% endfor %}</select></label>
                                     <label class="calendar-wide-field"><span>Название</span><input type="text" name="title" value="{{ event.title }}" class="form-control" maxlength="150"></label>
@@ -382,7 +437,7 @@
                                     <input type="hidden" name="year" value="{{ calendar_year }}">
                                     <input type="hidden" name="month" value="{{ calendar_month }}">
                                     <input type="hidden" name="selected" value="{{ selected_iso }}">
-                                    <input type="hidden" name="view" value="week">
+                                    <input type="hidden" name="view" value="{{ view_mode }}">
                                     <button type="submit">{{ icon('trash') }} Удалить событие</button>
                                 </form>
                             </details>
@@ -415,7 +470,7 @@
                     <input type="hidden" name="year" value="{{ calendar_year }}">
                     <input type="hidden" name="month" value="{{ calendar_month }}">
                     <input type="hidden" name="selected" value="{{ selected_iso }}">
-                    <input type="hidden" name="view" value="week">
+                    <input type="hidden" name="view" value="{{ view_mode }}">
                     <label><span>Тип события</span><select name="event_type" class="form-select">{% for option in calendar_event_type_options %}<option value="{{ option.value }}">{{ option.label }}</option>{% endfor %}</select></label>
                     <label><span>Название события</span><input type="text" name="title" class="form-control" placeholder="Название события" maxlength="150"></label>
                     <div class="calendar-date-time-grid">
@@ -441,7 +496,7 @@
                         <input type="hidden" name="year" value="{{ calendar_year }}">
                         <input type="hidden" name="month" value="{{ calendar_month }}">
                         <input type="hidden" name="selected" value="{{ selected_iso }}">
-                        <input type="hidden" name="view" value="week">
+                        <input type="hidden" name="view" value="{{ view_mode }}">
                         <div>
                             <label><span>Первый день</span><input type="date" name="start_date" value="{{ selected_iso }}" class="form-control" required></label>
                             <label><span>Последний день</span><input type="date" name="end_date" value="{{ selected_iso }}" class="form-control"></label>
@@ -458,5 +513,5 @@
 {% endblock %}
 
 {% block page_scripts %}
-<script src="/static/js/calendar.js?v=20260612-onboarding-v1"></script>
+<script src="/static/js/calendar.js?v=20260927-views"></script>
 {% endblock %}
