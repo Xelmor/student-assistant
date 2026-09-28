@@ -7,10 +7,17 @@ E2E-слой использует Python Playwright и `pytest-playwright`. Пр
 ## Установка
 
 ```bash
-source venv/bin/activate
-pip install -r requirements-dev.txt
+python3.12 -m venv /tmp/student-assistant-tests
+source /tmp/student-assistant-tests/bin/activate
+python -m pip install --require-hashes -r requirements.lock.txt
+python -m pip install -r requirements-dev.txt
+python -m pip check
 python -m playwright install chromium
 ```
+
+Runtime-версии удерживаются файлом `requirements.constraints.txt`, подключённым
+из dev requirements. Production-lock нацелен на Linux x86_64 / Python 3.12;
+установка на другой ОС требует отдельной проверки. Рабочий `venv` не обновляется.
 
 Для CI на Linux можно установить Chromium вместе с системными зависимостями:
 

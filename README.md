@@ -56,14 +56,23 @@ python run.py
 Приложение доступно по адресу [http://127.0.0.1:8000](http://127.0.0.1:8000).
 Если команда `python` недоступна в Linux/macOS, используйте `python3`.
 
-Для установки зафиксированных версий:
+### Production-зависимости
+
+`requirements.lock.txt` содержит только runtime-зависимости с точными версиями
+и SHA-256-хешами. Цель — **Linux x86_64 (glibc), CPython 3.12**; это не
+универсальный lock для Windows/macOS.
+
+В отдельном окружении целевой платформы:
 
 ```bash
-pip install -r requirements.lock.txt
+python -m pip install --require-hashes -r requirements.lock.txt
+python -m pip check
 ```
 
-Lock-файл — снимок окружения Python 3.14.5 на macOS, включая инструменты
-разработки. Совместимость с целевой ОС и версией Python нужно проверять отдельно.
+**Статус:** установка, QR SVG и запуск проверены на macOS arm64 / Python 3.12.14;
+Linux wheels проверены, но запуск на Linux и Docker-сборка ещё не выполнены.
+Поэтому Dockerfile пока устанавливает `requirements.txt`.
+[Проверки и повторная генерация lock](docs/DEPLOYMENT.md#dependency-installation-and-lock-regeneration).
 
 ## Переменные окружения
 
@@ -93,11 +102,21 @@ scripts/       — вспомогательные скрипты запуска
 
 ## Тесты
 
-Установите зависимости для разработки:
+Создайте отдельное тестовое окружение, не обновляя рабочий `venv`:
 
 ```bash
-pip install -r requirements-dev.txt
+python3.12 -m venv /tmp/student-assistant-tests
+source /tmp/student-assistant-tests/bin/activate
+python -m pip install --require-hashes -r requirements.lock.txt
+python -m pip install -r requirements-dev.txt
+python -m pip check
 ```
+
+`requirements-dev.txt` включает `requirements.constraints.txt`, автоматически
+полученный из production-lock. Поэтому установка pytest/Playwright/httpx2
+не может незаметно изменить закреплённые runtime-версии. Хеши проверяются
+при отдельной установке lock; constraints содержат только версии.
+На Windows/macOS совместимость нужно проверять отдельно.
 
 Основной набор тестов:
 
