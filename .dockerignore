@@ -18,3 +18,22 @@ tests/.tmp
 .sa_patch_backups
 *.bak
 *.before-*
+
+# Exclude local state at any depth, including SQLite journal/WAL files.
+**/.git
+**/.env
+**/.env.*
+!**/.env.example
+**/venv
+**/.venv
+**/data
+**/*.db
+**/*.db-*
+**/*.sqlite
+**/*.sqlite-*
+**/*.sqlite3
+**/*.sqlite3-*
+**/__pycache__
+**/.pytest_cache
+test-results
+playwright-report

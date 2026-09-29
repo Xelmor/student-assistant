@@ -13,7 +13,7 @@ This file declares direct application dependencies, including the existing passw
 and email validation libraries. Test tooling is declared in `requirements-dev.txt`.
 Do not update an existing working environment merely to regenerate the lock.
 
-### Production candidate
+### Production installation
 
 `requirements.lock.txt` is resolved for **Linux x86_64 (glibc), CPython 3.12**,
 matching the Python version in the current Dockerfile. It is not a universal
@@ -28,17 +28,26 @@ python -m pip install --require-hashes -r requirements.lock.txt
 python -m pip check
 ```
 
-Validation so far: clean installation, imports, real SVG QR generation and an HTTP
-startup with temporary SQLite succeeded on **macOS arm64 / CPython 3.12.14**.
-All Linux x86_64 / CPython 3.12 wheels were downloaded with hash verification.
-This is a cross-platform resolution and wheel check, **not a Linux execution test**.
-Docker/Podman and a Linux runtime were unavailable during this change.
-The Dockerfile therefore still installs `requirements.txt`. Before switching it,
-verify installation, `pip check`, QR SVG, isolated startup, tests and E2E inside
-Linux/Python 3.12, then build and run the resulting Docker image.
-No existing Render service configuration needs to be changed for this stage.
+The production-lock has passed the Linux and isolated Docker checks in PR #1.
+The main Dockerfile now installs this same lock with `--require-hashes`, runs
+`python -m pip check`, and retains `CMD ["python", "run.py"]`.
+The independent `production-image` CI job builds the **main** Dockerfile for
+`linux/amd64`, checks runtime pins and QR SVG, and starts the default command
+with temporary SQLite before probing HTTP through a published loopback port.
+This new main-image check must pass on GitHub; earlier `Dockerfile.ci` results
+do not substitute for it. See [Linux CI](testing/LINUX_CI.md).
 
-Recorded verification (macOS arm64 / CPython 3.12.14): production and dev
+```bash
+docker build --platform linux/amd64 -t student-assistant .
+docker run --rm --env-file .env -e HOST=0.0.0.0 -p 127.0.0.1:8000:8000 student-assistant
+```
+
+Local `.env`, databases, virtual environments and Git metadata are excluded from
+the build context. Supply runtime settings explicitly; use PostgreSQL or a
+separate SQLite volume for persistent data. The existing Render deployment mode
+and service settings are unchanged; this does not claim a Render rollout.
+
+Initial verification, before the E2E fix (macOS arm64 / CPython 3.12.14): production and dev
 `pip check` passed; all 37 runtime pins remained unchanged after dev installation;
 repeat lock generation was byte-for-byte identical. The primary suite passed
 221 tests and 54 subtests. The complete Chromium E2E suite passed 31 tests and
