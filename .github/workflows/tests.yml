@@ -1,0 +1,175 @@
+name: Linux dependency validation
+
+on:
+  push:
+    branches: [fix/dependency-reproducibility]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+# No repository/environment secrets or production services are used.
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  PYTHONUNBUFFERED: '1'
+  PYTHON_DOTENV_DISABLED: '1'
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
+  APP_ENV: test
+  TESTING: 'true'
+  SECRET_KEY: student-assistant-ci-only-not-a-production-secret-key
+  COOKIE_SECURE: 'false'
+  HOST: 127.0.0.1
+  RELOAD: 'false'
+  ALLOWED_HOSTS: 127.0.0.1,localhost,testserver
+  PUBLIC_BASE_URL: http://127.0.0.1
+  ALLOW_LOCAL_PRIVATE_DATA: 'false'
+  DISABLE_TELEGRAM: 'true'
+  TELEGRAM_BOT_TOKEN: ''
+  TELEGRAM_BOT_API_TOKEN: ''
+  TELEGRAM_BOT_API_BASE_URL: ''
+  TELEGRAM_USE_WEBHOOK: 'false'
+  TELEGRAM_WEBHOOK_BASE_URL: ''
+  TELEGRAM_WEBHOOK_SECRET: ''
+  SMTP_HOST: ''
+  SMTP_USERNAME: ''
+  SMTP_PASSWORD: ''
+  SMTP_FROM_EMAIL: ''
+
+jobs:
+  production-lock:
+    name: Production lock / Linux x86_64 / Python 3.12
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Create clean production venv and check target
+        run: |
+          test "$(uname -m)" = x86_64
+          python -m venv "$RUNNER_TEMP/production-venv"
+          echo "$RUNNER_TEMP/production-venv/bin" >> "$GITHUB_PATH"
+          mkdir -p "$RUNNER_TEMP/production-reports"
+      - name: Install hash-verified production lock
+        timeout-minutes: 8
+        run: |
+          python -m pip install --require-hashes -r requirements.lock.txt
+          python -m pip check | tee "$RUNNER_TEMP/production-reports/pip-check.txt"
+          python scripts/ci/check_runtime.py --production-only --snapshot "$RUNNER_TEMP/production-reports/runtime.json"
+      - name: Imports, actual QR SVG and isolated HTTP startup
+        timeout-minutes: 2
+        run: |
+          python scripts/ci/smoke_runtime.py --require-target 2>&1 | tee "$RUNNER_TEMP/production-reports/smoke.txt"
+      - name: Save runtime diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: production-runtime
+          path: |
+            ${{ runner.temp }}/production-reports/pip-check.txt
+            ${{ runner.temp }}/production-reports/runtime.json
+            ${{ runner.temp }}/production-reports/smoke.txt
+          if-no-files-found: warn
+          retention-days: 7
+
+  tests:
+    name: Unit and Chromium E2E / constrained runtime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Create clean test venv
+        run: |
+          test "$(uname -m)" = x86_64
+          python -m venv "$RUNNER_TEMP/test-venv"
+          echo "$RUNNER_TEMP/test-venv/bin" >> "$GITHUB_PATH"
+          echo "DATABASE_URL=sqlite:///$RUNNER_TEMP/student-assistant-tests.db" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/raw-test-reports" "$RUNNER_TEMP/test-reports"
+      - name: Install production lock first
+        timeout-minutes: 8
+        run: |
+          python -m pip install --require-hashes -r requirements.lock.txt
+          python -m pip check
+          python scripts/ci/check_runtime.py --production-only --snapshot "$RUNNER_TEMP/test-reports/runtime-before.json"
+      - name: Install constrained dev dependencies and verify runtime unchanged
+        id: dependencies
+        timeout-minutes: 8
+        run: |
+          python -m pip install -c requirements.constraints.txt -r requirements-dev.txt
+          python -m pip check
+          python scripts/ci/check_runtime.py --baseline "$RUNNER_TEMP/test-reports/runtime-before.json" --snapshot "$RUNNER_TEMP/test-reports/runtime-after.json"
+      - name: Main tests
+        timeout-minutes: 5
+        run: |
+          python -m pytest -q --junitxml="$RUNNER_TEMP/raw-test-reports/unit.xml" -o junit_logging=no
+      - name: Install Chromium and Linux system libraries
+        id: browser
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        timeout-minutes: 7
+        run: python -m playwright install --with-deps chromium
+      - name: Existing E2E tests (failures remain failures)
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' && steps.browser.outcome == 'success' }}
+        timeout-minutes: 10
+        run: |
+          python -m pytest -q tests/e2e --browser chromium --junitxml="$RUNNER_TEMP/raw-test-reports/e2e.xml" -o junit_logging=no
+      - name: Export test statuses without captured logs or network data
+        if: ${{ !cancelled() }}
+        run: python scripts/ci/export_test_reports.py "$RUNNER_TEMP/raw-test-reports" "$RUNNER_TEMP/test-reports"
+      - name: Save test reports and failure screenshots
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results
+          # Deliberate allowlist: no trace ZIP, DB, .env, storage state or cookies.
+          path: |
+            ${{ runner.temp }}/test-reports/unit.xml
+            ${{ runner.temp }}/test-reports/e2e.xml
+            ${{ runner.temp }}/test-reports/runtime-before.json
+            ${{ runner.temp }}/test-reports/runtime-after.json
+            test-results/e2e/*.png
+          if-no-files-found: warn
+          retention-days: 7
+
+  docker-lock:
+    name: Production lock / python:3.12-slim
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build separate lock verification image
+        timeout-minutes: 10
+        run: |
+          mkdir -p "$RUNNER_TEMP/docker-reports"
+          docker build --platform linux/amd64 --progress plain -f Dockerfile.ci -t student-assistant-lock-ci . 2>&1 | tee "$RUNNER_TEMP/docker-reports/build.txt"
+      - name: Check QR and HTTP startup inside container without external network
+        timeout-minutes: 2
+        run: |
+          docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,size=256m student-assistant-lock-ci 2>&1 | tee "$RUNNER_TEMP/docker-reports/smoke.txt"
+      - name: Save Docker diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: docker-lock
+          path: |
+            ${{ runner.temp }}/docker-reports/build.txt
+            ${{ runner.temp }}/docker-reports/smoke.txt
+          if-no-files-found: warn
+          retention-days: 7

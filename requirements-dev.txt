@@ -1,7 +1,11 @@
 -r requirements.txt
+-c requirements.constraints.txt
+
+pytest>=8.3.5
 
 # Python Playwright matches the project's Python/FastAPI/Jinja stack and avoids
 # introducing a separate Node build toolchain only for browser tests.
 playwright>=1.52.0
 pytest-playwright>=0.7.0
+# Starlette 1.2 TestClient imports httpx2; this is not a typo.
 httpx2>=0.1.0

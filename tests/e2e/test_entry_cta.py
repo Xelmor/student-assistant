@@ -54,12 +54,24 @@ def test_final_cta_morph_keyboard_repeat_click_and_existing_onboarding(e2e_page:
     assert not posts
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
 
-    # Continue the existing form all the way through its existing /start handler.
+    # Complete /start, acknowledge the recovery key, then enter the dashboard.
     page.locator('#entryDisplayName').fill('Морф переход')
     page.locator('#entryDisplayName').press('Enter')
     expect(page.locator('[data-entry-step="2"]')).to_be_visible()
     page.locator('#entryCreateProfile').click()
+    expect(page.get_by_role('heading', name='Пространство готово', exact=True)).to_be_visible()
+    recovery_key = page.locator('output[data-recovery-key]')
+    expect(recovery_key).to_be_visible()
+    # Validate in the browser so assertion diagnostics never include the key itself.
+    assert recovery_key.evaluate('''el =>
+        /^SA-(?:[A-HJ-NP-Z2-9]{4}-){4}[A-HJ-NP-Z2-9]{4}$/.test(el.textContent.trim())
+    '''), 'Recovery key must have the expected SA-prefixed format'
+    continue_link = page.get_by_role('link', name='Я сохранил ключ →', exact=True)
+    expect(continue_link).to_be_visible()
+    continue_link.click()
     expect(page).to_have_url(re.compile(r'/dashboard(?:\?.*)?$'))
+    expect(page.get_by_test_id('dashboard-page')).to_be_visible()
+    expect(page.get_by_test_id('current-user-name')).to_have_text('Морф переход')
     assert len([request for request in posts if request.url.endswith('/start')]) == 1
 
 

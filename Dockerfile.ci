@@ -1,0 +1,18 @@
+# Test image only. The deployment Dockerfile is deliberately unchanged.
+FROM python:3.12-slim
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHON_DOTENV_DISABLED=1
+RUN python -m venv /opt/production
+ENV PATH="/opt/production/bin:${PATH}"
+COPY requirements.lock.txt requirements.constraints.txt ./
+RUN python -m pip install --no-cache-dir --require-hashes -r requirements.lock.txt \
+    && python -m pip check
+# Explicit copies exclude local databases, .env, Git metadata and test artifacts.
+COPY app/ ./app/
+COPY telegram_bot/ ./telegram_bot/
+COPY run.py ./
+COPY scripts/ci/check_runtime.py scripts/ci/smoke_runtime.py ./scripts/ci/
+RUN python scripts/ci/check_runtime.py --production-only
+CMD ["python", "scripts/ci/smoke_runtime.py", "--require-target"]
