@@ -7,7 +7,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from sqlalchemy.orm import Session
 
 from ..core.config import settings
-from ..models import ScheduleItem, Task, User
+from ..models import Task, User
+from .calendar_service import effective_schedule_for_day
 from .task_schedule_links import get_task_anchor_datetime
 
 
@@ -35,7 +36,7 @@ def resolve_digest_timezone_name(user: User) -> str:
     candidates = (
         user.telegram_morning_digest_timezone,
         settings.timezone,
-        'UTC',
+        'Europe/Moscow',
     )
     for candidate in candidates:
         if not candidate:
@@ -101,15 +102,7 @@ def build_morning_digest_message(
     digest_date = target_date or local_now.date()
     local_time = current_local_time or local_now.time().replace(tzinfo=None)
 
-    lessons = (
-        db.query(ScheduleItem)
-        .filter(
-            ScheduleItem.user_id == user.id,
-            ScheduleItem.weekday == digest_date.weekday(),
-        )
-        .order_by(ScheduleItem.start_time.asc())
-        .all()
-    )
+    lessons = effective_schedule_for_day(db, user, digest_date)
     active_tasks = (
         db.query(Task)
         .filter(Task.user_id == user.id, Task.is_completed.is_(False))

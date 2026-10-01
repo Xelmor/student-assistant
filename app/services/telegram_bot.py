@@ -4,8 +4,8 @@ import json
 import logging
 import secrets
 import string
-from threading import RLock
-from dataclasses import dataclass
+from contextvars import ContextVar
+from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, time, timedelta
 from html import escape
 from urllib.error import HTTPError, URLError
@@ -15,10 +15,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..core.config import settings
-from ..core.time import current_date, current_time
+from ..core.time import current_date as app_current_date, current_time
+from .telegram_digest import digest_local_datetime
 from ..core.validation import normalize_bounded_text
 from ..models import AcademicEvent, ScheduleItem, Subject, Task, User
-from .recurring_tasks import RECURRENCE_NONE, calculate_next_deadline
+from .task_completion import complete_task
+from .telegram_now import build_now_message
+from .telegram_today import build_today_summary, build_today_schedule
+from .telegram_task_parser import parse_task, conversational_intent
+from . import telegram_task_draft as task_draft
+from . import telegram_task_actions as task_actions
+from . import telegram_task_views as task_views
+from .calendar_service import effective_schedule_for_day
+from .telegram_state import consume_limit, state_row, utcnow
 from .task_schedule_links import get_task_anchor_datetime
 from .telegram_digest import (
     build_morning_digest_message,
@@ -54,25 +63,19 @@ PRIORITY_ALIASES = {
     'низкий': 'low',
     'low': 'low',
 }
+# Public command menu only; dispatch below also accepts the hidden commands.
 BOT_COMMANDS = [
-    {'command': 'start', 'description': 'Начать работу'},
-    {'command': 'help', 'description': 'Помощь по командам'},
-    {'command': 'link', 'description': 'Подключить аккаунт'},
-    {'command': 'today', 'description': 'Планы на сегодня'},
-    {'command': 'tomorrow', 'description': 'Планы на завтра'},
-    {'command': 'week', 'description': 'Обзор недели'},
-    {'command': 'tasks', 'description': 'Ближайшие задачи'},
-    {'command': 'notifications', 'description': 'Настройки уведомлений'},
-    {'command': 'digest', 'description': 'Настройки утренней сводки'},
-    {'command': 'digest_on', 'description': 'Включить утреннюю сводку'},
-    {'command': 'digest_off', 'description': 'Выключить утреннюю сводку'},
-    {'command': 'digest_test', 'description': 'Проверить утреннюю сводку'},
+    {'command': 'start', 'description': 'Главное меню'},
+    {'command': 'today', 'description': 'Сегодня'},
+    {'command': 'tomorrow', 'description': 'Завтра'},
+    {'command': 'week', 'description': 'Неделя'},
+    {'command': 'tasks', 'description': 'Задачи'},
     {'command': 'add_task', 'description': 'Добавить задачу'},
-    {'command': 'done', 'description': 'Закрыть задачу'},
-    {'command': 'cancel', 'description': 'Отменить действие'},
-    {'command': 'site', 'description': 'Открыть сайт'},
-    {'command': 'unlink', 'description': 'Отключить Telegram'},
 ]
+INTERNAL_BOT_COMMANDS = frozenset({
+    'now', 'help', 'link', 'notifications', 'digest', 'digest_on', 'digest_off',
+    'digest_test', 'done', 'cancel', 'site', 'unlink',
+})
 WEEKDAY_SHORT_NAMES = ('Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс')
 MONTH_NAMES_GENITIVE = {
     1: 'января',
@@ -91,7 +94,13 @@ MONTH_NAMES_GENITIVE = {
 
 
 class TelegramAPIError(RuntimeError):
-    pass
+    def __init__(self, message='Telegram request failed', *, category='temporary', status=None, retry_after=None):
+        self.category = category
+        self.status = status
+        self.retry_after = retry_after
+        self.retryable = category in {'temporary', 'network', 'rate_limit'}
+        # Never retain API descriptions, URLs, payloads or chained exceptions.
+        super().__init__(f'Telegram: {category}' + (f' (HTTP {status})' if status else ''))
 
 
 @dataclass(frozen=True)
@@ -122,6 +131,17 @@ class AddTaskDialog:
     subject_name: str | None = None
     priority: str = 'medium'
     subject_warning: bool = False
+    generation: str = field(default_factory=lambda: secrets.token_hex(4))
+    natural: bool = False
+    editing: bool = False
+    warning: str | None = None
+    subject_candidates: list[int] = field(default_factory=list)
+    subject_title: str | None = None
+    edit_task_id: int | None = None
+    task_revision: str | None = None
+    original_deadline: str | None = None
+    awaiting_phrase: bool = False
+    time_explicit: bool = True
 
 
 ADD_TASK_WAITING_TITLE = 'add_task_waiting_title'
@@ -132,32 +152,41 @@ ADD_TASK_WAITING_CUSTOM_SUBJECT = 'add_task_waiting_custom_subject'
 ADD_TASK_WAITING_PRIORITY = 'add_task_waiting_priority'
 ADD_TASK_CONFIRM = 'add_task_confirm'
 ADD_TASK_QUICK_CONFIRM = 'add_task_quick_confirm'
-_ADD_TASK_DIALOGS: dict[int, AddTaskDialog] = {}
-_ADD_TASK_DIALOGS_LOCK = RLock()
+DIALOG_STEPS = [ADD_TASK_WAITING_TITLE, ADD_TASK_WAITING_DEADLINE, ADD_TASK_WAITING_CUSTOM_DEADLINE,
+                ADD_TASK_WAITING_SUBJECT, ADD_TASK_WAITING_CUSTOM_SUBJECT, ADD_TASK_WAITING_PRIORITY,
+                ADD_TASK_CONFIRM, ADD_TASK_QUICK_CONFIRM, *task_actions.RESCHEDULE_STEPS]
+_DIALOG_CONTEXT = ContextVar('telegram_dialog_context', default=None)
+_USER_DATE = ContextVar('telegram_user_date', default=None)
+
+
+def current_date():
+    return _USER_DATE.get() or app_current_date()
 
 
 def clear_telegram_dialog_states() -> None:
-    with _ADD_TASK_DIALOGS_LOCK:
-        _ADD_TASK_DIALOGS.clear()
+    """Compatibility hook; durable state belongs to its database, not this process."""
 
 
 def _get_add_task_dialog(telegram_user_id: int) -> AddTaskDialog | None:
-    with _ADD_TASK_DIALOGS_LOCK:
-        return _ADD_TASK_DIALOGS.get(telegram_user_id)
+    context = _DIALOG_CONTEXT.get()
+    return context.get('dialog') if context else None
 
 
-def _set_add_task_dialog(
-    telegram_user_id: int,
-    dialog: AddTaskDialog,
-) -> AddTaskDialog:
-    with _ADD_TASK_DIALOGS_LOCK:
-        _ADD_TASK_DIALOGS[telegram_user_id] = dialog
+def _set_add_task_dialog(telegram_user_id: int, dialog: AddTaskDialog) -> AddTaskDialog:
+    _DIALOG_CONTEXT.get()['dialog'] = dialog
     return dialog
 
 
 def _clear_add_task_dialog(telegram_user_id: int) -> bool:
-    with _ADD_TASK_DIALOGS_LOCK:
-        return _ADD_TASK_DIALOGS.pop(telegram_user_id, None) is not None
+    context = _DIALOG_CONTEXT.get()
+    return context.pop('dialog', None) is not None if context else False
+
+
+def _commit(db):
+    if db.info.get('telegram_atomic'):
+        db.flush()
+    else:
+        db.commit()
 
 
 def _html(value: object) -> str:
@@ -182,56 +211,58 @@ def _keyboard(*rows: list[dict]) -> dict:
 
 def _site_help_keyboard() -> dict:
     return _keyboard(
-        [_url_button('🌐 Открыть сайт'), _callback_button('❓ Помощь', 'help')],
+        [_callback_button('🔗 Подключить Telegram', 'connect')],
+        [_url_button('🌐 Открыть сайт')],
     )
 
 
 def _main_keyboard() -> dict:
     return _keyboard(
-        [
-            _callback_button('📅 Сегодня', 'today'),
-            _callback_button('📆 Завтра', 'tomorrow'),
-        ],
-        [
-            _callback_button('🗓 Неделя', 'week'),
-            _callback_button('📌 Задачи', 'tasks'),
-        ],
-        [
-            _callback_button('➕ Добавить задачу', 'add_task_start'),
-            _callback_button('⚙️ Уведомления', 'notifications'),
-        ],
-        [
-            _callback_button('🌐 Сайт', 'site'),
-            _callback_button('❓ Помощь', 'help'),
-        ],
+        [_callback_button('📍 Сейчас', 'now')],
+        [_callback_button('📅 Сегодня', 'today'), _callback_button('📆 Завтра', 'tomorrow')],
+        [_callback_button('🗓 Неделя', 'week'), _callback_button('📌 Задачи', 'tasks')],
+        [_callback_button('➕ Добавить задачу', 'add_task_start')],
+        [_callback_button('⚙️ Настройки', 'settings'), _callback_button('🌐 Сайт', 'site')],
     )
 
 
 def _help_keyboard() -> dict:
+    return _main_keyboard()
+
+
+def _settings_keyboard() -> dict:
     return _keyboard(
-        [
-            _callback_button('📅 Сегодня', 'today'),
-            _callback_button('📆 Завтра', 'tomorrow'),
-        ],
-        [
-            _callback_button('🗓 Неделя', 'week'),
-            _callback_button('📌 Задачи', 'tasks'),
-        ],
-        [_callback_button('⚙️ Уведомления', 'notifications')],
-        [_callback_button('🌐 Сайт', 'site')],
+        [_callback_button('🌅 Утренняя сводка', 'digest')],
+        [_callback_button('⏰ Напоминания о дедлайнах', 'deadline_settings')],
+        [_callback_button('🔗 Статус подключения', 'connection_status')],
+        [_callback_button('🚪 Отключить Telegram', 'unlink')],
+        [_callback_button('← Назад', 'start')],
+    )
+
+
+def _settings_back_button() -> list[dict]:
+    return [_callback_button('← Назад', 'settings')]
+
+
+def _now_keyboard() -> dict:
+    return _keyboard(
+        [_callback_button('📅 Сегодня', 'today'), _callback_button('📌 Задачи', 'tasks')],
+        [_callback_button('🔄 Обновить', 'now')],
     )
 
 
 def _today_keyboard() -> dict:
     return _keyboard(
-        [
-            _callback_button('📆 Завтра', 'tomorrow'),
-            _callback_button('📌 Задачи', 'tasks'),
-        ],
-        [
-            _callback_button('🗓 Неделя', 'week'),
-            _callback_button('🌐 Сайт', 'site'),
-        ],
+        [_callback_button('📍 Сейчас', 'now'), _callback_button('🗓 Расписание', 'today_schedule')],
+        [_callback_button('📌 Все задачи', 'tasks'), _callback_button('➕ Добавить задачу', 'add_task_start')],
+        [_callback_button('🔄 Обновить', 'today')],
+    )
+
+
+def _today_schedule_keyboard() -> dict:
+    return _keyboard(
+        [_callback_button('← Сегодня', 'today')],
+        [_callback_button('📍 Сейчас', 'now')],
     )
 
 
@@ -312,7 +343,7 @@ def _add_task_success_keyboard() -> dict:
 
 
 def _add_task_cancel_keyboard() -> dict:
-    return _keyboard([_callback_button('Отмена', 'add_task_cancel')])
+    return _keyboard([_callback_button('❌ Отменить', 'add_task_cancel')])
 
 
 def _add_task_deadline_keyboard() -> dict:
@@ -325,14 +356,14 @@ def _add_task_deadline_keyboard() -> dict:
             _callback_button('Без даты', 'add_task_deadline_none'),
             _callback_button('Ввести дату', 'add_task_deadline_custom'),
         ],
-        [_callback_button('Отмена', 'add_task_cancel')],
+        [_callback_button('❌ Отменить', 'add_task_cancel')],
     )
 
 
 def _add_task_custom_deadline_keyboard() -> dict:
     return _keyboard(
         [_callback_button('Без даты', 'add_task_deadline_none')],
-        [_callback_button('Отмена', 'add_task_cancel')],
+        [_callback_button('❌ Отменить', 'add_task_cancel')],
     )
 
 
@@ -347,7 +378,7 @@ def _add_task_subject_keyboard(subjects: list[Subject]) -> dict:
                 _callback_button('Без предмета', 'add_task_subject_none'),
                 _callback_button('Ввести предмет', 'add_task_subject_custom'),
             ],
-            [_callback_button('Отмена', 'add_task_cancel')],
+            [_callback_button('❌ Отменить', 'add_task_cancel')],
         ]
     )
     return _keyboard(*rows)
@@ -360,7 +391,7 @@ def _add_task_priority_keyboard() -> dict:
             _callback_button('🟡 Средний', 'add_task_priority_medium'),
         ],
         [_callback_button('🟢 Низкий', 'add_task_priority_low')],
-        [_callback_button('Отмена', 'add_task_cancel')],
+        [_callback_button('❌ Отменить', 'add_task_cancel')],
     )
 
 
@@ -369,7 +400,7 @@ def _add_task_confirm_keyboard() -> dict:
         [_callback_button('✅ Создать задачу', 'add_task_confirm_create')],
         [
             _callback_button('Начать заново', 'add_task_restart'),
-            _callback_button('Отмена', 'add_task_cancel'),
+            _callback_button('❌ Отменить', 'add_task_cancel'),
         ],
     )
 
@@ -380,7 +411,7 @@ def _add_task_existing_dialog_keyboard() -> dict:
             _callback_button('Начать заново', 'add_task_restart'),
             _callback_button('Продолжить', 'add_task_continue'),
         ],
-        [_callback_button('Отмена', 'add_task_cancel')],
+        [_callback_button('❌ Отменить', 'add_task_cancel')],
     )
 
 
@@ -389,7 +420,7 @@ def _quick_task_offer_keyboard() -> dict:
         [_callback_button('✅ Да, добавить', 'add_task_quick_create')],
         [
             _callback_button('Настроить', 'add_task_quick_customize'),
-            _callback_button('Отмена', 'add_task_cancel'),
+            _callback_button('❌ Отменить', 'add_task_cancel'),
         ],
     )
 
@@ -412,6 +443,7 @@ def _digest_keyboard(user: User) -> dict:
     return _keyboard(
         [toggle, _callback_button('🧪 Тестовая сводка', 'digest_test')],
         [_url_button('⚙️ Настроить на сайте', f'{_site_url()}/profile#profile-telegram')],
+        _settings_back_button(),
     )
 
 
@@ -452,7 +484,14 @@ def _notifications_keyboard(user: User) -> dict:
         [_callback_button(deadline_label, 'deadline_toggle')],
         hour_buttons,
         [_url_button('🌐 Настройки на сайте', f'{_site_url()}/profile#profile-telegram')],
+        _settings_back_button(),
     )
+
+
+def _deadline_keyboard(user: User) -> dict:
+    # Reuse the existing notification controls and callback handlers.
+    rows = _notifications_keyboard(user)['inline_keyboard']
+    return _keyboard(rows[1], rows[2], _settings_back_button())
 
 
 def generate_link_code(db: Session, user: User) -> str:
@@ -464,10 +503,15 @@ def generate_link_code(db: Session, user: User) -> str:
         if existing:
             continue
 
-        user.telegram_link_code = code
-        user.telegram_link_code_expires_at = expires_at
         try:
-            db.commit()
+            changed = db.query(User).filter(
+                User.id == user.id, User.telegram_user_id.is_(None),
+            ).update({User.telegram_link_code: code, User.telegram_link_code_expires_at: expires_at},
+                     synchronize_session=False)
+            if changed != 1:
+                db.rollback()
+                raise RuntimeError('Telegram уже подключён.')
+            _commit(db)
         except IntegrityError:
             db.rollback()
             continue
@@ -490,7 +534,7 @@ def clear_telegram_link(user: User) -> None:
 
 def unlink_telegram_user(db: Session, user: User) -> None:
     clear_telegram_link(user)
-    db.commit()
+    _commit(db)
 
 
 def get_active_link_code(user: User) -> str | None:
@@ -518,27 +562,13 @@ def build_not_linked_message() -> str:
 
 def build_help_message() -> str:
     return (
-        '⚙️ <b>Команды Student Assistant</b> '
-        '<i>Короткая справка по боту</i>\n\n'
-        f'{MESSAGE_DIVIDER}\n\n'
-        '<code>/start</code> — начать работу\n'
-        '<code>/link CODE</code> — подключить аккаунт\n'
-        '<code>/today</code> — планы на сегодня\n'
-        '<code>/tomorrow</code> — планы на завтра\n'
-        '<code>/week</code> — обзор недели\n'
-        '<code>/tasks</code> — ближайшие задачи\n'
-        '<code>/notifications</code> — настройки Telegram-уведомлений\n'
-        '<code>/digest</code> — настройки утренней сводки\n'
-        '<code>/digest_on</code> — включить сводку\n'
-        '<code>/digest_off</code> — выключить сводку\n'
-        '<code>/digest_test</code> — отправить тестовую сводку\n'
-        '<code>/add_task</code> — быстро добавить задачу\n'
-        '<code>/done</code> — отметить задачу выполненной\n'
-        '<code>/cancel</code> — отменить текущее действие\n'
-        '<code>/site</code> — открыть сайт\n'
-        '<code>/unlink</code> — отключить Telegram\n\n'
-        f'{MESSAGE_DIVIDER}\n\n'
-        '<i>Основные действия также доступны через кнопки под сообщениями.</i>'
+        '<b>Что умеет Student Assistant:</b>\n'
+        '📅 Сегодня\n'
+        '📆 Завтра\n'
+        '🗓 Неделя\n'
+        '📌 Задачи\n'
+        '➕ Добавить задачу\n'
+        '⚙️ Настройки'
     )
 
 
@@ -606,15 +636,7 @@ def _day_plan(
     user: User,
     target_date: date,
 ) -> tuple[list[ScheduleItem], list[Task], list[AcademicEvent]]:
-    schedule_items = (
-        db.query(ScheduleItem)
-        .filter(
-            ScheduleItem.user_id == user.id,
-            ScheduleItem.weekday == target_date.weekday(),
-        )
-        .order_by(ScheduleItem.start_time.asc())
-        .all()
-    )
+    schedule_items = effective_schedule_for_day(db, user, target_date)
     tasks = (
         db.query(Task)
         .filter(Task.user_id == user.id, Task.is_completed.is_(False))
@@ -679,19 +701,7 @@ def _build_day_message(
 
 
 def build_today_message(db: Session, user: User) -> str:
-    return _build_day_message(
-        db,
-        user,
-        target_date=current_date(),
-        heading='Сегодня',
-        subtitle='Краткий план на день',
-        empty_message=(
-            'На сегодня ничего не запланировано ✅\n\n'
-            'Можно спокойно закрыть старые задачи, повторить материал '
-            'или немного отдохнуть.'
-        ),
-        footer='Хорошего учебного дня 🎓',
-    )
+    return build_today_summary(db, user, now_utc=digest_local_datetime(user))
 
 
 def build_tomorrow_message(db: Session, user: User) -> str:
@@ -731,8 +741,22 @@ def _active_tasks_for_user(
     return tasks[:limit] if limit is not None else tasks
 
 
-def build_tasks_message(db: Session, user: User) -> str:
-    tasks = _active_tasks_for_user(db, user)
+def _remember_task_list(db, user, tasks):
+    data = {'ids': [task.id for task in tasks]}
+    if db.info.get('telegram_atomic'):
+        # A failed /tasks reply must not replace the numbering the user actually saw.
+        db.info['telegram_task_snapshot'] = {'user_id': user.id, **data}
+    else:
+        snapshot = state_row(db, f'tasks:{user.id}')
+        snapshot.data = data
+        snapshot.expires_at = utcnow() + timedelta(minutes=30)
+        _commit(db)
+
+
+def build_tasks_message(db: Session, user: User, tasks: list[Task] | None = None) -> str:
+    if tasks is None:
+        tasks = _active_tasks_for_user(db, user)
+    _remember_task_list(db, user, tasks)
     if not tasks:
         return (
             '📌 <b>Ближайшие задачи</b> <i>Активные дедлайны</i>\n\n'
@@ -811,7 +835,7 @@ def build_week_message(db: Session, user: User) -> str:
         .all()
     )
 
-    has_schedule = bool(schedule_items)
+    has_schedule = any(effective_schedule_for_day(db, user, start_date + timedelta(days=i)) for i in range(7))
     if not has_schedule and not dated_tasks and not events:
         return (
             '🗓 <b>Ближайшая неделя</b> <i>Обзор на 7 дней</i>\n\n'
@@ -835,7 +859,7 @@ def build_week_message(db: Session, user: User) -> str:
     for offset in range(7):
         day = start_date + timedelta(days=offset)
         details = []
-        lesson_count = schedule_counts.get(day.weekday(), 0)
+        lesson_count = len(effective_schedule_for_day(db, user, day))
         task_count = task_counts.get(day, 0)
         event_count = event_counts.get(day, 0)
         if lesson_count:
@@ -890,59 +914,18 @@ def build_week_message(db: Session, user: User) -> str:
 def build_done_help_message() -> str:
     return (
         '✅ <b>Закрытие задачи</b>\n\n'
-        'Сначала открой список задач:\n\n'
+        'Сначала открой нужную карточку задачи:\n\n'
         '<code>/tasks</code>\n\n'
-        'Потом отправь номер задачи:\n\n'
+        'Затем отправь:\n\n'
         '<code>/done 1</code>\n\n'
-        'Так бот отметит выбранную задачу выполненной.'
+        'Бот выполнит задачу из последней показанной карточки.'
     )
 
 
 def _complete_task(db: Session, task: Task) -> None:
-    now = current_time()
-    task.is_completed = True
-    task.completed_at = now
-
-    if task.recurrence_type != RECURRENCE_NONE:
-        group_id = task.recurrence_group_id or task.id
-        task.recurrence_group_id = group_id
-        next_deadline = calculate_next_deadline(
-            task.deadline,
-            task.recurrence_type,
-            task.recurrence_interval_days,
-        )
-        if next_deadline is not None:
-            existing_next_task = (
-                db.query(Task)
-                .filter(
-                    Task.user_id == task.user_id,
-                    Task.recurrence_group_id == group_id,
-                    Task.deadline == next_deadline,
-                    Task.is_completed.is_(False),
-                )
-                .first()
-            )
-            if existing_next_task is None:
-                db.add(
-                    Task(
-                        user_id=task.user_id,
-                        subject_id=task.subject_id,
-                        title=task.title,
-                        description=task.description,
-                        deadline=next_deadline,
-                        scheduled_for_date=task.scheduled_for_date,
-                        schedule_item_id=task.schedule_item_id,
-                        priority=task.priority,
-                        difficulty=task.difficulty,
-                        is_completed=False,
-                        completed_at=None,
-                        recurrence_group_id=group_id,
-                        recurrence_type=task.recurrence_type,
-                        recurrence_interval_days=task.recurrence_interval_days,
-                        created_at=now,
-                    )
-                )
-    db.commit()
+    complete_task(db, task)
+    task_actions.mark_changed(db, task)
+    _commit(db)
 
 
 def _resolve_done_task(
@@ -956,22 +939,18 @@ def _resolve_done_task(
         task = (
             db.query(Task)
             .filter(Task.id == task_id, Task.user_id == user.id)
-            .first()
+            .with_for_update().first()
         )
     else:
         normalized = argument.strip()
         if not normalized.isdigit():
             return 'missing', None
         number = int(normalized)
-        tasks = _active_tasks_for_user(db, user)
-        if 1 <= number <= len(tasks):
-            task = tasks[number - 1]
-        else:
-            task = (
-                db.query(Task)
-                .filter(Task.id == number, Task.user_id == user.id)
-                .first()
-            )
+        snapshot = state_row(db, f'tasks:{user.id}')
+        ids = snapshot.data.get('ids', []) if snapshot.expires_at > utcnow() else []
+        if not 1 <= number <= len(ids):
+            return 'missing', None
+        task = db.query(Task).filter(Task.id == ids[number - 1], Task.user_id == user.id).with_for_update().first()
 
     if task is None:
         return 'missing', None
@@ -1180,7 +1159,7 @@ def _save_telegram_task(
     )
     db.add(task)
     try:
-        db.commit()
+        _commit(db)
     except Exception:
         db.rollback()
         raise
@@ -1247,6 +1226,8 @@ def _start_add_task_dialog(
         chat_id=chat_id,
         step=ADD_TASK_WAITING_DEADLINE if title else ADD_TASK_WAITING_TITLE,
         title=title,
+        natural=title is None,
+        awaiting_phrase=title is None,
     )
     return _set_add_task_dialog(telegram_user_id, dialog)
 
@@ -1265,7 +1246,7 @@ def _user_subjects(db: Session, user: User) -> list[Subject]:
     )
 
 
-def _render_add_task_dialog_step(
+def _render_add_task_dialog_step_base(
     db: Session,
     user: User,
     dialog: AddTaskDialog,
@@ -1294,6 +1275,33 @@ def _render_add_task_dialog_step(
         return build_quick_task_offer_message(dialog.title), _quick_task_offer_keyboard()
     dialog.step = ADD_TASK_WAITING_TITLE
     return build_add_task_title_message(), _add_task_cancel_keyboard()
+
+
+def _prepare_task_phrase(db, user, *, telegram_user_id, chat_id, argument):
+    subjects = [(s.id, s.name) for s in db.query(Subject).filter(Subject.user_id == user.id).all()]
+    try:
+        parsed = parse_task(argument, now=digest_local_datetime(user), subjects=subjects)
+    except ValueError as error:
+        return _html(error), _add_task_cancel_keyboard() if _get_add_task_dialog(telegram_user_id) else _help_keyboard()
+    if parsed is None:
+        return ('Напиши, что нужно сделать, например: «сдать практику завтра в 18». Или выбери раздел в меню.',
+                _add_task_cancel_keyboard() if _get_add_task_dialog(telegram_user_id) else _main_keyboard())
+    dialog = task_draft.populate_draft(AddTaskDialog(user_id=user.id, chat_id=chat_id, step=ADD_TASK_QUICK_CONFIRM), parsed, subjects)
+    _set_add_task_dialog(telegram_user_id, dialog)
+    return _render_add_task_dialog_step(db, user, dialog)
+
+
+def _render_add_task_dialog_step(db, user, dialog):
+    if dialog.awaiting_phrase:
+        return task_draft.phrase_prompt(), _add_task_cancel_keyboard()
+    now = digest_local_datetime(user)
+    if dialog.step in task_actions.RESCHEDULE_STEPS:
+        return task_actions.render_reschedule(dialog, now.replace(tzinfo=None))
+    if dialog.natural and dialog.step in {ADD_TASK_QUICK_CONFIRM, ADD_TASK_CONFIRM}:
+        subjects = [(s.id, s.name) for s in db.query(Subject).filter(Subject.user_id == user.id).all()]
+        return task_draft.render_draft(dialog, now, subjects)
+    text, markup = _render_add_task_dialog_step_base(db, user, dialog)
+    return task_draft.edit_prefill(dialog, text, markup, now)
 
 
 def _advance_dialog_to_subject(
@@ -1325,6 +1333,10 @@ def _create_task_from_dialog(
         )
         if subject is not None:
             subject_id = subject.id
+    if dialog.edit_task_id is not None:
+        task = task_actions.save_edit(db, user, dialog, title=title, subject_id=subject_id)
+        _commit(db)
+        return task
     return _save_telegram_task(
         db,
         user,
@@ -1390,7 +1402,7 @@ def _handle_add_task_dialog_action(
 
     if action == 'add_task_cancel':
         _clear_add_task_dialog(telegram_user_id)
-        return 'Добавление задачи отменено.', _main_keyboard()
+        return ('Действие отменено.' if dialog and dialog.edit_task_id else 'Добавление задачи отменено.'), _main_keyboard()
 
     dialog_actions = (
         action.startswith('add_task_deadline_')
@@ -1401,6 +1413,8 @@ def _handle_add_task_dialog_action(
             'add_task_confirm_create',
             'add_task_quick_create',
             'add_task_quick_customize',
+            'add_task_keep',
+            'add_task_draft_tomorrow',
         }
     )
     if dialog_actions and dialog is None:
@@ -1412,6 +1426,28 @@ def _handle_add_task_dialog_action(
 
     if dialog is None:
         return None
+
+    if dialog.step in task_actions.RESCHEDULE_STEPS:
+        try:
+            result, finished = task_actions.reschedule_action(db, user, dialog, action, argument, digest_local_datetime(user).replace(tzinfo=None))
+        except task_actions.StaleTask:
+            _clear_add_task_dialog(telegram_user_id)
+            return task_views.stale()
+        if finished:
+            _clear_add_task_dialog(telegram_user_id)
+        else:
+            dialog.generation = secrets.token_hex(4)
+        return result
+
+    if dialog.awaiting_phrase:
+        if action == 'text':
+            return _prepare_task_phrase(db, user, telegram_user_id=telegram_user_id, chat_id=chat_id, argument=argument)
+        return _render_add_task_dialog_step(db, user, dialog)
+
+    if dialog.natural:
+        subjects = [(s.id, s.name) for s in db.query(Subject).filter(Subject.user_id == user.id).all()]
+        if task_draft.apply_action(dialog, action, digest_local_datetime(user), subjects):
+            return _render_add_task_dialog_step(db, user, dialog)
 
     if action == 'text':
         if dialog.step == ADD_TASK_WAITING_TITLE:
@@ -1431,7 +1467,17 @@ def _handle_add_task_dialog_action(
             return _render_add_task_dialog_step(db, user, dialog)
 
         if dialog.step == ADD_TASK_WAITING_CUSTOM_DEADLINE:
-            deadline, recognized = parse_telegram_deadline(argument)
+            deadline, recognized = parse_telegram_deadline(argument, now=digest_local_datetime(user).replace(tzinfo=None))
+            if dialog.natural:
+                try:
+                    parsed = parse_task('Задача ' + argument, now=digest_local_datetime(user))
+                    recognized = parsed is not None and parsed.deadline is not None
+                    deadline = parsed.deadline if recognized else None
+                    if recognized:
+                        dialog.time_explicit = parsed.time_explicit
+                    dialog.warning = parsed.warning if recognized else None
+                except ValueError:
+                    recognized = False
             if not recognized:
                 return (
                     '⚠️ <b>Не получилось распознать дату</b>\n\n'
@@ -1452,10 +1498,12 @@ def _handle_add_task_dialog_action(
         return _render_add_task_dialog_step(db, user, dialog)
 
     if action == 'add_task_deadline_today':
+        dialog.time_explicit = False
         today = current_date()
         dialog.deadline = datetime(today.year, today.month, today.day, 23, 59)
         return _advance_dialog_to_subject(db, user, dialog)
     if action == 'add_task_deadline_tomorrow':
+        dialog.time_explicit = False
         tomorrow = current_date() + timedelta(days=1)
         dialog.deadline = datetime(
             tomorrow.year,
@@ -1466,6 +1514,7 @@ def _handle_add_task_dialog_action(
         )
         return _advance_dialog_to_subject(db, user, dialog)
     if action == 'add_task_deadline_none':
+        dialog.time_explicit = False
         dialog.deadline = None
         return _advance_dialog_to_subject(db, user, dialog)
     if action == 'add_task_deadline_custom':
@@ -1506,21 +1555,39 @@ def _handle_add_task_dialog_action(
         return _render_add_task_dialog_step(db, user, dialog)
 
     if action == 'add_task_quick_customize':
-        dialog.step = ADD_TASK_WAITING_DEADLINE
+        if dialog.natural:
+            dialog.generation = secrets.token_hex(4)
+            dialog.editing, dialog.warning, dialog.subject_candidates = True, None, []
+        dialog.step = ADD_TASK_WAITING_TITLE if dialog.natural else ADD_TASK_WAITING_DEADLINE
         return _render_add_task_dialog_step(db, user, dialog)
 
     if action in {'add_task_confirm_create', 'add_task_quick_create'}:
+        if dialog.step not in {ADD_TASK_CONFIRM, ADD_TASK_QUICK_CONFIRM}:
+            return 'Действие устарело. Заверши текущий шаг.', _add_task_cancel_keyboard()
+        if dialog.natural and (task_draft.current_warning(dialog, digest_local_datetime(user)) or dialog.subject_candidates):
+            return _render_add_task_dialog_step(db, user, dialog)
         try:
             task = _create_task_from_dialog(db, user, dialog)
+        except task_actions.StaleTask:
+            _clear_add_task_dialog(telegram_user_id)
+            return task_views.stale()
+        except ValueError as error:
+            dialog.warning = str(error)
+            return _render_add_task_dialog_step(db, user, dialog)
         except Exception:
             db.rollback()
-            logger.exception('Telegram task dialog creation failed.')
+            logger.error('Telegram task dialog creation failed.')
             return (
                 '⚠️ <b>Не удалось добавить задачу</b>\n\n'
                 'Произошла ошибка. Попробуй ещё раз позже.',
                 _add_task_confirm_keyboard(),
             )
         _clear_add_task_dialog(telegram_user_id)
+        if dialog.edit_task_id is not None:
+            return task_views.after_update(db, task, '✅ Задача изменена')
+        if dialog.natural:
+            dialog.subject_name = task.subject.name if task.subject else None
+            return task_draft.parsed_success(dialog, digest_local_datetime(user))
         return _build_dialog_success_message(task), _add_task_success_keyboard()
 
     return None
@@ -1538,7 +1605,7 @@ def _link_account(
     if not normalized_code:
         return 'missing'
 
-    target = db.query(User).filter(User.telegram_link_code == normalized_code).first()
+    target = db.query(User).filter(User.telegram_link_code == normalized_code).with_for_update().first()
     now = current_time()
     if (
         target is None
@@ -1546,9 +1613,11 @@ def _link_account(
         or target.telegram_link_code_expires_at <= now
     ):
         if target is not None:
-            target.telegram_link_code = None
-            target.telegram_link_code_expires_at = None
-            db.commit()
+            db.query(User).filter(User.id == target.id, User.telegram_link_code == normalized_code,
+                                  User.telegram_link_code_expires_at <= now).update(
+                {User.telegram_link_code: None}, synchronize_session=False)
+            _commit(db)
+            db.refresh(target)
         return 'expired'
 
     linked_user = _telegram_user(db, telegram_user_id)
@@ -1557,36 +1626,39 @@ def _link_account(
     if target.telegram_user_id is not None and target.telegram_user_id != telegram_user_id:
         return 'account-conflict'
 
-    target.telegram_user_id = telegram_user_id
-    target.telegram_chat_id = telegram_chat_id
-    target.telegram_username = (telegram_username or '').strip().lstrip('@')[:64] or None
-    target.telegram_linked_at = now
-    target.telegram_link_code = None
-    target.telegram_link_code_expires_at = None
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
+    changed = db.query(User).filter(
+        User.id == target.id, User.telegram_link_code == normalized_code,
+        User.telegram_link_code_expires_at > now,
+        User.telegram_user_id.is_(None),
+    ).update({
+        User.telegram_user_id: telegram_user_id,
+        User.telegram_chat_id: telegram_chat_id,
+        User.telegram_username: (telegram_username or '').strip().lstrip('@')[:64] or None,
+        User.telegram_linked_at: now,
+        User.telegram_link_code: None,
+        User.telegram_link_code_expires_at: None,
+    }, synchronize_session=False)
+    if changed != 1:
         return 'conflict'
+    _commit(db)
+    db.refresh(target)
     return 'success'
 
 
 def build_start_unlinked_message() -> str:
     return (
-        '👋 <b>Student Assistant</b> '
-        '<i>Твой учебный помощник в Telegram</i>\n\n'
-        'Я помогу быстро смотреть:\n\n'
-        '📅 расписание на сегодня\n'
-        '📌 ближайшие задачи\n'
-        '🌐 ссылку на личный кабинет\n\n'
-        f'{MESSAGE_DIVIDER}\n\n'
-        'Чтобы подключить аккаунт:\n\n'
-        '1. Открой Student Assistant на сайте\n'
-        '2. Перейди в профиль\n'
-        '3. Нажми <b>«Подключить Telegram»</b>\n'
-        '4. Отправь сюда команду:\n\n'
-        '<code>/link КОД</code>\n\n'
-        'Пример: <code>/link A7K92Q</code>'
+        '👋 <b>Student Assistant</b>\n\n'
+        'Привет! Подключи своё пространство с сайта, чтобы продолжить.'
+    )
+
+
+def build_connect_message() -> str:
+    return (
+        '🔗 <b>Подключить Telegram</b>\n\n'
+        '1. Открой свой профиль на сайте.\n'
+        '2. Нажми «Подключить Telegram» и получи код.\n'
+        '3. Отправь его сюда: <code>/link CODE</code>\n\n'
+        'Вместо CODE подставь код из профиля.'
     )
 
 
@@ -1594,15 +1666,7 @@ def build_start_linked_message(user: User) -> str:
     return (
         f'👋 <b>Привет, {_html(_display_name(user))}!</b>\n\n'
         'Telegram уже подключён ✅\n'
-        'Теперь можно быстро проверить учёбу прямо здесь.\n\n'
-        f'{MESSAGE_DIVIDER}\n\n'
-        '📅 <b>Сегодня</b> — расписание и задачи на день\n'
-        '📆 <b>Завтра</b> — план на следующий день\n'
-        '🗓 <b>Неделя</b> — краткий обзор семи дней\n'
-        '📌 <b>Задачи</b> — ближайшие дедлайны\n'
-        '⚙️ <b>Уведомления</b> — сводка и напоминания о дедлайнах\n'
-        '➕ <b>Добавить задачу</b> — быстро создать новое дело\n'
-        '🌐 <b>Сайт</b> — полный личный кабинет'
+        'Выбери, что хочешь посмотреть или сделать.'
     )
 
 
@@ -1615,21 +1679,7 @@ def build_site_message() -> str:
 
 
 def build_unknown_command_message() -> str:
-    return (
-        '🤔 <b>Я пока не понял команду</b>\n\n'
-        'Вот что я умею:\n\n'
-        '<code>/today</code> — планы на сегодня\n'
-        '<code>/tomorrow</code> — планы на завтра\n'
-        '<code>/week</code> — обзор недели\n'
-        '<code>/tasks</code> — ближайшие задачи\n'
-        '<code>/notifications</code> — настройки уведомлений\n'
-        '<code>/digest</code> — утренняя сводка\n'
-        '<code>/add_task</code> — добавить задачу\n'
-        '<code>/done</code> — закрыть задачу\n'
-        '<code>/cancel</code> — отменить действие\n'
-        '<code>/site</code> — открыть сайт\n'
-        '<code>/help</code> — помощь'
-    )
+    return '🤔 <b>Я пока не понял команду</b>\n\nВыбери действие в меню ниже.'
 
 
 def build_link_success_message() -> str:
@@ -1642,7 +1692,7 @@ def build_link_success_message() -> str:
         '📆 <b>Завтра</b> — следующий учебный день\n'
         '🗓 <b>Неделя</b> — обзор ближайших дней\n'
         '📌 <b>Задачи</b> — ближайшие дедлайны\n'
-        '⚙️ <b>Уведомления</b> — сводка и напоминания\n'
+        '⚙️ <b>Настройки</b> — сводка и напоминания\n'
         '🌐 <b>Сайт</b> — личный кабинет'
     )
 
@@ -1720,10 +1770,10 @@ def _update_linked_identity(
     username = sender.get('username')
     if isinstance(username, str):
         user.telegram_username = username.strip().lstrip('@')[:64] or None
-    db.commit()
+    _commit(db)
 
 
-def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
+def _handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
     callback = update.get('callback_query')
     callback_query_id = None
     argument = ''
@@ -1762,23 +1812,77 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
         return None
     chat_id = chat.get('id')
     telegram_user_id = sender.get('id')
-    if not isinstance(chat_id, int) or not isinstance(telegram_user_id, int):
+    if (type(chat_id) is not int or type(telegram_user_id) is not int
+            or not -(2**63) <= chat_id < 2**63 or not 0 < telegram_user_id < 2**63):
         return None
 
+    if chat.get('type') != 'private':
+        return TelegramReply(chat_id=chat_id, text='Открой личный чат с ботом.', callback_query_id=callback_query_id)
+    if action == 'start' and argument.startswith('link_'):
+        action, argument = 'link', argument[5:]
+    if action == 'link' and not consume_limit(db, f'link:{telegram_user_id}', 5, 300):
+        return TelegramReply(chat_id=chat_id, text='Слишком много попыток. Подожди 5 минут и получи новый код на сайте.', callback_query_id=callback_query_id)
+    active_dialog = _get_add_task_dialog(telegram_user_id)
+    if action in {'add_task_quick_create', 'add_task_confirm_create'} and active_dialog and active_dialog.natural:
+        return TelegramReply(chat_id=chat_id, text='Действие устарело. Открой подтверждение задачи заново.', callback_query_id=callback_query_id)
+    if '|' in action:
+        action, _, stamp = action.partition('|')
+        dialog = _get_add_task_dialog(telegram_user_id)
+        expected = f'{dialog.generation}:{DIALOG_STEPS.index(dialog.step)}' if dialog else None
+        if stamp != expected:
+            if action.startswith('add_task_reschedule_') or (dialog and dialog.edit_task_id):
+                text, markup = task_views.stale()
+                return TelegramReply(chat_id=chat_id, text=text, reply_markup=markup, callback_query_id=callback_query_id)
+            return TelegramReply(chat_id=chat_id, text='Действие устарело. Начни заново: /add_task', callback_query_id=callback_query_id)
+    command_kind = action if action in ({item['command'] for item in BOT_COMMANDS} | INTERNAL_BOT_COMMANDS) else 'callback' if callback_query_id else 'text'
+    logger.info('Telegram stage=command update_id=%s command=%s', update.get('update_id'), command_kind)
     user = _telegram_user(db, telegram_user_id)
+    if action == 'text' and user is None and len(argument) == 6 and argument.upper().isalnum() and conversational_intent(argument) is None:
+        action = 'link'
+        if not consume_limit(db, f'link:{telegram_user_id}', 5, 300):
+            return TelegramReply(chat_id=chat_id, text='Слишком много попыток. Подожди 5 минут.', callback_query_id=callback_query_id)
     _update_linked_identity(db, user, chat_id=chat_id, sender=sender)
 
+    if action == 'text':
+        intent = conversational_intent(argument)
+        if intent == 'cancel':
+            action = 'cancel'
+        elif intent and (_get_add_task_dialog(telegram_user_id) is None or _get_add_task_dialog(telegram_user_id).awaiting_phrase):
+            action = intent
+
     reply_markup = None
-    if action == 'start':
+    if action == 'greeting':
+        response = 'Привет! Выбери нужный раздел или напиши задачу обычной фразой.' if user else build_start_unlinked_message()
+        reply_markup = _main_keyboard() if user else _site_help_keyboard()
+    elif action == 'thanks':
+        response = 'Пожалуйста 🙂'
+        reply_markup = _main_keyboard() if user else _site_help_keyboard()
+    elif action == 'start':
         response = (
             build_start_linked_message(user)
             if user
             else build_start_unlinked_message()
         )
         reply_markup = _main_keyboard() if user else _site_help_keyboard()
+    elif action == 'connect':
+        response = build_start_linked_message(user) if user else build_connect_message()
+        reply_markup = _main_keyboard() if user else _keyboard(
+            [_url_button('🌐 Открыть сайт')], [_callback_button('← Назад', 'start')],
+        )
+    elif action in {'settings', 'connection_status'}:
+        if user is None:
+            response = build_not_linked_message()
+            reply_markup = _site_help_keyboard()
+        elif action == 'settings':
+            response = '⚙️ <b>Настройки</b>\n\nВыбери нужный раздел.'
+            reply_markup = _settings_keyboard()
+        else:
+            name = user.workspace.display_name if user.workspace else _display_name(user)
+            response = f'🔗 <b>Telegram подключён</b>\n\nПространство: <b>{_html(name)}</b>'
+            reply_markup = _keyboard(_settings_back_button())
     elif action == 'help':
         response = build_help_message()
-        reply_markup = _help_keyboard()
+        reply_markup = _help_keyboard() if user else _site_help_keyboard()
     elif action == 'cancel':
         cancelled = _clear_add_task_dialog(telegram_user_id)
         response = 'Действие отменено.' if cancelled else 'Сейчас нет активного действия.'
@@ -1797,29 +1901,7 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
                 argument=argument,
             )
             if dialog_result is None:
-                try:
-                    title = normalize_bounded_text(
-                        argument,
-                        label='Название задачи',
-                        max_length=150,
-                        required=True,
-                    )
-                except ValueError as error:
-                    response = (
-                        '⚠️ <b>Не получилось подготовить задачу</b>\n\n'
-                        f'{_html(error)}'
-                    )
-                    reply_markup = _help_keyboard()
-                else:
-                    dialog = AddTaskDialog(
-                        user_id=user.id,
-                        chat_id=chat_id,
-                        step=ADD_TASK_QUICK_CONFIRM,
-                        title=title,
-                    )
-                    _set_add_task_dialog(telegram_user_id, dialog)
-                    response = build_quick_task_offer_message(title)
-                    reply_markup = _quick_task_offer_keyboard()
+                response, reply_markup = _prepare_task_phrase(db, user, telegram_user_id=telegram_user_id, chat_id=chat_id, argument=argument)
             else:
                 response, reply_markup = dialog_result
     elif action.startswith('add_task_'):
@@ -1861,7 +1943,9 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
                 telegram_username=sender.get('username') if isinstance(sender.get('username'), str) else None,
             )
             if status == 'success':
-                response = build_link_success_message()
+                linked = _telegram_user(db, telegram_user_id)
+                name = linked.workspace.display_name if linked.workspace else _display_name(linked)
+                response = build_link_success_message() + f'\n\nПространство: <b>{_html(name)}</b>'
                 reply_markup = _main_keyboard()
             else:
                 response = build_link_error_message(status)
@@ -1870,24 +1954,56 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
                     if status == 'missing'
                     else _keyboard([_url_button('🌐 Открыть сайт')])
                 )
+    elif action == 'now':
+        response = build_now_message(db, user) if user else build_not_linked_message()
+        reply_markup = _now_keyboard() if user else _site_help_keyboard()
     elif action == 'today':
         response = build_today_message(db, user) if user else build_not_linked_message()
         reply_markup = _today_keyboard() if user else _site_help_keyboard()
+    elif action == 'today_schedule':
+        response = build_today_schedule(db, user, now_utc=digest_local_datetime(user)) if user else build_not_linked_message()
+        reply_markup = _today_schedule_keyboard() if user else _site_help_keyboard()
     elif action == 'tomorrow':
         response = build_tomorrow_message(db, user) if user else build_not_linked_message()
         reply_markup = _tomorrow_keyboard() if user else _site_help_keyboard()
     elif action == 'week':
         response = build_week_message(db, user) if user else build_not_linked_message()
         reply_markup = _week_keyboard() if user else _site_help_keyboard()
-    elif action == 'tasks':
-        response = build_tasks_message(db, user) if user else build_not_linked_message()
-        reply_markup = (
-            _tasks_keyboard(_active_tasks_for_user(db, user))
-            if user
-            else _site_help_keyboard()
-        )
+    elif action == 'tasks' or action.startswith('tasks_page:'):
+        if user is None:
+            response, reply_markup = build_not_linked_message(), _site_help_keyboard()
+        else:
+            raw_page = action.partition(':')[2] if action != 'tasks' else '0'
+            page = int(raw_page) if raw_page.isdigit() and len(raw_page) < 8 else -1
+            response, reply_markup, visible = task_views.task_page(db, user, digest_local_datetime(user).replace(tzinfo=None), page)
+            if page >= 0 and (visible or action == 'tasks'):
+                _remember_task_list(db, user, visible)
+    elif action.startswith(('task_done:', 'task_restore:', 'task_reschedule:', 'task_edit:')):
+        if user is None:
+            response, reply_markup = build_not_linked_message(), _site_help_keyboard()
+        else:
+            try:
+                result = task_actions.handle_action(db, user, action, digest_local_datetime(user).replace(tzinfo=None))
+                if isinstance(result, Task):
+                    if _get_add_task_dialog(telegram_user_id) is not None:
+                        response, reply_markup = 'Есть незавершённое действие. Продолжи его или отмени.', _add_task_existing_dialog_keyboard()
+                    else:
+                        reschedule = action.startswith('task_reschedule:')
+                        dialog = AddTaskDialog(user_id=user.id, chat_id=chat_id,
+                            step=task_actions.RESCHEDULE if reschedule else ADD_TASK_WAITING_TITLE,
+                            title=result.title, deadline=result.deadline, subject_id=result.subject_id,
+                            subject_name=result.subject.name if result.subject else None, priority=result.priority,
+                            natural=True, editing=not reschedule, edit_task_id=result.id,
+                            task_revision=task_views.revision(db, result),
+                            original_deadline=result.deadline.isoformat() if result.deadline else None)
+                        _set_add_task_dialog(telegram_user_id, dialog)
+                        response, reply_markup = _render_add_task_dialog_step(db, user, dialog)
+                else:
+                    response, reply_markup = result
+            except task_actions.StaleTask:
+                response, reply_markup = task_views.stale()
     elif (
-        action in {'notifications', 'digest_toggle', 'deadline_toggle'}
+        action in {'notifications', 'digest_toggle', 'deadline_toggle', 'deadline_settings'}
         or action.startswith('deadline_hours:')
     ):
         if user is None:
@@ -1908,7 +2024,7 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
                     if user.telegram_morning_digest_enabled
                     else 'Утренняя сводка выключена.'
                 )
-                db.commit()
+                _commit(db)
             elif action == 'deadline_toggle':
                 user.telegram_deadline_reminders_enabled = (
                     not user.telegram_deadline_reminders_enabled
@@ -1920,21 +2036,28 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
                     if user.telegram_deadline_reminders_enabled
                     else 'Напоминания о дедлайнах выключены.'
                 )
-                db.commit()
+                _commit(db)
             elif action.startswith('deadline_hours:'):
                 raw_hours = action.partition(':')[2]
                 hours = int(raw_hours) if raw_hours.isdigit() else 0
                 if hours in VALID_DEADLINE_REMINDER_HOURS:
                     user.telegram_deadline_reminder_hours = hours
-                    db.commit()
+                    _commit(db)
                     notice = f'Буду напоминать примерно за {hours} ч.'
                 else:
                     notice = 'Такой интервал не поддерживается.'
 
-            response = (
-                f'{notice}\n\n' if notice else ''
-            ) + build_notifications_settings_message(user)
-            reply_markup = _notifications_keyboard(user)
+            if action == 'deadline_settings' or action == 'deadline_toggle' or action.startswith('deadline_hours:'):
+                status = 'включены ✅' if user.telegram_deadline_reminders_enabled else 'выключены'
+                response = (f'{notice}\n\n' if notice else '') + (
+                    '⏰ <b>Напоминания о дедлайнах</b>\n\n'
+                    f'Статус: <b>{status}</b>\n'
+                    f'Напоминать за: <b>{deadline_reminder_hours(user)} ч.</b>'
+                )
+                reply_markup = _deadline_keyboard(user)
+            else:
+                response = (f'{notice}\n\n' if notice else '') + build_notifications_settings_message(user)
+                reply_markup = _notifications_keyboard(user)
     elif action in {'digest', 'digest_on', 'digest_off', 'digest_test'}:
         if user is None:
             response = build_not_linked_message()
@@ -1950,11 +2073,11 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
                     user.telegram_morning_digest_time = time(hour=8)
                 if not user.telegram_morning_digest_timezone:
                     user.telegram_morning_digest_timezone = settings.timezone
-                db.commit()
+                _commit(db)
                 status_notice = 'Утренняя сводка включена ✅\n\n'
             elif action == 'digest_off':
                 user.telegram_morning_digest_enabled = False
-                db.commit()
+                _commit(db)
                 status_notice = 'Утренняя сводка выключена.\n\n'
             response = status_notice + build_digest_settings_message(user)
             reply_markup = _digest_keyboard(user)
@@ -1979,7 +2102,7 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
                 )
             except Exception:
                 db.rollback()
-                logger.exception('Telegram task completion failed.')
+                logger.error('Telegram task completion failed.')
                 status, task = 'error', None
 
             if status == 'error':
@@ -1989,10 +2112,11 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
                 )
                 reply_markup = _done_error_keyboard()
             else:
-                response = build_done_result_message(status, task)
-                reply_markup = (
-                    _done_keyboard() if status == 'success' else _done_error_keyboard()
-                )
+                if status == 'success':
+                    remaining = db.query(Task).filter(Task.user_id == user.id, Task.is_completed.is_(False)).count()
+                    response, reply_markup = task_views.after_done(db, task, remaining)
+                else:
+                    response, reply_markup = build_done_result_message(status, task), _done_error_keyboard()
     elif action == 'add_task':
         if user is None:
             response = build_not_linked_message()
@@ -2018,7 +2142,7 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
                 reply_markup = _add_task_navigation_keyboard()
             except Exception:
                 db.rollback()
-                logger.exception('Telegram task creation failed.')
+                logger.error('Telegram task creation failed.')
                 response = (
                     '⚠️ <b>Не удалось добавить задачу</b>\n\n'
                     'Произошла ошибка. Попробуй ещё раз позже.'
@@ -2047,7 +2171,7 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
         else:
             _clear_add_task_dialog(telegram_user_id)
             clear_telegram_link(user)
-            db.commit()
+            _commit(db)
             response = (
                 '✅ <b>Telegram отключён</b>\n\n'
                 'Ты сможешь подключить его заново в профиле Student Assistant.'
@@ -2058,12 +2182,7 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
         reply_markup = _main_keyboard()
     else:
         response = build_unknown_command_message()
-        reply_markup = _keyboard(
-            [
-                _callback_button('❓ Помощь', 'help'),
-                _callback_button('🌐 Сайт', 'site'),
-            ],
-        )
+        reply_markup = _main_keyboard() if user else _site_help_keyboard()
 
     return TelegramReply(
         chat_id=chat_id,
@@ -2102,9 +2221,51 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
     )
 
 
+def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
+    message = update.get('callback_query') or update.get('message') or {}
+    sender = message.get('from') if isinstance(message, dict) else None
+    chat_message = message.get('message', message) if isinstance(message, dict) else {}
+    chat = chat_message.get('chat', {}) if isinstance(chat_message, dict) else {}
+    if not isinstance(sender, dict) or type(sender.get('id')) is not int or not isinstance(chat, dict) or chat.get('type') != 'private':
+        return _handle_telegram_update(db, update)
+    row = state_row(db, f'dialog:{sender["id"]}')
+    context = {}
+    if row.expires_at > utcnow() and row.data:
+        data = dict(row.data)
+        if data.get('deadline'):
+            data['deadline'] = datetime.fromisoformat(data['deadline'])
+        context['dialog'] = AddTaskDialog(**data)
+    token = _DIALOG_CONTEXT.set(context)
+    user = _telegram_user(db, sender['id'])
+    date_token = _USER_DATE.set(digest_local_datetime(user).date() if user else None)
+    try:
+        reply = _handle_telegram_update(db, update)
+        dialog = context.get('dialog')
+        if reply and reply.reply_markup and dialog:
+            rows = reply.reply_markup.get('inline_keyboard', [])
+            if not any(button.get('callback_data', '').split('|', 1)[0] == 'add_task_cancel'
+                       for buttons in rows for button in buttons):
+                rows.append([_callback_button('❌ Отменить', 'add_task_cancel')])
+            for buttons in reply.reply_markup.get('inline_keyboard', []):
+                for button in buttons:
+                    action = button.get('callback_data', '')
+                    if action.startswith('add_task_') and action not in {'add_task_start', 'add_task_help'}:
+                        button['callback_data'] = f'{action}|{dialog.generation}:{DIALOG_STEPS.index(dialog.step)}'
+        data = asdict(dialog) if dialog else {}
+        if data.get('deadline'):
+            data['deadline'] = data['deadline'].isoformat()
+        row.data = data
+        row.expires_at = utcnow() + timedelta(minutes=30)
+        _commit(db)
+        return reply
+    finally:
+        _DIALOG_CONTEXT.reset(token)
+        _USER_DATE.reset(date_token)
+
+
 def call_telegram_api(method: str, payload: dict, *, request_timeout: int = 12) -> dict:
     if not settings.telegram_bot_token:
-        raise TelegramAPIError('Telegram token is not configured.')
+        raise TelegramAPIError(category='missing_token')
 
     url = f'{TELEGRAM_API_ORIGIN}/bot{settings.telegram_bot_token}/{method}'
     body = json.dumps(payload).encode('utf-8')
@@ -2117,11 +2278,32 @@ def call_telegram_api(method: str, payload: dict, *, request_timeout: int = 12) 
     try:
         with urlopen(request, timeout=request_timeout) as response:
             result = json.loads(response.read().decode('utf-8'))
-    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as error:
-        raise TelegramAPIError('Telegram API request failed.') from error
+            status = response.status
+    except HTTPError as error:
+        status = error.code
+        try:
+            result = json.loads(error.read().decode('utf-8'))
+        except (ValueError, OSError):
+            result = {}
+    except (URLError, TimeoutError, OSError):
+        raise TelegramAPIError(category='network') from None
+    except (ValueError, UnicodeError):
+        raise TelegramAPIError(category='temporary') from None
 
-    if not isinstance(result, dict) or not result.get('ok'):
-        raise TelegramAPIError('Telegram API rejected the request.')
+    if not isinstance(result, dict):
+        raise TelegramAPIError(category='temporary', status=status)
+    if not result.get('ok'):
+        error_code = result.get('error_code')
+        if type(error_code) is int:
+            status = error_code
+        category = {401: 'invalid_token', 403: 'blocked', 409: 'receiver_conflict',
+                    429: 'rate_limit', 404: 'invalid_token', 400: 'bad_request'}.get(status, 'temporary' if status >= 500 else 'rejected')
+        if status == 400 and 'chat not found' in str(result.get('description', '')).lower():
+            category = 'chat_not_found'
+        parameters = result.get('parameters')
+        retry_after = parameters.get('retry_after') if isinstance(parameters, dict) else None
+        raise TelegramAPIError(category=category, status=status,
+                               retry_after=retry_after if type(retry_after) is int else None) from None
     return result
 
 
@@ -2131,6 +2313,7 @@ def send_telegram_message(reply: TelegramReply) -> None:
             call_telegram_api(
                 'answerCallbackQuery',
                 {'callback_query_id': reply.callback_query_id},
+                request_timeout=2,
             )
         except TelegramAPIError:
             logger.warning('Telegram callback acknowledgement failed.')
@@ -2143,19 +2326,31 @@ def send_telegram_message(reply: TelegramReply) -> None:
                     'chat_id': reply.chat_id,
                     'action': reply.chat_action,
                 },
+                request_timeout=2,
             )
         except TelegramAPIError:
             logger.warning('Telegram chat action failed.')
 
-    payload = {
-        'chat_id': reply.chat_id,
-        'text': reply.text,
-        'parse_mode': reply.parse_mode,
-        'disable_web_page_preview': True,
-    }
-    if reply.reply_markup:
-        payload['reply_markup'] = reply.reply_markup
-    call_telegram_api('sendMessage', payload)
+    chunks = [(reply.text, reply.parse_mode)]
+    if len(reply.text.encode('utf-16-le')) // 2 > 3900:
+        from html.parser import HTMLParser
+        class PlainText(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.parts = []
+            def handle_data(self, data):
+                self.parts.append(data)
+        parser = PlainText()
+        parser.feed(reply.text)
+        plain = ''.join(parser.parts)
+        chunks = [(plain[i:i + 1900], None) for i in range(0, len(plain), 1900)]
+    for index, (text, mode) in enumerate(chunks):
+        payload = {'chat_id': reply.chat_id, 'text': text, 'disable_web_page_preview': True}
+        if mode:
+            payload['parse_mode'] = mode
+        if reply.reply_markup and index == len(chunks) - 1:
+            payload['reply_markup'] = reply.reply_markup
+        call_telegram_api('sendMessage', payload)
 
 
 def install_telegram_webhook(webhook_url: str) -> None:
@@ -2163,6 +2358,7 @@ def install_telegram_webhook(webhook_url: str) -> None:
         'setWebhook',
         {
             'url': webhook_url,
+            'secret_token': settings.telegram_webhook_secret,
             'allowed_updates': ['message', 'callback_query'],
             'drop_pending_updates': False,
         },

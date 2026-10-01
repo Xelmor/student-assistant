@@ -19,3 +19,4 @@ __all__ = [
     'WorkspaceDevice',
     'DeviceLinkSession',
 ]
+from .telegram_runtime import TelegramState, TelegramUpdate

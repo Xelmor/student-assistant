@@ -141,6 +141,20 @@ def should_show_schedule_on_day(user: User, day: date) -> bool:
     return not is_summer_break_day(day)
 
 
+def effective_schedule_for_day(db, user, day):
+    """The same cancellations/term boundaries used by the calendar and Telegram."""
+    if not should_show_schedule_on_day(user, day):
+        return []
+    if db.query(AcademicEvent.id).filter(
+        AcademicEvent.user_id == user.id, AcademicEvent.event_date == day,
+        AcademicEvent.event_type == DAY_OVERRIDE_EVENT_TYPE,
+    ).first():
+        return []
+    return db.query(ScheduleItem).filter(
+        ScheduleItem.user_id == user.id, ScheduleItem.weekday == day.weekday(),
+    ).order_by(ScheduleItem.start_time).all()
+
+
 def get_intensity_level(day_events):
     weight = get_event_weight(day_events)
     if weight >= 7:

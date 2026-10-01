@@ -172,6 +172,7 @@ class MigrationTests(unittest.TestCase):
                     '20260614_01_add_users_telegram_digest_fields',
                     '20260614_02_add_telegram_deadline_reminders',
                     '20260922_01_add_workspace_device_sync',
+                    '20260929_01_telegram_runtime',
                 },
             )
             self.assertTrue(onboarding_completed)

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from html import escape
+from ..core.config import settings
+from .telegram_digest import resolve_digest_timezone_name
 
 from ..models import Task, User
 
@@ -21,11 +23,14 @@ def deadline_reminder_date_key(task: Task, reminder_hours: int) -> str:
     return f'{deadline_key}:{reminder_hours}'
 
 
-def build_deadline_reminder_message(task: Task, reminder_hours: int) -> str:
+def build_deadline_reminder_message(task: Task, reminder_hours: int, *, user: User | None = None) -> str:
     priority_key = task.priority or 'medium'
     priority = PRIORITY_LABELS.get(priority_key, 'средний')
     marker = PRIORITY_MARKERS.get(priority_key, '🟡')
-    deadline = task.deadline.strftime('%d.%m.%Y в %H:%M')
+    target_zone = resolve_digest_timezone_name(user) if user else settings.timezone
+    # Deadlines are user-local wall-clock values, as in the calendar and /today.
+    deadline_time = task.deadline
+    deadline = deadline_time.strftime('%d.%m.%Y в %H:%M') + f' ({escape(target_zone)})'
     return (
         '⏰ <b>Скоро дедлайн</b>\n\n'
         f'📌 <b>{escape(task.title, quote=False)}</b>\n\n'

@@ -10,11 +10,14 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .core.config import settings
+from .core.telegram_logging import install_telegram_log_filter
+
 from .core.migrations import run_migrations
 from .web.dependencies import templates
 from .web.routes import router
 
 
+install_telegram_log_filter()
 logger = logging.getLogger(__name__)
 
 

@@ -159,3 +159,11 @@ APP_ENV=development
 COOKIE_SECURE=false
 DATABASE_URL=sqlite:///./data/student_assistant.db
 ```
+
+## Telegram: транспорт и отдельный scheduler
+
+Для актуальных команд настройки, общей постоянной БД, перехода со старого webhook
+и ограничений бесплатного Render используйте
+[инструкцию Telegram](integrations/TELEGRAM_BOT_SETUP.md).
+Web запускается текущим Docker CMD; scheduler — отдельным процессом
+`python -m telegram_bot.scheduler`. Сборка образа не регистрирует webhook.

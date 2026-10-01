@@ -12,11 +12,11 @@ from ...models import ScheduleItem, Subject, Task
 from ...services.recurring_tasks import (
     RECURRENCE_NONE,
     RECURRENCE_OPTIONS,
-    calculate_next_deadline,
     get_recurrence_label,
     normalize_recurrence_settings,
     recurrence_requires_deadline,
 )
+from ...services.task_completion import complete_task
 from ...services.task_schedule_links import get_task_anchor_datetime, parse_scheduled_for_date, validate_schedule_link
 from ..dependencies import require_user, templates, validate_csrf
 
@@ -499,53 +499,11 @@ def toggle_task(task_id: int, request: Request, _: None = Depends(validate_csrf)
 
     task = db.query(Task).filter(Task.id == task_id, Task.user_id == user.id).first()
     if task:
-        now = current_time()
-        is_marking_completed = not task.is_completed
-
-        task.is_completed = is_marking_completed
-        task.completed_at = now if is_marking_completed else None
-
-        if is_marking_completed and task.recurrence_type != RECURRENCE_NONE:
-            group_id = task.recurrence_group_id or task.id
-            task.recurrence_group_id = group_id
-            next_deadline = calculate_next_deadline(
-                task.deadline,
-                task.recurrence_type,
-                task.recurrence_interval_days,
-            )
-
-            if next_deadline is not None:
-                existing_next_task = (
-                    db.query(Task)
-                    .filter(
-                        Task.user_id == user.id,
-                        Task.recurrence_group_id == group_id,
-                        Task.deadline == next_deadline,
-                        Task.is_completed.is_(False),
-                    )
-                    .first()
-                )
-
-                if not existing_next_task:
-                    db.add(
-                        Task(
-                            user_id=task.user_id,
-                            subject_id=task.subject_id,
-                            title=task.title,
-                            description=task.description,
-                            deadline=next_deadline,
-                            scheduled_for_date=task.scheduled_for_date,
-                            schedule_item_id=task.schedule_item_id,
-                            priority=task.priority,
-                            difficulty=task.difficulty,
-                            is_completed=False,
-                            completed_at=None,
-                            recurrence_group_id=group_id,
-                            recurrence_type=task.recurrence_type,
-                            recurrence_interval_days=task.recurrence_interval_days,
-                            created_at=now,
-                        )
-                    )
+        if task.is_completed:
+            task.is_completed = False
+            task.completed_at = None
+        else:
+            complete_task(db, task)
 
         db.commit()
     return RedirectResponse('/tasks', status_code=302)

@@ -1,51 +1,45 @@
 from __future__ import annotations
 
+import argparse
+import re
 import sys
-from urllib.parse import quote, urlparse
+from urllib.parse import urlparse
 
 from app.core.config import settings
-from app.services.telegram_bot import TelegramAPIError, install_telegram_webhook
+from app.services.telegram_bot import TelegramAPIError, install_telegram_webhook, delete_telegram_webhook
 
 
 def build_webhook_url() -> str:
-    public_base_url = (
-        settings.telegram_webhook_base_url
-        or settings.telegram_bot_api_base_url
-    ).rstrip('/')
-    if not public_base_url:
-        raise ValueError(
-            'Set TELEGRAM_WEBHOOK_BASE_URL or TELEGRAM_BOT_API_BASE_URL.'
-        )
-    parsed = urlparse(public_base_url)
-    if parsed.scheme not in {'http', 'https'} or not parsed.netloc:
-        raise ValueError('Telegram webhook base URL must be an absolute http(s) URL.')
-    if not settings.telegram_webhook_secret:
-        raise ValueError('Set TELEGRAM_WEBHOOK_SECRET.')
-
-    encoded_secret = quote(settings.telegram_webhook_secret, safe='')
-    return f'{public_base_url}{settings.telegram_webhook_path}/{encoded_secret}'
+    origin = (settings.telegram_webhook_base_url or settings.public_base_url or settings.telegram_bot_api_base_url).rstrip('/')
+    parsed = urlparse(origin)
+    if (parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password
+            or parsed.path or parsed.query or parsed.fragment or parsed.hostname in {'localhost', '127.0.0.1', '::1'}):
+        raise ValueError('Set a public HTTPS origin in TELEGRAM_WEBHOOK_BASE_URL or PUBLIC_BASE_URL (no path or credentials).')
+    if not re.fullmatch(r'[A-Za-z0-9_-]{1,256}', settings.telegram_webhook_secret):
+        raise ValueError('TELEGRAM_WEBHOOK_SECRET must contain 1–256 URL-safe characters.')
+    return f'{origin}{settings.telegram_webhook_path}'
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description='Explicit Telegram transport setup; never drops pending updates.')
+    parser.add_argument('--delete-for-polling', action='store_true')
+    args = parser.parse_args(argv)
     if not settings.telegram_bot_token:
-        print(
-            'Telegram token is missing. Set TELEGRAM_BOT_TOKEN '
-            'or TELEGRAM_BOT_API_TOKEN.',
-            file=sys.stderr,
-        )
+        print('Telegram token is missing or disabled.', file=sys.stderr)
         return 1
-
     try:
-        webhook_url = build_webhook_url()
-        install_telegram_webhook(webhook_url)
+        if args.delete_for_polling:
+            if settings.telegram_use_webhook:
+                raise ValueError('Set TELEGRAM_USE_WEBHOOK=false before switching to polling.')
+            delete_telegram_webhook()
+        else:
+            if not settings.telegram_use_webhook:
+                raise ValueError('Set TELEGRAM_USE_WEBHOOK=true before installing webhook.')
+            install_telegram_webhook(build_webhook_url())
     except (ValueError, TelegramAPIError) as error:
-        print(f'Webhook was not installed: {error}', file=sys.stderr)
+        print(f'Transport was not changed: {error}', file=sys.stderr)
         return 1
-
-    print(
-        'Telegram webhook installed: '
-        f'{settings.telegram_webhook_path}/<secret>'
-    )
+    print('Telegram transport updated; pending updates retained.')
     return 0
 
 

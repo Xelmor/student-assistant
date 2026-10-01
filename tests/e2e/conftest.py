@@ -70,8 +70,7 @@ def _unlink_with_retry(path: Path) -> None:
             time.sleep(0.1)
 
 
-@pytest.fixture(scope='session')
-def e2e_runtime(tmp_path_factory):
+def _isolated_runtime(tmp_path_factory):
     runtime_directory = tmp_path_factory.mktemp('student-assistant-e2e')
     database_path = runtime_directory / 'test_e2e.db'
     server_log_path = runtime_directory / 'server.log'
@@ -180,3 +179,14 @@ def e2e_page(browser, base_url, request):
     else:
         context.tracing.stop()
     context.close()
+
+
+@pytest.fixture(scope='session')
+def e2e_runtime(tmp_path_factory):
+    yield from _isolated_runtime(tmp_path_factory)
+
+
+@pytest.fixture(scope='module')
+def telegram_e2e_runtime(tmp_path_factory):
+    # Telegram browser checks have an independent DB and rate-limit budget.
+    yield from _isolated_runtime(tmp_path_factory)

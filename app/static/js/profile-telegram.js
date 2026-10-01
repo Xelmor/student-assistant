@@ -5,6 +5,7 @@
     }
 
     const statusMessages = {
+        'rate-limited': {type: 'info', title: 'Слишком много попыток', description: 'Подожди немного и повтори.'},
         'code-created': {
             type: 'success',
             title: 'Код подключения создан',
@@ -28,7 +29,7 @@
         'digest-saved': {
             type: 'success',
             title: 'Настройки сводки сохранены',
-            description: 'Бот отправит её в выбранное время.',
+            description: 'Время сохранено. Отправка зависит от доступности сервиса уведомлений.',
         },
         'digest-error': {
             type: 'error',
@@ -78,6 +79,49 @@
             `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`,
         );
     }
+
+    let timer;
+    const deadline = Date.now() + 10 * 60 * 1000;
+    let waiting = card.dataset.telegramWaiting === 'true';
+    const label = document.getElementById('telegramConnectionStatus');
+    const poll = async () => {
+        clearTimeout(timer);
+        if (!waiting || document.hidden) return;
+        if (Date.now() >= deadline) {
+            waiting = false;
+            if (label) label.textContent = 'Проверка завершена. Обнови страницу, чтобы проверить связь.';
+            return;
+        }
+        try {
+            const response = await fetch('/profile/telegram/status', {
+                headers: {Accept: 'application/json'}, cache: 'no-store',
+                signal: AbortSignal.timeout(5000),
+            });
+            if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error('status');
+            const data = await response.json();
+            if (data.state === 'linked') {
+                waiting = false;
+                window.location.reload();
+                return;
+            }
+            if (data.state === 'expired' || data.state === 'unlinked') {
+                waiting = false;
+                document.querySelector('.profile-telegram-code-wrap')?.remove();
+                if (label) label.textContent = 'Код истёк или отменён. Создай новый код.';
+                return;
+            }
+            if (label) label.textContent = 'Ожидаем подключения в личном чате с ботом…';
+        } catch (_) {
+            if (label) label.textContent = 'Не удалось проверить связь. Повторим проверку.';
+        }
+        if (waiting && !document.hidden) timer = setTimeout(poll, 3000);
+    };
+    document.addEventListener('visibilitychange', () => {
+        clearTimeout(timer);
+        if (!document.hidden) poll();
+    });
+    window.addEventListener('pagehide', () => { waiting = false; clearTimeout(timer); });
+    poll();
 
     const copyButton = document.getElementById('telegramCopyCode');
     const command = document.getElementById('telegramLinkCommand');
