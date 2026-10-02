@@ -7,18 +7,20 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 
+from sqlalchemy import String, cast
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.migrations import run_migrations
-from app.models import Task, TelegramDeadlineReminderLog, User
+from app.models import Task, TelegramDeadlineReminderLog, TelegramState, User
 from app.services.telegram_bot import DEFAULT_SITE_URL, TelegramAPIError, TelegramReply, send_telegram_message
 from app.services.telegram_delivery import retry_pending_replies
 from app.services.telegram_digest import build_morning_digest_message, digest_local_datetime, digest_send_time
 from app.services.telegram_notifications import build_deadline_reminder_message, deadline_reminder_date_key, deadline_reminder_hours
 from app.services.telegram_state import state_row, utcnow
 from app.services.telegram_task_views import task_button
+from app.services import telegram_class_reminders, telegram_evening_digest
 
 logger = logging.getLogger(__name__)
 # After downtime, only today's digest in the first two hours and future deadlines.
@@ -49,8 +51,8 @@ def _keyboard(task_id=None, *, db=None, task=None):
     ]}
 
 
-def _send_notification(db, row, key, reply, send_message, user):
-    now = utcnow()
+def _send_notification(db, row, key, reply, send_message, user, *, now=None):
+    now = now or utcnow()
     binding = f'{user.telegram_user_id}:{user.telegram_linked_at}:' + sha256(settings.telegram_bot_token.encode()).hexdigest()
     if row.data.get('binding') == binding and row.data.get('error') in {'blocked', 'invalid_token', 'chat_not_found', 'missing_token'}:
         return False
@@ -151,6 +153,62 @@ def process_deadline_reminders(db: Session, *, now_utc=None, send_message=send_t
     return sent
 
 
+def process_class_reminders(db, *, now_utc=None, send_message=send_telegram_message):
+    return telegram_class_reminders.process_class_reminders(
+        db, now_utc=now_utc, send_message=send_message, send_notification=_send_notification,
+    )
+
+
+def process_evening_digests(db, *, now_utc=None, send_message=send_telegram_message):
+    """Deliver once per local day with the shared durable notification retry."""
+
+    current = now_utc or datetime.now(UTC)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=UTC)
+    now = current.astimezone(UTC).replace(tzinfo=None)
+    sent = 0
+    ids = db.query(User.id).join(
+        TelegramState, TelegramState.key == 'evening-settings:' + cast(User.id, String),
+    ).filter(User.telegram_user_id.isnot(None), User.telegram_chat_id > 0,
+             TelegramState.data['enabled'].as_boolean().is_(True)).all()
+
+    def retryable_send(reply):
+        try:
+            send_message(reply)
+        except TelegramAPIError:
+            raise
+        except Exception:
+            raise TelegramAPIError(category='network') from None
+
+    for (user_id,) in ids:
+        try:
+            user = db.get(User, user_id)
+            if not telegram_evening_digest.is_due(db, user, current):
+                db.commit()
+                continue
+            # Serialize preference changes and concurrent sends, then refresh consent.
+            state_row(db, f'evening-settings:{user_id}')
+            db.refresh(user, with_for_update=True)
+            if not telegram_evening_digest.is_due(db, user, current):
+                db.commit()
+                continue
+            local = digest_local_datetime(user, current)
+            key = f'evening-digest:{user_id}:{local.date()}'
+            delivery = state_row(db, key)
+            if delivery.data.get('sent'):
+                db.commit()
+                continue
+            text = telegram_evening_digest.build_evening_digest_message(db, user, now_utc=current)
+            if _send_notification(db, delivery, key, TelegramReply(chat_id=user.telegram_chat_id, text=text, reply_markup=telegram_evening_digest.digest_keyboard()),
+                                 retryable_send, user, now=now):
+                sent += 1
+            db.commit()
+        except Exception as error:
+            db.rollback()
+            logger.warning('Telegram stage=evening user_id=%s category=%s', user_id, getattr(error, 'category', 'processing'))
+    return sent
+
+
 def scheduler_tick(db):
     row = state_row(db, 'scheduler-heartbeat')
     row.data = {'started_at': utcnow().isoformat(), 'state': 'running'}
@@ -159,6 +217,8 @@ def scheduler_tick(db):
     retry_pending_replies(db)
     process_due_digests(db)
     process_deadline_reminders(db)
+    process_class_reminders(db)
+    process_evening_digests(db)
     row = state_row(db, 'scheduler-heartbeat')
     row.data = {'completed_at': utcnow().isoformat(), 'state': 'completed'}
     row.expires_at = utcnow() + timedelta(seconds=max(180, settings.telegram_digest_check_interval_seconds * 3))

@@ -26,6 +26,9 @@ from .telegram_task_parser import parse_task, conversational_intent
 from . import telegram_task_draft as task_draft
 from . import telegram_task_actions as task_actions
 from . import telegram_task_views as task_views
+from . import telegram_class_reminders as class_reminders
+from . import telegram_notes
+from . import telegram_evening_digest as evening_digest
 from .calendar_service import effective_schedule_for_day
 from .telegram_state import consume_limit, state_row, utcnow
 from .task_schedule_links import get_task_anchor_datetime
@@ -222,6 +225,7 @@ def _main_keyboard() -> dict:
         [_callback_button('📅 Сегодня', 'today'), _callback_button('📆 Завтра', 'tomorrow')],
         [_callback_button('🗓 Неделя', 'week'), _callback_button('📌 Задачи', 'tasks')],
         [_callback_button('➕ Добавить задачу', 'add_task_start')],
+        [_callback_button('📝 Заметка', 'note_start')],
         [_callback_button('⚙️ Настройки', 'settings'), _callback_button('🌐 Сайт', 'site')],
     )
 
@@ -236,6 +240,8 @@ def _settings_keyboard() -> dict:
         [_callback_button('⏰ Напоминания о дедлайнах', 'deadline_settings')],
         [_callback_button('🔗 Статус подключения', 'connection_status')],
         [_callback_button('🚪 Отключить Telegram', 'unlink')],
+        [_callback_button('🎓 Пары', 'class_settings')],
+        [_callback_button('🌙 Вечерняя сводка', 'evening_settings')],
         [_callback_button('← Назад', 'start')],
     )
 
@@ -1843,6 +1849,14 @@ def _handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
             return TelegramReply(chat_id=chat_id, text='Слишком много попыток. Подожди 5 минут.', callback_query_id=callback_query_id)
     _update_linked_identity(db, user, chat_id=chat_id, sender=sender)
 
+    dialog = _get_add_task_dialog(telegram_user_id)
+    note_reply = telegram_notes.handle(
+        db, user, telegram_user_id=telegram_user_id, action=action, argument=argument,
+        site_url=_site_url(), special_active=bool(dialog and dialog.step in task_actions.RESCHEDULE_STEPS),
+    )
+    if note_reply is not None:
+        return TelegramReply(chat_id=chat_id, text=note_reply[0], reply_markup=note_reply[1], callback_query_id=callback_query_id)
+
     if action == 'text':
         intent = conversational_intent(argument)
         if intent == 'cancel':
@@ -1874,12 +1888,34 @@ def _handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
             response = build_not_linked_message()
             reply_markup = _site_help_keyboard()
         elif action == 'settings':
-            response = '⚙️ <b>Настройки</b>\n\nВыбери нужный раздел.'
+            response = ('⚙️ <b>Настройки</b>\n\n' + class_reminders.settings_summary(db, user)
+                        + '\n\n' + evening_digest.settings_summary(db, user) + '\n\nВыбери нужный раздел.')
             reply_markup = _settings_keyboard()
         else:
             name = user.workspace.display_name if user.workspace else _display_name(user)
             response = f'🔗 <b>Telegram подключён</b>\n\nПространство: <b>{_html(name)}</b>'
             reply_markup = _keyboard(_settings_back_button())
+    elif action in {'class_settings', 'class_enable', 'class_disable', 'class_lead'} or action.startswith(('class_lead:', 'class_snooze:')):
+        if user is None or user.telegram_chat_id != chat_id:
+            response = build_not_linked_message()
+            reply_markup = _site_help_keyboard()
+        elif action.startswith('class_snooze:'):
+            response = class_reminders.request_snooze(db, user, action.partition(':')[2])
+        else:
+            if action in {'class_enable', 'class_disable'}:
+                class_reminders.set_preferences(db, user, enabled=action == 'class_enable')
+            elif action.startswith('class_lead:'):
+                raw = action.partition(':')[2]
+                if raw.isdigit() and int(raw) in class_reminders.LEAD_MINUTES:
+                    class_reminders.set_preferences(db, user, lead=int(raw))
+            response, reply_markup = class_reminders.settings_view(
+                db, user, choose_lead=action == 'class_lead' or action.startswith('class_lead:'),
+            )
+    elif action in {'evening_settings', 'evening_enable', 'evening_disable', 'evening_time', 'evening_preview'} or action.startswith('evening_hour:'):
+        if user is None or user.telegram_chat_id != chat_id:
+            response, reply_markup = build_not_linked_message(), _site_help_keyboard()
+        else:
+            response, reply_markup = evening_digest.handle_settings(db, user, action, now_utc=digest_local_datetime(user))
     elif action == 'help':
         response = build_help_message()
         reply_markup = _help_keyboard() if user else _site_help_keyboard()
@@ -2244,6 +2280,7 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
         if reply and reply.reply_markup and dialog:
             rows = reply.reply_markup.get('inline_keyboard', [])
             if not any(button.get('callback_data', '').split('|', 1)[0] == 'add_task_cancel'
+                       or button.get('callback_data', '').startswith('note_cancel:')
                        for buttons in rows for button in buttons):
                 rows.append([_callback_button('❌ Отменить', 'add_task_cancel')])
             for buttons in reply.reply_markup.get('inline_keyboard', []):

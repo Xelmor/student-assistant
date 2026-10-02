@@ -307,6 +307,7 @@ def build_calendar_event_map(user: User, db: Session, year: int, month: int):
             event_map.setdefault(current_day, []).append(
                 {
                     'type': 'schedule',
+                    'schedule_item_id': item.id,
                     'title': item.subject.name,
                     'subject': item.subject.name,
                     'start': start_dt,
