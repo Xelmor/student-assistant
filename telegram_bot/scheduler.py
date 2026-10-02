@@ -20,7 +20,7 @@ from app.services.telegram_digest import build_morning_digest_message, digest_lo
 from app.services.telegram_notifications import build_deadline_reminder_message, deadline_reminder_date_key, deadline_reminder_hours
 from app.services.telegram_state import state_row, utcnow
 from app.services.telegram_task_views import task_button
-from app.services import telegram_class_reminders, telegram_evening_digest
+from app.services import telegram_class_reminders, telegram_evening_digest, telegram_weekly_digest
 
 logger = logging.getLogger(__name__)
 # After downtime, only today's digest in the first two hours and future deadlines.
@@ -159,8 +159,8 @@ def process_class_reminders(db, *, now_utc=None, send_message=send_telegram_mess
     )
 
 
-def process_evening_digests(db, *, now_utc=None, send_message=send_telegram_message):
-    """Deliver once per local day with the shared durable notification retry."""
+def _process_periodic_digest(db, *, kind, is_due, delivery_key, build_message, markup, now_utc, send_message):
+    """Deliver once per period key with the shared durable notification retry."""
 
     current = now_utc or datetime.now(UTC)
     if current.tzinfo is None:
@@ -168,7 +168,7 @@ def process_evening_digests(db, *, now_utc=None, send_message=send_telegram_mess
     now = current.astimezone(UTC).replace(tzinfo=None)
     sent = 0
     ids = db.query(User.id).join(
-        TelegramState, TelegramState.key == 'evening-settings:' + cast(User.id, String),
+        TelegramState, TelegramState.key == f'{kind}-settings:' + cast(User.id, String),
     ).filter(User.telegram_user_id.isnot(None), User.telegram_chat_id > 0,
              TelegramState.data['enabled'].as_boolean().is_(True)).all()
 
@@ -183,30 +183,49 @@ def process_evening_digests(db, *, now_utc=None, send_message=send_telegram_mess
     for (user_id,) in ids:
         try:
             user = db.get(User, user_id)
-            if not telegram_evening_digest.is_due(db, user, current):
+            if not is_due(db, user, current):
                 db.commit()
                 continue
             # Serialize preference changes and concurrent sends, then refresh consent.
-            state_row(db, f'evening-settings:{user_id}')
+            state_row(db, f'{kind}-settings:{user_id}')
             db.refresh(user, with_for_update=True)
-            if not telegram_evening_digest.is_due(db, user, current):
+            if not is_due(db, user, current):
                 db.commit()
                 continue
-            local = digest_local_datetime(user, current)
-            key = f'evening-digest:{user_id}:{local.date()}'
+            key = delivery_key(user, current)
             delivery = state_row(db, key)
             if delivery.data.get('sent'):
                 db.commit()
                 continue
-            text = telegram_evening_digest.build_evening_digest_message(db, user, now_utc=current)
-            if _send_notification(db, delivery, key, TelegramReply(chat_id=user.telegram_chat_id, text=text, reply_markup=telegram_evening_digest.digest_keyboard()),
+            text = build_message(db, user, now_utc=current)
+            if _send_notification(db, delivery, key, TelegramReply(chat_id=user.telegram_chat_id, text=text, reply_markup=markup(user, current)),
                                  retryable_send, user, now=now):
                 sent += 1
             db.commit()
         except Exception as error:
             db.rollback()
-            logger.warning('Telegram stage=evening user_id=%s category=%s', user_id, getattr(error, 'category', 'processing'))
+            logger.warning('Telegram stage=%s user_id=%s category=%s', kind, user_id, getattr(error, 'category', 'processing'))
     return sent
+
+
+def process_evening_digests(db, *, now_utc=None, send_message=send_telegram_message):
+    return _process_periodic_digest(
+        db, kind='evening', is_due=telegram_evening_digest.is_due,
+        delivery_key=lambda user, current: f'evening-digest:{user.id}:{digest_local_datetime(user, current).date()}',
+        build_message=telegram_evening_digest.build_evening_digest_message,
+        markup=lambda user, current: telegram_evening_digest.digest_keyboard(),
+        now_utc=now_utc, send_message=send_message,
+    )
+
+
+def process_weekly_digests(db, *, now_utc=None, send_message=send_telegram_message):
+    return _process_periodic_digest(
+        db, kind='weekly', is_due=telegram_weekly_digest.is_due,
+        delivery_key=telegram_weekly_digest.delivery_key,
+        build_message=telegram_weekly_digest.automatic_message,
+        markup=telegram_weekly_digest.automatic_keyboard,
+        now_utc=now_utc, send_message=send_message,
+    )
 
 
 def scheduler_tick(db):
@@ -219,6 +238,7 @@ def scheduler_tick(db):
     process_deadline_reminders(db)
     process_class_reminders(db)
     process_evening_digests(db)
+    process_weekly_digests(db)
     row = state_row(db, 'scheduler-heartbeat')
     row.data = {'completed_at': utcnow().isoformat(), 'state': 'completed'}
     row.expires_at = utcnow() + timedelta(seconds=max(180, settings.telegram_digest_check_interval_seconds * 3))

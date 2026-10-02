@@ -63,7 +63,7 @@ def test_linked_main_menu_and_settings_back(harness):
         preferences = callback(db, harness, rows(menu)[5][0])
         assert [[button['text'] for button in row] for row in rows(preferences)] == [
             ['🌅 Утренняя сводка'], ['⏰ Напоминания о дедлайнах'],
-            ['🔗 Статус подключения'], ['🚪 Отключить Telegram'], ['🎓 Пары'], ['🌙 Вечерняя сводка'], ['← Назад'],
+            ['🔗 Статус подключения'], ['🚪 Отключить Telegram'], ['🎓 Пары'], ['🌙 Вечерняя сводка'], ['📊 Недельный обзор'], ['← Назад'],
         ]
         back = callback(db, harness, buttons(preferences)[-1])
         assert back.reply_markup == menu.reply_markup

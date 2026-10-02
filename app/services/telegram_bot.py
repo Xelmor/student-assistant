@@ -29,6 +29,7 @@ from . import telegram_task_views as task_views
 from . import telegram_class_reminders as class_reminders
 from . import telegram_notes
 from . import telegram_evening_digest as evening_digest
+from . import telegram_weekly_digest as weekly_digest
 from .calendar_service import effective_schedule_for_day
 from .telegram_state import consume_limit, state_row, utcnow
 from .task_schedule_links import get_task_anchor_datetime
@@ -242,6 +243,7 @@ def _settings_keyboard() -> dict:
         [_callback_button('🚪 Отключить Telegram', 'unlink')],
         [_callback_button('🎓 Пары', 'class_settings')],
         [_callback_button('🌙 Вечерняя сводка', 'evening_settings')],
+        [_callback_button('📊 Недельный обзор', 'weekly_settings')],
         [_callback_button('← Назад', 'start')],
     )
 
@@ -1916,6 +1918,11 @@ def _handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
             response, reply_markup = build_not_linked_message(), _site_help_keyboard()
         else:
             response, reply_markup = evening_digest.handle_settings(db, user, action, now_utc=digest_local_datetime(user))
+    elif action in {'weekly_settings', 'weekly_enable', 'weekly_disable', 'weekly_day', 'weekly_time', 'weekly_preview'} or action.startswith(('weekly_day:', 'weekly_hour:')):
+        if user is None:
+            response, reply_markup = build_not_linked_message(), _site_help_keyboard()
+        else:
+            response, reply_markup = weekly_digest.settings_view(db, user, action, now_utc=digest_local_datetime(user))
     elif action == 'help':
         response = build_help_message()
         reply_markup = _help_keyboard() if user else _site_help_keyboard()
@@ -2002,9 +2009,14 @@ def _handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
     elif action == 'tomorrow':
         response = build_tomorrow_message(db, user) if user else build_not_linked_message()
         reply_markup = _tomorrow_keyboard() if user else _site_help_keyboard()
-    elif action == 'week':
+    elif action == 'week_details':
         response = build_week_message(db, user) if user else build_not_linked_message()
-        reply_markup = _week_keyboard() if user else _site_help_keyboard()
+        reply_markup = _keyboard([_callback_button('← Обзор недели', 'week')]) if user else _site_help_keyboard()
+    elif action in {'week', 'week_next'} or action.startswith(('week_schedule:', 'week_view:')):
+        if user is None:
+            response, reply_markup = build_not_linked_message(), _site_help_keyboard()
+        else:
+            response, reply_markup = weekly_digest.view(db, user, action, now_utc=digest_local_datetime(user))
     elif action == 'tasks' or action.startswith('tasks_page:'):
         if user is None:
             response, reply_markup = build_not_linked_message(), _site_help_keyboard()

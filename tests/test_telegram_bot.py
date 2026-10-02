@@ -860,8 +860,8 @@ class TelegramBotTests(unittest.TestCase):
             db.commit()
 
             empty = handle_telegram_update(db, self._update('/week'))
-            self.assertIn('<b>Ближайшая неделя</b>', empty.text)
-            self.assertIn('пока ничего не запланировано', empty.text)
+            self.assertIn('<b>Эта неделя</b>', empty.text)
+            self.assertIn('На этой неделе занятий нет', empty.text)
 
     def test_week_is_compact_sorted_and_limited_to_five_deadlines(self):
         start = current_date()
@@ -904,7 +904,7 @@ class TelegramBotTests(unittest.TestCase):
             )
             db.commit()
 
-            reply = handle_telegram_update(db, self._update('/week'))
+            reply = handle_telegram_update(db, self._callback('week_details'))
 
             self.assertIn('<b>Кратко по дням</b>', reply.text)
             self.assertIn('1 пара', reply.text)
@@ -972,7 +972,7 @@ class TelegramBotTests(unittest.TestCase):
 
             self.assertIn('<b>Сегодня</b>', today.text)
             self.assertIn('<b>Завтра</b>', tomorrow.text)
-            self.assertIn('<b>Ближайшая неделя</b>', week.text)
+            self.assertIn('<b>Эта неделя</b>', week.text)
             self.assertIn('<b>Задачи</b>', tasks.text)
             self.assertIn('<b>Что умеет Student Assistant:</b>', help_reply.text)
             self.assertIn('<b>Новая задача</b>', add_task.text)
