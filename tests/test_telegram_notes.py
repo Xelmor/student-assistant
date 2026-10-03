@@ -44,7 +44,7 @@ def test_main_menu_note_prompt_and_six_commands(harness):
     rows = menu.reply_markup['inline_keyboard']
     assert [[b['text'] for b in row] for row in rows] == [
         ['📍 Сейчас'], ['📅 Сегодня', '📆 Завтра'], ['🗓 Неделя', '📌 Задачи'],
-        ['➕ Добавить задачу'], ['📝 Заметка'], ['⚙️ Настройки', '🌐 Сайт']]
+        ['➕ Добавить задачу'], ['📝 Заметка', '🔎 Поиск'], ['⚙️ Настройки', '🌐 Сайт']]
     reply = callback(harness, rows[4][0]['callback_data'])
     assert '📝 <b>Новая заметка</b>' in reply.text
     assert 'Напиши текст одним сообщением.' in reply.text

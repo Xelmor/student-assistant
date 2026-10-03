@@ -58,7 +58,7 @@ def test_linked_main_menu_and_settings_back(harness):
         assert [[button['text'] for button in row] for row in rows(menu)] == [
             ['📍 Сейчас'],
             ['📅 Сегодня', '📆 Завтра'], ['🗓 Неделя', '📌 Задачи'],
-            ['➕ Добавить задачу'], ['📝 Заметка'], ['⚙️ Настройки', '🌐 Сайт'],
+            ['➕ Добавить задачу'], ['📝 Заметка', '🔎 Поиск'], ['⚙️ Настройки', '🌐 Сайт'],
         ]
         preferences = callback(db, harness, rows(menu)[5][0])
         assert [[button['text'] for button in row] for row in rows(preferences)] == [

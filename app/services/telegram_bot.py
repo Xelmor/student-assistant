@@ -28,6 +28,7 @@ from . import telegram_task_actions as task_actions
 from . import telegram_task_views as task_views
 from . import telegram_class_reminders as class_reminders
 from . import telegram_notes
+from . import telegram_search
 from . import telegram_evening_digest as evening_digest
 from . import telegram_weekly_digest as weekly_digest
 from .calendar_service import effective_schedule_for_day
@@ -226,7 +227,7 @@ def _main_keyboard() -> dict:
         [_callback_button('📅 Сегодня', 'today'), _callback_button('📆 Завтра', 'tomorrow')],
         [_callback_button('🗓 Неделя', 'week'), _callback_button('📌 Задачи', 'tasks')],
         [_callback_button('➕ Добавить задачу', 'add_task_start')],
-        [_callback_button('📝 Заметка', 'note_start')],
+        [_callback_button('📝 Заметка', 'note_start'), _callback_button('🔎 Поиск', 'search')],
         [_callback_button('⚙️ Настройки', 'settings'), _callback_button('🌐 Сайт', 'site')],
     )
 
@@ -1855,9 +1856,18 @@ def _handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
     note_reply = telegram_notes.handle(
         db, user, telegram_user_id=telegram_user_id, action=action, argument=argument,
         site_url=_site_url(), special_active=bool(dialog and dialog.step in task_actions.RESCHEDULE_STEPS),
+        defer_prefix=telegram_search.waiting(db, telegram_user_id),
     )
     if note_reply is not None:
         return TelegramReply(chat_id=chat_id, text=note_reply[0], reply_markup=note_reply[1], callback_query_id=callback_query_id)
+
+    search_reply = telegram_search.handle(
+        db, user, telegram_user_id=telegram_user_id, action=action, argument=argument,
+        local_now=digest_local_datetime(user) if user else None,
+        task_active=bool(dialog and (not dialog.awaiting_phrase or dialog.edit_task_id)),
+    )
+    if search_reply is not None:
+        return TelegramReply(chat_id=chat_id, text=search_reply[0], reply_markup=search_reply[1], callback_query_id=callback_query_id)
 
     if action == 'text':
         intent = conversational_intent(argument)

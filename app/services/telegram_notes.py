@@ -117,7 +117,7 @@ def _delete_action(db, user, action, site_url):
     ))
 
 
-def handle(db, user, *, telegram_user_id, action, argument, site_url, special_active=False):
+def handle(db, user, *, telegram_user_id, action, argument, site_url, special_active=False, defer_prefix=False):
     """Return a reply tuple when notes consumed the action; otherwise return None.
 
     Called only after the bot's private-chat guard and identity resolution, and
@@ -128,6 +128,8 @@ def handle(db, user, *, telegram_user_id, action, argument, site_url, special_ac
     key = f'note-flow:{telegram_user_id}'
     state = db.get(TelegramState, key)
     waiting = bool(state and state.data)
+    if defer_prefix and not waiting:
+        prefix = None  # An active search consumes text before explicit prefixes.
     note_action = action == 'note_start' or action.startswith(('note_cancel:', 'note_delete:', 'note_delete_confirm:', 'note_keep:'))
     cancel = action in {'cancel', 'add_task_cancel'} or (
         action == 'text' and argument.strip().casefold() in {'отмена', 'отменить', 'cancel', '❌ отмена', '❌ отменить'})
