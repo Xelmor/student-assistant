@@ -2295,6 +2295,9 @@ def handle_telegram_update(db: Session, update: dict) -> TelegramReply | None:
         context['dialog'] = AddTaskDialog(**data)
     token = _DIALOG_CONTEXT.set(context)
     user = _telegram_user(db, sender['id'])
+    if user is not None:
+        # Shared lock order: User before settings, task revisions or delivery rows.
+        db.refresh(user, with_for_update=True)
     date_token = _USER_DATE.set(digest_local_datetime(user).date() if user else None)
     try:
         reply = _handle_telegram_update(db, update)

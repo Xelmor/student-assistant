@@ -133,6 +133,9 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+    if settings.app_env == 'production':
+        print('Polling is local-development only; production requires webhook.', file=sys.stderr)
+        return 1
     if settings.telegram_use_webhook:
         print(
             'Polling requires TELEGRAM_USE_WEBHOOK=false. '

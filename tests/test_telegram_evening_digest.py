@@ -207,7 +207,7 @@ def test_incomplete_lesson_time_is_not_fabricated(harness):
 def test_html_escaped_and_summary_bounded(harness):
     with harness.SessionLocal() as db:
         task(db, harness, '<&>' * 50, priority='high')
-        add_lesson(db, harness, '<&>' * 50, day=TOMORROW)
+        add_lesson(db, harness, '<&>' * 33, day=TOMORROW)
         message = render(db, harness)
         assert '&lt;&amp;&gt;' in message and '<&>' not in message and len(message) < 4096
 

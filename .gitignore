@@ -22,3 +22,7 @@ screenshots/
 *.before-*
 **pycache**/
 .DS_Store
+
+# Local secret variants; keep only the documented placeholder template.
+.env.*
+!.env.example

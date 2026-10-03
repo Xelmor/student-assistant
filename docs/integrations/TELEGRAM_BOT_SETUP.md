@@ -803,3 +803,84 @@ HTML-viewer на 1440/390 px с подменённой отправкой, а н
    Без дедлайна
 Показано 5 из 12 задач.
 ```
+
+## Production-hardening: актуальный порядок запуска
+
+Актуальные результаты PostgreSQL/SQLite/процессных проверок и release gates:
+[TELEGRAM_VERIFICATION.md](TELEGRAM_VERIFICATION.md). Исторические замечания выше
+об отсутствии PostgreSQL-прогона относятся к прежним этапам разработки.
+
+### LOCAL DEVELOPMENT
+
+SQLite, один web, polling и при необходимости отдельный локальный scheduler с
+тем же файлом БД. Используйте отдельного тестового бота. Режим `TELEGRAM_MODE=polling`
+или прежний `TELEGRAM_USE_WEBHOOK=false`; не задавайте конфликтующие значения.
+Polling проверяет установленный webhook и отказывается запускаться при конфликте.
+Он никогда автоматически не вызывает deleteWebhook. Явное переключение тестового
+бота: `python -m telegram_bot.set_webhook --delete-for-polling`. В production это
+действие запрещено. Команда сохраняет pending updates.
+
+### PRODUCTION
+
+Общая PostgreSQL, webhook, отдельные web и always-on worker. Точные сервисы,
+команды и env: [DEPLOYMENT.md](../DEPLOYMENT.md#telegram-production-topology-hardening-2026-10-03).
+`PUBLIC_ORIGIN` — поддерживаемый alias `PUBLIC_BASE_URL`; origin без пути,
+credentials, query/fragment. Для Telegram требуется HTTPS. Включённый Telegram
+в production запрещает SQLite, polling, пустой username и слабый webhook secret.
+Постоянный `SECRET_KEY` обязателен; случайный dev secret не допускается.
+
+Миграции PostgreSQL сериализуются advisory transaction lock, включая create_all.
+Telegram и scheduler берут User lock до настроек, задач и записей уведомлений.
+Два worker не дублируют подтверждённую доставку по одному ключу. Это не обещание
+exactly-once для внешней сети: crash/lost acknowledgement после принятия Telegram
+и до commit остаётся неопределённым исходом. Нет автоматического удаления журналов;
+нужно контролировать их рост. Старые pending replies без данных текущей привязки
+могут быть отменены после обновления — пользователь повторяет команду.
+
+Worker обрабатывает morning/evening/weekly digest, deadlines, class reminders,
+snooze и pending replies. Сбой одного job логируется, остальные продолжаются;
+heartbeat становится `degraded`. Сбой сессии БД не завершает цикл. SIGTERM просит
+закончить текущую итерацию, затем закрыть процесс. Для большого backlog shutdown
+может занять дольше hosting grace period; следите за временем итерации.
+
+### LIVE CHECK
+
+Это действия оператора после отдельного разрешения deploy, а не выполненные
+сетевые проверки. Настройте env безопасно, не передавайте секреты аргументами.
+
+```bash
+python -m telegram_bot.diagnose
+python -m telegram_bot.diagnose --network
+python -m telegram_bot.set_commands
+python -m telegram_bot.set_webhook
+python -m telegram_bot.diagnose --network
+```
+
+Без `--network` нет обращения к Telegram. С флагом вызываются только getMe и
+getWebhookInfo. Проверить: mode webhook, username_matches/webhook_present/
+webhook_matches/database_accessible true, missing_tables/missing_migrations пусты,
+свежий scheduler heartbeat. `production_safe` вычисляется по доступным проверкам;
+общность двух hosting DB подключений оператор подтверждает отдельно.
+
+Далее: `/start` → подключить существующий профиль → «Сейчас» → «Сегодня» →
+«Неделя» → «Задачи» → создать задачу обычной фразой и подтвердить → выполнить/
+восстановить → заметка → поиск → настройки → тест реального напоминания о паре →
+evening preview → weekly preview → unlink/relink. Сверять данные с тем же
+пространством сайта. Preview не заменяет проверку плановой доставки.
+
+### TROUBLESHOOTING
+
+| Симптом | Проверка и действие |
+|---|---|
+| Webhook/polling conflict | Остановить local polling; сравнить режим и getWebhookInfo. Не удалять production webhook ради локального запуска. |
+| Бот молчит | Проверить token configured, username match, webhook URL/secret, HTTP 403/503, pending_updates/replies и failed_replies. Не публиковать полный getWebhookInfo. |
+| Нет heartbeat | Проверить отдельный worker, его логи, startup migrations, доступ к общей PostgreSQL; web сам scheduler не запускает. |
+| База не общая | Сравнить безопасный fingerprint обоих diagnose, Render DB reference и данные workspace. Одинаковый SQLite путь не помогает. |
+| Invalid secret | Webhook secret должен совпадать в web и setWebhook; SECRET_KEY должен быть прежним и общим. Не ротировать ключи вслепую. |
+| Пользователь заблокировал бота | Категория blocked — терминальная ошибка; убрать блокировку и повторно подключить Telegram. Не создавать бесконечные retries. |
+| degraded heartbeat | Найти job/status=failure; проверить БД и доступность transport. Другие jobs продолжаются, но это не здоровый статус. |
+
+Логи содержат update_id, stage/job, статус и безопасные числовые user_id. Содержимое
+сообщений/заметок, токены, credentials и сырые API/DB exception strings не нужны.
+Диагностика возвращает только безопасные категории ошибок. Reverse proxy/hosting
+логи также нужно проверить вручную: предпочтителен header secret, не legacy URL.

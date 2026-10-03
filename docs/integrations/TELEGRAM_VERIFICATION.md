@@ -1,210 +1,200 @@
-# Проверка Telegram-интеграции — 29 сентября 2026
+# Telegram production-hardening — 2026-10-03
 
-## Результат и границы работы
+Ветка: `fix/telegram-integration`. Новые пользовательские функции не добавлялись.
+Commit/push/merge/deploy и настоящий Bot API не выполнялись. Этот отчёт заменяет
+исторический отчёт ранней интеграции. Локальные проверки не равны разрешению
+production rollout: остаются CI/image и live hosting gates ниже.
 
-**Проверено в изолированной среде.** Ветка `fix/telegram-integration` создана от
-чистого `f002382` (`fix/production-docker-lock`). Изменения зависимостей, четырёх CI
-job и production Dockerfile сохранены. Commit, push, merge и deploy не выполнялись.
-Рабочий `.env`, ключ сайта, реальные токены, данные пользователей и устройства
-не изменялись. Реальные сообщения, getUpdates, setWebhook/deleteWebhook и
-сетевые getMe/getWebhookInfo не запускались.
+## A. Аудит до исправлений
 
-**Осталось подтвердить на настоящем боте.** Наличие токена в локальных настройках
-не доказывает, что он принадлежит username из ссылки сайта. Render, его процессы,
-БД, актуальная ревизия и зарегистрированный webhook удалённо не проверялись.
+Проверены webhook, polling, scheduler, модели/миграции, outbox, state, настройки,
+CLI setup/diagnose, Dockerfile, CI, `.env` ignore и deployment docs.
 
-## Подтверждённые причины и дефекты
+Реальные проблемы и пробелы:
 
-| Наблюдение | Доказательство / исправление |
-| --- | --- |
-| Локально выбран polling, но polling и scheduler не запущены | Read-only проверка процессов: оба счётчика 0; при этой конфигурации локально некому принимать команды и отправлять уведомления |
-| Локальная БД — SQLite; PUBLIC_BASE_URL пуст, валидный публичный webhook не настроен | Вывод безопасной диагностики без секретов; эта БД не считается общей с Render |
-| Webhook подтверждал update после ошибки обработки/отправки | Теперь транзакционная обработка + outbox; при сбое 503, при повторе бизнес-операция не повторяется |
-| Polling двигал offset после ошибки и безусловно удалял webhook | Дефект offset воспроизведён тестом; теперь offset сохраняется, переключение только отдельной явной командой |
-| Команда из группы могла заменить private chat ID и выдать персональные данные | Дефект воспроизведён тестом; тип чата проверяется до поиска данных/обновления привязки |
-| Ошибки API скрывались, исходное исключение могло содержать URL с токеном | Безопасные категории/HTTP status/retry_after, ограниченные повторы, подавленная цепочка исходных сетевых исключений и редактирование legacy URL в логах |
-| Диалог терялся при рестарте; /done N пересчитывал сортировку и мог закрыть другую задачу | Состояние/TTL в БД, версии кнопок, стабильные ID, нумерация последнего подтверждённо отправленного списка |
-| Scheduler заранее писал «отправлено» | Успех фиксируется после API; общие блокировки БД, сохраняемый журнал и измеряемый heartbeat |
-| Бот расходился с календарём сайта по отменам/каникулам | Использованы общие правила календаря и общий сервис завершения повторяющихся задач |
-| Профиль не узнавал о привязке в боте без ручного обновления | JSON endpoint статуса и ограниченный опрос; тест отправки защищён CSRF/лимитом частоты |
+1. При включённом Telegram production config допускал SQLite и polling. Два Render
+   сервиса с одинаковым SQLite URL всё равно используют разные файлы.
+2. Нет PostgreSQL CI; тестовый harness всегда создавал SQLite через create_all.
+   Поэтому PostgreSQL locking, SQL constraints и чистые migrations не были доказаны.
+3. Разный порядок User/settings/event locks у callbacks и scheduler создавал риск
+   PostgreSQL deadlock. SQLite сериализовала записи и скрывала этот риск.
+4. Одновременный startup web/worker не сериализовал create_all и migration registry.
+5. Pending reply проверял только user/chat IDs: после unlink/relink с теми же IDs
+   мог отправиться ответ старого подключения. После ожидания owner lock состояние
+   reply также требовало повторной проверки.
+6. Ошибка открытия session могла завершить scheduler loop; ошибка одного job
+   прерывала оставшиеся jobs текущей итерации. SIGTERM завершал процесс немедленно.
+7. Diagnose не проверял все необходимые таблицы/версии миграций и не агрегировал
+   readiness blockers. Явный production username и сильный webhook secret не
+   требовались. `.env` игнорировался, но варианты `.env.*` — не все.
+8. Локально нет Docker CLI/daemon. Linux production image нельзя подтвердить этим
+   macOS прогоном; требуется реальный CI run до merge.
 
-Нет оснований объявлять конкретную настройку Render причиной production-проблемы:
-её состояние не наблюдалось. Локальная диагностика также выявила отсутствие двух
-новых runtime-таблиц в рабочей БД: это ожидаемо до первого старта новой версии;
-миграции на рабочей БД намеренно не запускались.
+Уже корректные части, сохранённые без переизобретения:
 
-## Выполненные проверки
+- Webhook endpoint `/telegram/webhook` (или настроенный путь), secret-header
+  compare_digest, лимит тела, проверка JSON/update_id, HTTP 403/400/413/503.
+  Критическая ошибка логируется безопасно и возвращает 503.
+- `telegram_updates` PK update_id: бизнес-операция и reply пишутся одной
+  транзакцией. Повтор update не повторяет бизнес-операцию. Durable outbox переживает
+  restart, имеет lease, максимум 5 попыток и срок 24 часа.
+- `telegram_state` PK key, bounded retry/backoff, delivery keys и уникальный
+  deadline delivery constraint уже присутствовали.
+- Polling проверял getWebhookInfo и не удалял webhook автоматически. Теперь
+  дополнительно запрещён production polling и production delete-for-polling.
+- Owner-scoped SQL, private-chat guard, одноразовые link-коды, шесть BOT_COMMANDS,
+  HMAC workspace credentials и обязательный постоянный production SECRET_KEY.
+
+## B. Исправления
+
+- Введён явный `TELEGRAM_MODE` с совместимостью `TELEGRAM_USE_WEBHOOK`; конфликт
+  отклоняется. `PUBLIC_ORIGIN` поддерживается как alias `PUBLIC_BASE_URL`.
+- Включённый production Telegram требует PostgreSQL, webhook, username,
+  HTTPS origin и webhook secret длиной 32–256 URL-safe символов. Origin не может
+  содержать credentials/query/fragment. SECRET_KEY и DATABASE_URL скрыты в repr.
+- Миграции в одной транзакции; PostgreSQL `pg_advisory_xact_lock` перед всем DDL.
+- Единый порядок: User → settings/task/event/delivery rows. Приём update сначала
+  сериализуется dialog-key; scheduler этот dialog-key не захватывает.
+- Pending reply сохраняет timestamp текущей привязки и отменяется при её смене;
+  после ожидания блокировок status перечитывается. Legacy pending replies без
+  binding metadata могут быть безопасно отменены.
+- Scheduler продолжает работу после session/job failures, пишет job/result,
+  retry attempt/terminal и heartbeat `completed`/`degraded`. SIGTERM/SIGINT дают
+  завершить текущую итерацию и закрыть сессии.
+- Diagnose показывает database kind/accessibility/fingerprint, shared-hosting
+  verification status, все tables/missing migrations, heartbeat, pending/failed
+  replies, network pending updates и production_readiness_blockers.
+- Новый PostgreSQL CI и opt-in harness запускают существующие Telegram тесты
+  на настоящем PostgreSQL; добавлены concurrent/process smoke проверки.
+- Две HTML stress fixtures приведены к реальному лимиту Subject.name (100).
+  Количество занятий, escaping, emoji, pagination и Telegram length assertions
+  сохранены. PostgreSQL раньше отвергал эти фикстуры, SQLite принимала.
+
+## C. Файлы
+
+Runtime:
+`app/core/config.py`, `app/core/migrations.py`, `app/services/telegram_bot.py`,
+`app/services/telegram_class_reminders.py`, `app/services/telegram_delivery.py`,
+`telegram_bot/diagnose.py`, `telegram_bot/polling.py`, `telegram_bot/scheduler.py`,
+`telegram_bot/set_webhook.py`.
+
+Тесты/CI:
+`tests/telegram_database.py`, `tests/test_telegram_production.py`,
+`tests/test_telegram_bot.py`, `tests/test_telegram_evening_digest.py`,
+`tests/test_telegram_weekly_digest.py`, `.github/workflows/telegram-postgresql.yml`,
+`scripts/ci/check_scheduler_image.sh`, `scripts/ci/smoke_telegram_processes.py`,
+`scripts/ci/scan_secrets.py`.
+
+Документация/секреты:
+`.env.example`, `.gitignore`, `docs/DEPLOYMENT.md`,
+`docs/integrations/TELEGRAM_BOT_SETUP.md`, этот файл.
+Dockerfile и production dependency lock не менялись.
+
+## D–E. Проверки и воспроизведение
+
+Локальный PostgreSQL 16.15 запущен в отдельном временном UTF-8 кластере на loopback,
+без production data. Только allowlisted `sa_telegram_test_*` DB разрешены для
+разрушающего reset тестовых данных. Ни DATABASE_URL пользователя, ни реальная
+SQLite БД не сбрасывались. Отдельные чистые DB/schema использованы для startup и
+concurrent migration tests. PostgreSQL подтвердил PK/unique constraints,
+FOR UPDATE, повторные update/callback, restart и конкурентных workers.
+
+Проверенные гонки: morning/evening/weekly, deadline, class reminder, snooze;
+create confirm, done, reschedule, note delete и snooze callback; scheduler вместе
+с изменением настроек. Для каждого подтверждённого ключа — одна мутация/отправка.
+Отдельный HTTP smoke создаёт passwordless workspace, связывает fake Telegram,
+проходит start/today/tasks, natural-language confirm, note/search и scheduler pass.
 
 | Проверка | Результат |
-| --- | --- |
-| Исходные Telegram-тесты до правок | 65 passed |
-| Первые регрессионные проверки до правок | 2 ожидаемых падения: группа меняет chat ID; offset пропускает ошибочный update |
-| Полный итоговый основной набор, Python 3.12.14 | **277 passed, 54 subtests passed** |
-| Полный Chromium E2E | **35 passed** |
-| Итоговый повтор Telegram UI после уточнения текста | **2 passed**, desktop 1440 и mobile 390 px |
-| Production smoke в временной копии, без .env и Telegram/SMTP | Импорты приложения/бота, настоящий QR SVG, `run.py`, временная SQLite, HTTP `/login` 200 — PASS |
-| Runtime/lock/constraints | Все **37 runtime-версий** совпадают |
-| `pip check` в проверенном окружении | No broken requirements found |
-| `compileall`, `node --check`, `git diff --check` | PASS |
-| Недеструктивные миграции на временной БД | Повторный запуск сохраняет данные; новые таблицы создаются |
-| Linux / Docker / PostgreSQL | Не запускались локально: macOS arm64, Docker отсутствует; требуются CI и проверка целевой БД |
+|---|---|
+| Финальный полный SQLite pytest | 863 passed, 54 subtests |
+| Финальный полный Telegram/scheduler на PostgreSQL | 707 passed |
+| Новый hardening-набор (включён в полные прогоны) | 30 passed на PostgreSQL; 30 passed на SQLite |
+| Весь Chromium E2E | 41 passed, включая 8 Telegram desktop/mobile |
+| Production web + два настоящих worker-процесса, чистая PostgreSQL | HTTP 200, migrations, heartbeat, reconnect после обрыва DB connections, graceful SIGTERM: PASS |
+| pip check | No broken requirements found |
+| Runtime lock/constraints | 37 runtime versions match |
+| Python syntax / shell syntax / git diff --check | PASS |
+| Offline scan текущих файлов | 0 findings; эвристика, не гарантия |
+| Полный Git history scan | Не завершён: локальный git log превышает таймаут; секрет по этому результату не обнаружен и отсутствие не доказано |
+| Docker build/default HTTP/scheduler image | Подготовлены CI checks; локально Docker отсутствует |
+| GitHub Actions | Workflow подготовлен, remote run не выполнялся (нет push) |
 
-Включён интеграционный сценарий без пароля: HTTP `/start` → HTTP генерация кода
-из профиля → webhook с secret header → исходящий `sendMessage` через замоканный
-`urlopen` → настоящие задачи того же пространства → актуальный статус профиля.
-Другие проверки покрывают конкурентные update/привязки/worker, потери ответа,
-rollback до commit, одноразовые и истёкшие коды, изоляцию пользователей и групп,
-диалоги после рестарта, устаревшие кнопки, /done после изменения сортировки и
-неудачной отправки списка, CSRF/rate limit, 401/403/409/429/5xx, retry_after,
-длинный HTML, временные сбои scheduler, heartbeat и часовые пояса.
+Обычный прогон: `python -m pytest -q tests --ignore=tests/e2e`.
+PostgreSQL: задать только отдельную тестовую `TELEGRAM_TEST_DATABASE_URL`, затем
+`python -m pytest -q tests/test_telegram*.py`. Harness применяет migrations,
+затем очищает только явную тестовую БД между тестами. Для CI первоначальная
+миграция отдельным обязательным шагом: любой migration failure завершает job.
+Browser E2E: `python -m pytest -q tests/e2e` (отдельные SQLite DB).
+Secret scan: `python scripts/ci/scan_secrets.py --history` (включает все локальные
+ветки, не печатает значения, прерывает job при findings/незавершённом сканировании).
 
-Это моки Telegram API, **не проверка настоящего бота**. Браузерная проверка меняет
-только временную тестовую БД. Скриншоты Telegram-блока проверены визуально после
-удаления одноразового кода со страницы; секретные trace-артефакты не создаются
-новыми Telegram E2E.
+## F–H. Production architecture / Render / env
 
-Первый общий прогон старого пользовательского `venv` обнаружил отсутствие
-`qrcode`, хотя он уже есть в requirements/lock. Окончательные проверки выполнены
-в существующем отдельном Python 3.12 окружении с проверкой всех runtime-пинов;
-рабочий `venv` не переписывался. Первый общий E2E выявил исчерпание общего лимита
-`/start`; новые Telegram E2E получили отдельный сервер/БД. Ограничения приложения
-не ослаблялись. Несколько старых тестов, прямо требовавших опасного поведения
-(удаление webhook/пропуск update), заменены проверками исправленного контракта;
-skip/xfail и отключение проверок не добавлялись.
+Схема и точные команды: [DEPLOYMENT.md](../DEPLOYMENT.md#telegram-production-topology-hardening-2026-10-03).
+Web: `python run.py`; отдельный Background Worker:
+`python -m telegram_bot.scheduler`; одна постоянная PostgreSQL для обоих.
+Публичный HTTPS нужен web, worker HTTP-порт не нужен. Миграции запускаются при
+старте обоих процессов и сериализуются. Web не запускает scheduler внутри себя.
 
-## Запуск и действия оператора
+Общие env names:
+`APP_ENV`, `DATABASE_URL`, `SECRET_KEY`, `COOKIE_SECURE`, `PUBLIC_ORIGIN`,
+`ALLOWED_HOSTS`, `APP_TIMEZONE`, `TELEGRAM_MODE`, `TELEGRAM_BOT_TOKEN`,
+`TELEGRAM_BOT_USERNAME`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_WEBHOOK_PATH`,
+`DISABLE_TELEGRAM`, `TESTING`, `PYTHON_DOTENV_DISABLED`.
+Web: `HOST`, `PORT`, `RELOAD`. Worker: `TELEGRAM_DIGEST_CHECK_INTERVAL_SECONDS`,
+`TELEGRAM_BOT_LOG_LEVEL`. Legacy aliases: `PUBLIC_BASE_URL`, `TELEGRAM_USE_WEBHOOK`.
+Секретные значения не входят в этот отчёт.
 
-Полная инструкция: [TELEGRAM_BOT_SETUP.md](TELEGRAM_BOT_SETUP.md).
-Команды ниже выполняются из корня проекта с заранее настроенным окружением.
-Для локального polling используйте один бот-процесс, ту же БД и режим
-`TELEGRAM_USE_WEBHOOK=false`. Настоящий production-токен требует отдельного
-осознанного решения о запуске/переключении транспорта.
+Free Render web засыпает, а worker должен быть always-on. Не обещаем real-time
+reminders на спящем или отсутствующем процессе. Варианты: Background Worker,
+внешний scheduler подходящей частоты либо другой always-on runtime.
+Источники: [Render Free](https://render.com/docs/free),
+[Background Workers](https://render.com/docs/background-workers).
 
-```bash
-source .venv/bin/activate
-python -m telegram_bot.diagnose
-```
+## I. Ручной live smoke после отдельно разрешённого deploy
 
-Три отдельных терминала:
+1. `python -m telegram_bot.diagnose --network`.
+2. `python -m telegram_bot.set_commands` — ровно шесть команд.
+3. `python -m telegram_bot.set_webhook`.
+4. Повторить `diagnose --network`: mode webhook, username/webhook match,
+   database accessible, missing tables/migrations пусты, свежий heartbeat.
+5. `/start`.
+6. Привязать существующий профиль и сверить workspace на сайте.
+7. «📍 Сейчас».
+8. «📅 Сегодня».
+9. «🗓 Неделя» и расписание.
+10. «📌 Задачи».
+11. Создать задачу обычной фразой, явно подтвердить.
+12. Выполнить/восстановить задачу.
+13. Создать заметку и проверить сайт.
+14. Поиск и `поиск: ...`.
+15. Настройки.
+16. Включить напоминание о тестовой паре, проверить доставку и snooze один раз.
+17. Evening preview без изменения delivery marker.
+18. Weekly preview без изменения delivery marker.
+19. Unlink/relink, убедиться, что старые pending replies не отправились.
 
-```bash
-python run.py
-```
+## J. Что не подтверждено / release gates
 
-```bash
-python -m telegram_bot.polling
-```
+До merge нужны зелёные remote CI (включая настоящий Linux Docker build и worker
+image smoke) и завершённый history scan. До production rollout нужны проверка
+реального bot username/token/header secret, публичного TLS/webhook, общей Render
+БД и always-on worker. Эти действия здесь не выполнялись и не подразумеваются.
 
-```bash
-python -m telegram_bot.scheduler
-```
+Ни mock transport, ни тестовый HTML Telegram viewer не проверяют официальный
+Telegram client. Hosting access logs, реальный тариф/ресурсы/спящий web,
+production data migration/backup/restore требуют проверки владельцем окружения.
 
-Для Render оператору осталось:
+Даже после успешных concurrency tests потеря Telegram acknowledgement или crash
+между send и DB commit могут дать повтор внешнего сообщения. Бизнес-операции
+по одному update защищены отдельно. Нет обещания exactly-once внешней доставки.
+Grace windows и bounded retries могут оставить недоставленное уведомление при
+длительном downtime. Записи дедупликации/TTL автоматически не удаляются.
+SECRET_KEY не ротировать при обычном deploy: он участвует в доступе к workspace.
 
-1. После собственного решения о публикации выбрать эту ревизию и проверить
-   Linux CI/сборку текущего Dockerfile с production lock.
-2. Проверить постоянную общую PostgreSQL БД, постоянный SECRET_KEY, публичный HTTPS
-   origin, username/токен, режим webhook и отключённый TESTING/DISABLE_TELEGRAM.
-3. Запустить web, дождаться миграций, затем отдельный scheduler. Проверить свежий
-   heartbeat; не полагаться на одно наличие переменной окружения.
-4. Явно выполнить setup и read-only сетевую диагностику в защищённом окружении:
+## K. Git status
 
-```bash
-python -m telegram_bot.diagnose --network
-python -m telegram_bot.set_webhook
-python -m telegram_bot.set_commands
-python -m telegram_bot.diagnose --network
-```
-
-5. На своём пространстве подтвердить /link → данные → добавить/закрыть задачу →
-   тест сводки → плановую отправку → отключение. Сверить изменение той же записи
-   на сайте. Для Free web без Shell setup можно выполнить локально с **адресами
-   Render**, не запуская polling и не передавая токен аргументом команды.
-
-## Оставшиеся ограничения
-
-- Нужны реальные проверки getMe, getWebhookInfo, HTTPS доставки, общей БД и
-  worker в Render. Бесплатный спящий web не гарантирует быстрый ответ и не заменяет
-  постоянно работающий scheduler; тариф/ресурсы здесь не менялись.
-- Таймаут после фактической отправки может дать повтор сообщения; ошибка между
-  отправкой и записью подтверждения scheduler тоже имеет неопределённый исход.
-  Повтор бизнес-операции для того же update предотвращается отдельно.
-- Outbox ограничен пятью попытками и 24 часами. Терминальные ответы видны в
-  диагностике, после исправления пользователь отправляет новую команду.
-- SQLite ограничивает параллельную запись во время отправки уведомления; для
-  нескольких production-сервисов нужен общий PostgreSQL. Его конкурентные
-  сценарии остаются live/staging-проверкой, локальные конкурентные тесты — SQLite.
-- Перенос старой SQLite в PostgreSQL требует отдельной пробной миграции всех таблиц
-  и проверки ID/устройств. Копирование одинакового SQLite URL между сервисами
-  не переносит пространство.
-- Небольшие записи дедупликации пока сохраняются без автоматического удаления;
-  контролируйте рост БД. Старые URL-секреты поддерживаются, но внешний reverse proxy
-  может вести собственные access-логи: предпочтителен переход на secret header.
-
-## Изменённые файлы
-
-Основная логика:
-`app/services/telegram_bot.py`, `telegram_delivery.py`, `telegram_state.py`,
-`telegram_digest.py`, `telegram_notifications.py`, `task_completion.py`,
-`calendar_service.py`.
-
-БД/безопасность/приложение:
-`app/core/database.py`, `app/core/migrations.py`, `app/core/telegram_logging.py`,
-`app/models/telegram_runtime.py`, `app/models/__init__.py`, `app/main.py`.
-
-Маршруты/UI:
-`app/web/routes/telegram.py`, `profile.py`, `tasks.py`,
-`app/web/templates/profile/profile.html`, `app/static/js/profile-telegram.js`.
-
-CLI/настройки:
-`telegram_bot/polling.py`, `scheduler.py`, `set_webhook.py`, `diagnose.py`, `.env.example`.
-
-Тесты:
-`tests/test_telegram_bot.py`, `test_telegram_reliability.py`, `test_migrations.py`,
-`tests/e2e/conftest.py`, `tests/e2e/test_telegram_profile.py`.
-
-Документация:
-`docs/integrations/TELEGRAM_BOT_SETUP.md`, `docs/DEPLOYMENT.md`, этот отчёт.
-
-Ниже — фактический `git diff --stat` для отслеживаемых файлов. Git не включает
-неотслеживаемые новые файлы в эту команду; они перечислены отдельно. Ничего не staged.
-
-```text
- .env.example                            |   2 +
- app/core/database.py                    |   2 +-
- app/core/migrations.py                  |  10 +
- app/main.py                             |   3 +
- app/models/__init__.py                  |   1 +
- app/services/calendar_service.py        |  14 +
- app/services/telegram_bot.py            | 354 ++++++++++++--------
- app/services/telegram_digest.py         |  15 +-
- app/services/telegram_notifications.py  |   9 +-
- app/static/js/profile-telegram.js       |  46 ++-
- app/web/routes/profile.py               |  33 +-
- app/web/routes/tasks.py                 |  54 +--
- app/web/routes/telegram.py              |  62 ++--
- app/web/templates/profile/profile.html  |  10 +-
- docs/DEPLOYMENT.md                      |   8 +
- docs/integrations/TELEGRAM_BOT_SETUP.md | 577 ++++++++++++++------------------
- telegram_bot/polling.py                 | 107 +++---
- telegram_bot/scheduler.py               | 386 ++++++++-------------
- telegram_bot/set_webhook.py             |  64 ++--
- tests/e2e/conftest.py                   |  14 +-
- tests/test_migrations.py                |   1 +
- tests/test_telegram_bot.py              |  70 ++--
- 22 files changed, 901 insertions(+), 941 deletions(-)
-```
-
-Новые файлы:
-
-```text
-app/core/telegram_logging.py
-app/models/telegram_runtime.py
-app/services/task_completion.py
-app/services/telegram_delivery.py
-app/services/telegram_state.py
-docs/integrations/TELEGRAM_VERIFICATION.md
-telegram_bot/diagnose.py
-tests/e2e/test_telegram_profile.py
-tests/test_telegram_reliability.py
-```
+Изменения из списка C остаются unstaged в `fix/telegram-integration`.
+Новые workflow, три CI scripts, test DB helper и hardening tests — untracked до
+отдельной команды пользователя. Commit/push/merge/deploy не выполнялись.

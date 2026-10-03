@@ -160,6 +160,7 @@ def process_class_reminders(db, *, now_utc=None, send_message, send_notification
     for (user_id,) in ids:
         try:
             user = db.get(User, user_id)
+            db.refresh(user, with_for_update=True)
             if not preferences(db, user)['enabled']:
                 db.commit()
                 continue
@@ -188,6 +189,7 @@ def process_class_reminders(db, *, now_utc=None, send_message, send_notification
             ).all()
             for (key,) in keys:
                 try:
+                    db.refresh(user, with_for_update=True)
                     row = state_row(db, key)
                     data = dict(row.data)
                     snooze = data.get('status') == 'sent' and data.get('snooze_status') == 'pending'

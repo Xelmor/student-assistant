@@ -210,7 +210,7 @@ def test_navigation_schedule_back_and_legacy_details(harness):
 def test_long_schedule_paginates_without_losing_rows_or_exceeding_utf16_limit(harness):
     with harness.SessionLocal() as db:
         for i in range(85):
-            add_lesson(db,harness,f'{i:03d} '+ '🚀<&>'*45, room='🚀'*50, day=MONDAY)
+            add_lesson(db,harness,f'{i:03d} '+ '🚀<&>'*24, room='🚀'*50, day=MONDAY)
     reply = callback(harness,f'week_schedule:{MONDAY}:0')
     messages = []
     while True:

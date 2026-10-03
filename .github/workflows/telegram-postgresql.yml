@@ -1,0 +1,96 @@
+name: Telegram production readiness
+on:
+  push:
+    branches: [main, fix/telegram-integration]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+
+env:
+  PYTHON_DOTENV_DISABLED: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+  APP_ENV: test
+  TESTING: 'true'
+  DISABLE_TELEGRAM: 'true'
+  TELEGRAM_BOT_TOKEN: ''
+  TELEGRAM_BOT_API_TOKEN: ''
+  TELEGRAM_USE_WEBHOOK: 'false'
+  TELEGRAM_WEBHOOK_SECRET: ''
+  SECRET_KEY: telegram-postgresql-ci-only-test-secret-key
+  COOKIE_SECURE: 'false'
+  PUBLIC_BASE_URL: http://127.0.0.1
+  DATABASE_URL: postgresql+psycopg://postgres@127.0.0.1:5432/sa_telegram_test_ci
+  TELEGRAM_TEST_DATABASE_URL: postgresql+psycopg://postgres@127.0.0.1:5432/sa_telegram_test_ci
+
+jobs:
+  telegram-postgresql:
+    name: Telegram + PostgreSQL / Python 3.12
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sa_telegram_test_ci
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sa_telegram_test_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Create clean Python environment
+        run: |
+          python -m venv "$RUNNER_TEMP/telegram-venv"
+          echo "$RUNNER_TEMP/telegram-venv/bin" >> "$GITHUB_PATH"
+      - name: Hash-verified production dependencies, constrained tests
+        run: |
+          python -m pip install --require-hashes -r requirements.lock.txt
+          python scripts/ci/check_runtime.py --production-only --snapshot "$RUNNER_TEMP/telegram-runtime.json"
+          python -m pip install -c requirements.constraints.txt -r requirements-dev.txt
+          python -m pip check
+          python scripts/ci/check_runtime.py --baseline "$RUNNER_TEMP/telegram-runtime.json"
+      - name: Clean PostgreSQL migrations (failure is fatal)
+        run: python -c 'from app.core.migrations import run_migrations; run_migrations()'
+      - name: All Telegram, scheduler, concurrency and HTTP workspace smoke on PostgreSQL
+        run: python -m pytest -q tests/test_telegram*.py --tb=short
+      - name: Real web and two workers, connection loss and graceful shutdown
+        env:
+          TELEGRAM_PROCESS_TEST_DATABASE_URL: postgresql+psycopg://postgres@127.0.0.1:5432/sa_telegram_test_processes_ci
+        run: |
+          python - <<'PYCODE'
+          import os
+          from sqlalchemy import create_engine, text
+          engine=create_engine(os.environ['DATABASE_URL'], isolation_level='AUTOCOMMIT')
+          with engine.connect() as connection:
+              connection.execute(text('CREATE DATABASE sa_telegram_test_processes_ci'))
+          engine.dispose()
+          PYCODE
+          python scripts/ci/smoke_telegram_processes.py
+      - name: Repository secret scan
+        run: python scripts/ci/scan_secrets.py --history
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Telegram desktop/mobile E2E (separate isolated browser DBs)
+        env:
+          TELEGRAM_TEST_DATABASE_URL: ''
+          DATABASE_URL: sqlite:////tmp/sa-telegram-browser.db
+        run: python -m pytest -q tests/e2e/test_telegram*.py --browser chromium --tb=short
+      - name: Build unchanged production Dockerfile
+        run: docker build --platform linux/amd64 -t sa-telegram-production .
+      - name: Default image command, pip check, HTTP smoke
+        run: bash scripts/ci/check_main_image.sh sa-telegram-production sa-telegram-http-ci
+      - name: Scheduler command in production image, shared PostgreSQL and graceful shutdown
+        run: bash scripts/ci/check_scheduler_image.sh sa-telegram-production sa-telegram-worker-ci
+      - name: Always remove local CI containers
+        if: ${{ always() }}
+        run: docker rm -f sa-telegram-http-ci sa-telegram-worker-ci >/dev/null 2>&1 || true

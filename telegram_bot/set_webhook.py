@@ -29,6 +29,8 @@ def main(argv=None) -> int:
         return 1
     try:
         if args.delete_for_polling:
+            if settings.app_env == 'production':
+                raise ValueError('Production webhook cannot be deleted by polling setup.')
             if settings.telegram_use_webhook:
                 raise ValueError('Set TELEGRAM_USE_WEBHOOK=false before switching to polling.')
             delete_telegram_webhook()

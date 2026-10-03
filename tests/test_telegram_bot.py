@@ -61,12 +61,14 @@ class TelegramBotTests(unittest.TestCase):
         if self.db_path.exists():
             self.db_path.unlink()
 
-        self.engine = create_engine(
+        from telegram_database import postgres_test_engine
+        self.engine = postgres_test_engine() or create_engine(
             f"sqlite:///{self.db_path.resolve().as_posix()}",
             connect_args={'check_same_thread': False},
         )
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        Base.metadata.create_all(bind=self.engine)
+        if self.engine.dialect.name == "sqlite":
+            Base.metadata.create_all(bind=self.engine)
 
         def override_get_db():
             db = self.SessionLocal()
@@ -1789,6 +1791,7 @@ class TelegramBotTests(unittest.TestCase):
 
     def test_polling_main_requires_token(self):
         local_settings = SimpleNamespace(
+            app_env="development",
             telegram_bot_token='',
             telegram_use_webhook=False,
             telegram_bot_log_level='INFO',
@@ -1798,6 +1801,7 @@ class TelegramBotTests(unittest.TestCase):
 
     def test_polling_main_rejects_webhook_mode(self):
         local_settings = SimpleNamespace(
+            app_env="development",
             telegram_bot_token='test-token',
             telegram_use_webhook=True,
             telegram_bot_log_level='INFO',
@@ -1807,6 +1811,7 @@ class TelegramBotTests(unittest.TestCase):
 
     def test_polling_main_checks_webhook_and_starts_loop(self):
         local_settings = SimpleNamespace(
+            app_env="development",
             telegram_bot_token='test-token',
             telegram_use_webhook=False,
             telegram_bot_log_level='INFO',
@@ -1826,6 +1831,7 @@ class TelegramBotTests(unittest.TestCase):
 
     def test_polling_stops_when_webhook_check_fails(self):
         local_settings = SimpleNamespace(
+            app_env="development",
             telegram_bot_token='test-token',
             telegram_use_webhook=False,
             telegram_bot_log_level='INFO',

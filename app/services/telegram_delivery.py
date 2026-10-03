@@ -38,6 +38,8 @@ def process_update(db, update, *, send_message=send_telegram_message):
             record.telegram_user_id = sender_id if type(sender_id) is int and 0 < sender_id < 2**63 else None
             user = db.query(User).filter_by(telegram_user_id=record.telegram_user_id).first() if record.telegram_user_id else None
             record.user_id = user.id if user and reply and reply.chat_id == user.telegram_chat_id else None
+            if record.user_id:
+                record.reply = {**record.reply, '_linked_at': user.telegram_linked_at.isoformat() if user.telegram_linked_at else None}
             record.status = 'pending' if reply else 'sent'
             db.commit()
             logger.info('Telegram stage=stored update_id=%s', update_id)
@@ -47,6 +49,7 @@ def process_update(db, update, *, send_message=send_telegram_message):
                 raise RuntimeError('Telegram transaction conflict') from None
         except Exception:
             db.rollback()
+            logger.error('Telegram stage=command update_id=%s category=processing_failed', update_id)
             raise
         finally:
             db.info.pop('telegram_atomic', None)
@@ -77,11 +80,23 @@ def deliver_reply(db, update_id, *, send_message=send_telegram_message):
         user = db.get(User, record.user_id)
         if user:
             db.refresh(user, with_for_update=True)
-        if not user or user.telegram_user_id != record.telegram_user_id or user.telegram_chat_id != record.reply['chat_id']:
+        db.refresh(record, with_for_update=True)
+        if record.status != 'pending' or not record.reply:
+            db.commit()
+            return
+        if (not user or user.telegram_user_id != record.telegram_user_id
+                or user.telegram_chat_id != record.reply['chat_id']
+                or record.reply.get('_linked_at') != (user.telegram_linked_at.isoformat() if user.telegram_linked_at else None)):
             record.status, record.reply = 'cancelled', None
             db.commit()
             return
+    # A previous sender may finish while this worker waits for the owner lock.
+    db.refresh(record, with_for_update=True)
+    if record.status != 'pending' or not record.reply:
+        db.commit()
+        return
     payload = dict(record.reply)
+    payload.pop('_linked_at', None)
     snapshot = payload.pop('_task_snapshot', None)
     try:
         send_message(TelegramReply(**payload))
@@ -122,3 +137,4 @@ def retry_pending_replies(db, *, send_message=send_telegram_message):
             deliver_reply(db, update_id, send_message=send_message)
         except Exception:
             db.rollback()
+            logger.warning('Telegram stage=reply_retry update_id=%s category=retry_failed', update_id)

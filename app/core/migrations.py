@@ -461,9 +461,11 @@ MIGRATIONS = [
 
 def run_migrations(target_engine: Engine | None = None) -> None:
     active_engine = target_engine or engine
-    Base.metadata.create_all(bind=active_engine)
-
     with active_engine.begin() as connection:
+        if connection.dialect.name == "postgresql":
+            # Web and worker may start together; serialize all DDL and version writes.
+            connection.execute(text("SELECT pg_advisory_xact_lock(734102941)"))
+        Base.metadata.create_all(bind=connection)
         connection.execute(
             text(
                 """
