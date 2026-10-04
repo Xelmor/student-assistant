@@ -581,18 +581,18 @@ def build_help_message() -> str:
     )
 
 
-def _format_schedule(items: list[ScheduleItem]) -> list[str]:
+def _format_schedule(items: list[dict]) -> list[str]:
     rows = []
     for item in items:
         row = (
-            f"🕘 {item.start_time.strftime('%H:%M')}–{item.end_time.strftime('%H:%M')} "
-            f"— <b>{_html(item.subject.name)}</b>"
+            f"🕘 {_html(item['time_label'].replace(' - ', '–'))} "
+            f"— <b>{_html(item['title'])}</b>"
         )
         details = []
-        if item.lesson_type:
-            details.append(_html(item.lesson_type))
-        if item.room:
-            details.append(f'Аудитория: {_html(item.room)}')
+        if item.get('description'):
+            details.append(_html(item['description']))
+        if item.get('room'):
+            details.append(f"Аудитория: {_html(item['room'])}")
         if details:
             row += '\n   ' + ' · '.join(details)
         rows.append(row)
@@ -644,7 +644,7 @@ def _day_plan(
     db: Session,
     user: User,
     target_date: date,
-) -> tuple[list[ScheduleItem], list[Task], list[AcademicEvent]]:
+) -> tuple[list[dict], list[Task], list[AcademicEvent]]:
     schedule_items = effective_schedule_for_day(db, user, target_date)
     tasks = (
         db.query(Task)
@@ -669,6 +669,10 @@ def _day_plan(
         .order_by(AcademicEvent.start_time.asc())
         .all()
     )
+    # Replacements are already rendered as lessons; do not repeat them in the
+    # separate academic-events section of the day plan.
+    lesson_event_ids = {item.get('academic_event_id') for item in schedule_items}
+    events = [event for event in events if event.id not in lesson_event_ids]
     return schedule_items, tasks, events
 
 

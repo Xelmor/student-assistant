@@ -141,18 +141,15 @@ def should_show_schedule_on_day(user: User, day: date) -> bool:
     return not is_summer_break_day(day)
 
 
-def effective_schedule_for_day(db, user, day):
-    """The same cancellations/term boundaries used by the calendar and Telegram."""
-    if not should_show_schedule_on_day(user, day):
-        return []
-    if db.query(AcademicEvent.id).filter(
-        AcademicEvent.user_id == user.id, AcademicEvent.event_date == day,
-        AcademicEvent.event_type == DAY_OVERRIDE_EVENT_TYPE,
-    ).first():
-        return []
-    return db.query(ScheduleItem).filter(
-        ScheduleItem.user_id == user.id, ScheduleItem.weekday == day.weekday(),
-    ).order_by(ScheduleItem.start_time).all()
+def effective_schedule_for_day(db: Session, user: User, day: date) -> list[dict]:
+    """Calendar lesson events, including replacements of an overridden day.
+
+    The calendar suppresses recurring slots for overrides/term boundaries while
+    retaining explicit changed_class events. Do not interpret an override as a
+    cancellation of those replacements, or manufacture ScheduleItem rows for them.
+    """
+    events = build_calendar_event_map(user, db, day.year, day.month)['event_map']
+    return [event for event in events.get(day, []) if event['type'] in {'schedule', 'schedule-change'}]
 
 
 def get_intensity_level(day_events):
