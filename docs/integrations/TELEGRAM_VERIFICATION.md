@@ -115,8 +115,9 @@ create confirm, done, reschedule, note delete и snooze callback; scheduler вм
 | pip check | No broken requirements found |
 | Runtime lock/constraints | 37 runtime versions match |
 | Python syntax / shell syntax / git diff --check | PASS |
-| Offline scan текущих файлов | 0 findings; эвристика, не гарантия |
-| Полный Git history scan | Не завершён: локальный git log превышает таймаут; секрет по этому результату не обнаружен и отсутствие не доказано |
+| Working tree secret scan (включая ignored .env) | Завершён: локальный Telegram token в ignored `.env`; значения не выводятся |
+| Tracked HEAD secret scan | PASS: 237 файлов, 236 уникальных blobs |
+| Полный reachable Git history scan | Завершён: 50 commits; исторический небезопасный fallback SECRET_KEY, подробности ниже |
 | Docker build/default HTTP/scheduler image | Подготовлены CI checks; локально Docker отсутствует |
 | GitHub Actions | Workflow подготовлен, remote run не выполнялся (нет push) |
 
@@ -126,8 +127,84 @@ PostgreSQL: задать только отдельную тестовую `TELEG
 затем очищает только явную тестовую БД между тестами. Для CI первоначальная
 миграция отдельным обязательным шагом: любой migration failure завершает job.
 Browser E2E: `python -m pytest -q tests/e2e` (отдельные SQLite DB).
-Secret scan: `python scripts/ci/scan_secrets.py --history` (включает все локальные
-ветки, не печатает значения, прерывает job при findings/незавершённом сканировании).
+Secret scan: `python3 scripts/ci/scan_secrets.py --history --timeout 60`.
+Для безопасного машиночитаемого отчёта добавить `--json`.
+
+### Завершение history scan, 2026-10-03
+
+Проверено на HEAD `1d45e3c5c43a1e2cc5ff81d75e0a7ffd0be24104`, ветка
+`fix/telegram-integration`. Исходный timeout был связан с iCloud dataless
+Git objects: после загрузки локальных объектов обход завершается. Сканер сам
+не обращается в сеть и не загружает недостающие объекты.
+
+Вместо повторного сканирования patch для каждого commit сканер получает деревья
+всех reachable commits, читает каждый уникальный blob один раз через
+`git cat-file --batch`, затем связывает findings с путями и commits.
+Дополнительно проверяются commit/tag metadata и refs, указывающие прямо на
+деревья/blobs (в этом checkout есть служебные refs Codex). Временные blob data
+хранятся только в приватной временной директории, удаляемой после прохода.
+
+| Область | Проверено | Результат |
+|---|---|---|
+| Working tree | 242 файла, включая 2 env-файла и ignored local files вне dependency/cache directories | FAIL: только локальный ignored `.env` |
+| Tracked HEAD | 1 commit, 237 файлов, 236 blobs | **PASS** |
+| Reachable history и служебные tree refs | 50 commits + их metadata, 3 дополнительных tree roots, 351 путь, 863 версии файлов, 820 уникальных blobs, 17 env-версий | FAIL: один потенциально небезопасный исторический ключ в 8 commits |
+
+Повторный полный проход: **5.021 s**, exit **1** (findings, а не timeout).
+Количество blobs/путей включает текущие служебные snapshots и может меняться
+без новых commits. Результаты повторного прохода совпали: новых findings нет.
+Это эвристическая offline-проверка: действительность credentials у провайдера
+не проверялась. Reflogs, unreachable objects и refs, существующие только на
+remote, не входят в reachable local history. Shallow checkout, недоступные
+objects, submodules и external LFS content дают INCOMPLETE (exit 2), а не PASS.
+Ignored dependency/cache directories исключены только из working tree обхода;
+tracked blobs проверяются без фильтра по расширению или размеру.
+
+Безопасные findings:
+
+- Commit отсутствует; path `.env`; type `telegram_bot_token`;
+  fingerprint `sha256:4757a726cf94db9d`. Файл ignored/untracked; этот токен
+  в reachable Git history не найден. Наличие локального токена само по себе
+  не доказывает утечку и не требует ротации.
+- Commit `969bb1548ef65fefd2de118c3e67e508f86b8240`; path `app/main.py`;
+  type `secret_key`; fingerprint `sha256:376912d192756c41`.
+  Это известный development fallback в `os.getenv`, который старая версия
+  `SessionMiddleware` использовала без production guard. Фактическое применение
+  этого значения на публичном окружении по Git доказать нельзя. Он также есть
+  в commits `3fad685827252c964f419a993bddbd90694396fd`,
+  `3a7b6efe83aba3044033cc93b1bb0a8644d7acb6`,
+  `06c60e7a4512eccccc03c1d6c0e168815b49bedb`,
+  `35c7ed89a15d5282c5caa41775e845692a122b8a`,
+  `5f0773611be268d191dc2b08061c0d305f8b10c0`,
+  `a98e9bdc25f98889930c94ffc7f59f0614d6cba8`,
+  `0e2445521d5cc1002ea5f9e57e8917bd25dcee01`.
+
+Если исторический fallback использовался для публичных сессий, нужно заменить
+SECRET_KEY безопасным способом с учётом инвалидирования сессий и доступа к
+workspace. Ротация не выполнялась. Переписывание истории для публичного
+development-default не требуется и не заменяет ротацию, если он использовался.
+История не переписывалась; автоматически объявлять её чистой нельзя.
+
+Обычные placeholders документации не считаются секретами. Проверенные fixture
+исключения ограничены точным path/type/SHA-256 fingerprint и пояснены в
+`REVIEWED_EXAMPLES`; произвольные файлы tests/docs не исключаются из проверки.
+Исторический fallback из `app/core/config.py` отдельно проверен: production
+ветка выбрасывала ошибку до его использования, поэтому это development-only
+пример. Небезопасный fallback `app/main.py` в исключения не добавлен.
+
+Scanner regression tests: `python -m pytest -q tests/test_secret_scanner.py`
+— **58 passed**. Проверяются категории секретов, placeholders, удалённый
+секрет в другой ветке, metadata/non-commit refs, разделение working tree/HEAD,
+ignored env/key files, большие binary blobs, symlinks, дедупликация blob reads,
+shallow/missing/LFS/timeout и отсутствие raw secrets в отчёте.
+
+CI использует `fetch-depth: 0`, общий budget сканера 60 s и ограничение шага
+2 минуты; шаг запускает regression tests. При текущем историческом finding
+CI должен завершать secret scan с exit 1 до его явного разбора, а не скрывать
+результат. Дополнительный проход в отдельном чистом local clone без `.env`
+завершился за **4.634 s**: working tree/HEAD PASS, history exit 1 с тем же
+fallback (50 commits, 350 путей, 811 blobs; служебные refs Codex clone не
+переносит). Remote CI в этом этапе не запускался.
 
 ## F–H. Production architecture / Render / env
 
@@ -178,7 +255,8 @@ reminders на спящем или отсутствующем процессе. 
 ## J. Что не подтверждено / release gates
 
 До merge нужны зелёные remote CI (включая настоящий Linux Docker build и worker
-image smoke) и завершённый history scan. До production rollout нужны проверка
+image smoke) и разбор найденного исторического fallback SECRET_KEY. History
+scan завершён, но имеет finding (см. E). До production rollout нужны проверка
 реального bot username/token/header secret, публичного TLS/webhook, общей Render
 БД и always-on worker. Эти действия здесь не выполнялись и не подразумеваются.
 
@@ -195,6 +273,8 @@ SECRET_KEY не ротировать при обычном deploy: он учас
 
 ## K. Git status
 
-Изменения из списка C остаются unstaged в `fix/telegram-integration`.
-Новые workflow, три CI scripts, test DB helper и hardening tests — untracked до
-отдельной команды пользователя. Commit/push/merge/deploy не выполнялись.
+Предыдущий hardening уже входит в HEAD `1d45e3c5c43a1e2cc5ff81d75e0a7ffd0be24104`.
+В этапе завершения history scan изменены `scripts/ci/scan_secrets.py`,
+`.github/workflows/telegram-postgresql.yml` и этот отчёт; добавлен
+`tests/test_secret_scanner.py`. Изменения остаются unstaged/untracked.
+Commit/push/merge/deploy не выполнялись.

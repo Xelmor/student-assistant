@@ -77,7 +77,10 @@ jobs:
           PYCODE
           python scripts/ci/smoke_telegram_processes.py
       - name: Repository secret scan
-        run: python scripts/ci/scan_secrets.py --history
+        timeout-minutes: 2
+        run: |
+          python -m pytest -q tests/test_secret_scanner.py --tb=short
+          python scripts/ci/scan_secrets.py --history --timeout 60
       - name: Install Chromium
         run: python -m playwright install --with-deps chromium
       - name: Telegram desktop/mobile E2E (separate isolated browser DBs)
