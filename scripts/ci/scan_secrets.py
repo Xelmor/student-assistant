@@ -71,10 +71,31 @@ REVIEWED_EXAMPLES = {
     # Historical Russian instruction to paste a BotFather token, not a token.
     ('README.md', 'telegram_bot_token', 'sha256:3be4a94b3f2d7020'),
     # Historical development-only fallback: get_settings raises in production
-    # before choosing this value. The old unguarded app/main.py fallback is NOT
-    # allowlisted: it could have signed real sessions if deployed without env.
+    # before choosing this value. app/main.py is handled separately below,
+    # only for its reviewed historical commits, never in working tree/HEAD.
     ('app/core/config.py', 'secret_key', 'sha256:7e0feefa9129e367'),
 }
+
+
+# Reviewed 2026-10-04: development fallback, not a production credential.
+# Keep the finding visible. Do not add this to scan() / REVIEWED_EXAMPLES:
+# reintroducing it in HEAD, the working tree or another commit must still fail.
+KNOWN_SAFE_HISTORY = {
+    ('app/main.py', 'secret_key', 'sha256:376912d192756c41'): frozenset({
+        '969bb1548ef65fefd2de118c3e67e508f86b8240',
+        '3fad685827252c964f419a993bddbd90694396fd',
+        '3a7b6efe83aba3044033cc93b1bb0a8644d7acb6',
+        '06c60e7a4512eccccc03c1d6c0e168815b49bedb',
+        '35c7ed89a15d5282c5caa41775e845692a122b8a',
+        '5f0773611be268d191dc2b08061c0d305f8b10c0',
+        'a98e9bdc25f98889930c94ffc7f59f0614d6cba8',
+        '0e2445521d5cc1002ea5f9e57e8917bd25dcee01',
+    }),
+}
+
+
+def history_allowlisted(commit, path, hit):
+    return commit in KNOWN_SAFE_HISTORY.get((path, hit.kind, hit.fingerprint), ())
 
 
 def secret_kind(key):
@@ -239,7 +260,7 @@ def working_files(git):
 
 def scope_report():
     return {'status': 'PASS', 'commits': 0, 'files': 0, 'unique_blobs': 0,
-            'env_files': 0, 'findings': [], 'seconds': 0.0}
+            'env_files': 0, 'findings': [], 'allowlisted': [], 'seconds': 0.0}
 
 
 def audit(root, *, history=False, timeout=120):
@@ -349,20 +370,26 @@ def audit(root, *, history=False, timeout=120):
             versions, blobs, paths, env = set(), set(), set(), set()
             # Group identical secret+path across commits; never print secret values.
             findings = {}
+            allowlisted = {}
             for commit in selected:
                 for name, oid in snapshots[commit]:
                     versions.add((name, oid)); blobs.add(oid); paths.add(name)
                     if Path(name).name.startswith('.env'): env.add((name, oid))
                     for hit in cache[oid, name]:
                         key = (name, hit.kind, hit.fingerprint)
-                        item = findings.setdefault(key, {'commit': None if commit in extra_roots else commit,
+                        known_safe = label == 'history' and history_allowlisted(commit, name, hit)
+                        destination = allowlisted if known_safe else findings
+                        item = destination.setdefault(key, {'commit': None if commit in extra_roots else commit,
                                                          'path': name, **asdict(hit), 'commits': []})
+                        if known_safe:
+                            item['status'] = 'KNOWN_SAFE / ALLOWLISTED'
                         if commit in extra_roots:
                             item.setdefault('objects', []).append(commit)
                         else:
                             item['commits'].append(commit)
             scope.update(files=len(paths), file_versions=len(versions), unique_blobs=len(blobs), env_files=len(env),
-                         findings=list(findings.values()), seconds=round(time.monotonic() - began, 3))
+                         findings=list(findings.values()), allowlisted=list(allowlisted.values()),
+                         seconds=round(time.monotonic() - began, 3))
             if label == 'history':
                 scope['findings'].extend(metadata_findings)
         report['unique_blobs_read'] = len(oids)
@@ -395,11 +422,12 @@ def main(argv=None):
     else:
         for label, scope in report['scopes'].items():
             print(f"{label}: {scope['status']} commits={scope['commits']} files={scope['files']} "
-                  f"unique_blobs={scope['unique_blobs']} findings={len(scope['findings'])} seconds={scope['seconds']}")
-            for item in scope['findings']:
+                  f"unique_blobs={scope['unique_blobs']} findings={len(scope['findings'])} "
+                  f"allowlisted={len(scope['allowlisted'])} seconds={scope['seconds']}")
+            for item in scope['findings'] + scope['allowlisted']:
                 # JSON escaping also prevents control-character/terminal injection from paths.
                 safe = {k: item[k] for k in ('commit', 'path', 'kind', 'fingerprint')}
-                for key in ('object', 'objects'):
+                for key in ('object', 'objects', 'status'):
                     if key in item:
                         safe[key] = item[key]
                 print(json.dumps(safe, ensure_ascii=True))

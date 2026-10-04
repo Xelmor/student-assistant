@@ -142,6 +142,110 @@ def test_reviewed_examples_are_exact_path_type_and_value(monkeypatch):
     assert scanner.scan(data.replace(b'SECRET_KEY', b'API_KEY'), 'tests/fixture.py')
 
 
+def historical_fallback():
+    # Reconstruct the reviewed public development literal, without embedding a
+    # credential assignment in this test source or printing the literal.
+    return '_'.join(('dev', 'secret', 'change', 'me'))
+
+
+def allow_fixture_commit(monkeypatch, commit_id):
+    monkeypatch.setattr(scanner, 'KNOWN_SAFE_HISTORY', {
+        ('app/main.py', 'secret_key', 'sha256:376912d192756c41'): frozenset({commit_id}),
+    })
+
+
+def test_known_history_rule_is_exact():
+    old = '969bb1548ef65fefd2de118c3e67e508f86b8240'
+    hit = scanner.Hit('secret_key', 'sha256:376912d192756c41')
+    assert scanner.fingerprint(historical_fallback()) == hit.fingerprint
+    assert scanner.history_allowlisted(old, 'app/main.py', hit)
+    assert not scanner.history_allowlisted(old, 'other/main.py', hit)
+    assert not scanner.history_allowlisted(old, 'app/main.py', scanner.Hit('api_key', hit.fingerprint))
+    assert not scanner.history_allowlisted(old, 'app/main.py', scanner.Hit(hit.kind, scanner.fingerprint(fake_value())))
+    assert not scanner.history_allowlisted('0' * 40, 'app/main.py', hit)
+
+
+@pytest.mark.parametrize('path,key,value,expected', [
+    ('app/main.py', 'SECRET_KEY', historical_fallback(), 'PASS'),
+    ('app/main.py', 'SECRET_KEY', fake_value(), 'FAIL'),
+    ('other/main.py', 'SECRET_KEY', historical_fallback(), 'FAIL'),
+    ('app/main.py', 'TELEGRAM_BOT_TOKEN', '123456789:' + fake_value(), 'FAIL'),
+    ('settings.py', 'SECRET_KEY', fake_value(), 'FAIL'),
+    ('app/main.py', 'APP_NAME', 'student-assistant', 'PASS'),
+])
+def test_history_allowlist_preserves_failures(repo, monkeypatch, path, key, value, expected):
+    file = repo / path
+    file.parent.mkdir(parents=True, exist_ok=True)
+    file.write_text(f'{key}="{value}"')
+    old = commit(repo)
+    allow_fixture_commit(monkeypatch, old)
+    file.unlink()
+    commit(repo)
+    result = scanner.audit(repo, history=True)
+    history = result['scopes']['history']
+    assert result['status'] == history['status'] == expected
+    assert result['scopes']['head']['status'] == 'PASS'
+    assert result['scopes']['working_tree']['status'] == 'PASS'
+    if value == historical_fallback() and path == 'app/main.py':
+        assert history['allowlisted'][0]['status'] == 'KNOWN_SAFE / ALLOWLISTED'
+        assert history['allowlisted'][0]['commits'] == [old]
+    else:
+        assert not history['allowlisted']
+    assert value not in json.dumps(result)
+
+
+def test_history_allowlist_never_applies_to_head_or_working_tree(repo, monkeypatch):
+    file = repo / 'app/main.py'
+    file.parent.mkdir()
+    file.write_text(f'SECRET_KEY="{historical_fallback()}"')
+    old = commit(repo)
+    allow_fixture_commit(monkeypatch, old)
+    result = scanner.audit(repo, history=True)
+    assert result['scopes']['history']['status'] == 'PASS'
+    for label in ('working_tree', 'head'):
+        assert result['scopes'][label]['status'] == 'FAIL'
+        assert not result['scopes'][label]['allowlisted']
+    assert result['status'] == 'FAIL'
+
+
+def test_same_finding_in_unreviewed_commit_still_fails(repo, monkeypatch):
+    file = repo / 'app/main.py'
+    file.parent.mkdir()
+    file.write_text(f'SECRET_KEY="{historical_fallback()}"')
+    old = commit(repo)
+    new = commit(repo)
+    allow_fixture_commit(monkeypatch, old)
+    file.unlink()
+    commit(repo)
+    history = scanner.audit(repo, history=True)['scopes']['history']
+    assert history['status'] == 'FAIL'
+    assert history['allowlisted'][0]['commits'] == [old]
+    assert history['findings'][0]['commits'] == [new]
+
+
+def test_known_history_visible_in_cli_and_does_not_hide_new_secret(repo, monkeypatch, capsys):
+    file = repo / 'app/main.py'
+    file.parent.mkdir()
+    file.write_text(f'SECRET_KEY="{historical_fallback()}"')
+    allow_fixture_commit(monkeypatch, commit(repo))
+    file.unlink()
+    commit(repo)
+    assert scanner.main(['--repo', str(repo), '--history']) == 0
+    output = capsys.readouterr().out
+    assert 'history: PASS' in output
+    assert 'KNOWN_SAFE / ALLOWLISTED' in output
+    assert historical_fallback() not in output
+    file.write_text(f'SECRET_KEY="{fake_value()}"')
+    commit(repo)
+    file.unlink()
+    commit(repo)
+    assert scanner.main(['--repo', str(repo), '--history', '--json']) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report['scopes']['history']['status'] == 'FAIL'
+    assert len(report['scopes']['history']['allowlisted']) == 1
+    assert len(report['scopes']['history']['findings']) == 1
+
+
 def test_deleted_secret_on_other_branch_and_separate_scopes(repo):
     branch = git(repo, 'branch', '--show-current')
     git(repo, 'checkout', '-qb', 'historical-branch')

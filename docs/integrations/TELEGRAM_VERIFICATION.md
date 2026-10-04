@@ -116,8 +116,8 @@ create confirm, done, reschedule, note delete и snooze callback; scheduler вм
 | Runtime lock/constraints | 37 runtime versions match |
 | Python syntax / shell syntax / git diff --check | PASS |
 | Working tree secret scan (включая ignored .env) | Завершён: локальный Telegram token в ignored `.env`; значения не выводятся |
-| Tracked HEAD secret scan | PASS: 237 файлов, 236 уникальных blobs |
-| Полный reachable Git history scan | Завершён: 50 commits; исторический небезопасный fallback SECRET_KEY, подробности ниже |
+| Tracked HEAD secret scan | PASS: 238 файлов, 237 уникальных blobs (повторная проверка 2026-10-04) |
+| Полный reachable Git history scan | PASS: 51 commit; точная reviewed historical запись показана как KNOWN_SAFE / ALLOWLISTED, подробности ниже |
 | Docker build/default HTTP/scheduler image | Подготовлены CI checks; локально Docker отсутствует |
 | GitHub Actions | Workflow подготовлен, remote run не выполнялся (нет push) |
 
@@ -131,6 +131,9 @@ Secret scan: `python3 scripts/ci/scan_secrets.py --history --timeout 60`.
 Для безопасного машиночитаемого отчёта добавить `--json`.
 
 ### Завершение history scan, 2026-10-03
+
+Ниже сохранены результаты первоначального прохода до разбора historical finding.
+Актуальное решение и проверка исправления CI — в подразделе от 2026-10-04.
 
 Проверено на HEAD `1d45e3c5c43a1e2cc5ff81d75e0a7ffd0be24104`, ветка
 `fix/telegram-integration`. Исходный timeout был связан с iCloud dataless
@@ -179,18 +182,17 @@ tracked blobs проверяются без фильтра по расширен
   `a98e9bdc25f98889930c94ffc7f59f0614d6cba8`,
   `0e2445521d5cc1002ea5f9e57e8917bd25dcee01`.
 
-Если исторический fallback использовался для публичных сессий, нужно заменить
-SECRET_KEY безопасным способом с учётом инвалидирования сессий и доступа к
-workspace. Ротация не выполнялась. Переписывание истории для публичного
-development-default не требуется и не заменяет ротацию, если он использовался.
-История не переписывалась; автоматически объявлять её чистой нельзя.
+При первоначальном проходе finding оставлен блокирующим до разбора его
+происхождения. Ротация и переписывание истории не выполнялись. Итог разбора
+и точное history-only исключение описаны ниже.
 
 Обычные placeholders документации не считаются секретами. Проверенные fixture
 исключения ограничены точным path/type/SHA-256 fingerprint и пояснены в
 `REVIEWED_EXAMPLES`; произвольные файлы tests/docs не исключаются из проверки.
 Исторический fallback из `app/core/config.py` отдельно проверен: production
 ветка выбрасывала ошибку до его использования, поэтому это development-only
-пример. Небезопасный fallback `app/main.py` в исключения не добавлен.
+пример. Fallback `app/main.py` не добавлен в общие `REVIEWED_EXAMPLES`;
+для него применяется отдельное history-only правило, описанное ниже.
 
 Scanner regression tests: `python -m pytest -q tests/test_secret_scanner.py`
 — **58 passed**. Проверяются категории секретов, placeholders, удалённый
@@ -199,12 +201,51 @@ ignored env/key files, большие binary blobs, symlinks, дедуплика
 shallow/missing/LFS/timeout и отсутствие raw secrets в отчёте.
 
 CI использует `fetch-depth: 0`, общий budget сканера 60 s и ограничение шага
-2 минуты; шаг запускает regression tests. При текущем историческом finding
-CI должен завершать secret scan с exit 1 до его явного разбора, а не скрывать
-результат. Дополнительный проход в отдельном чистом local clone без `.env`
+2 минуты; шаг запускает regression tests. До разбора historical finding
+CI завершал secret scan с exit 1. Дополнительный первоначальный проход
+в отдельном чистом local clone без `.env`
 завершился за **4.634 s**: working tree/HEAD PASS, history exit 1 с тем же
 fallback (50 commits, 350 путей, 811 blobs; служебные refs Codex clone не
 переносит). Remote CI в этом этапе не запускался.
+
+### Точное historical исключение для CI, 2026-10-04
+
+Работа выполнена на `fix/telegram-integration`, HEAD
+`0ee8235a8e45e8ea0fd485b2ccaaf02d2fa30232`. По результату разбора владельцем
+проекта запись `app/main.py` / `secret_key` /
+`sha256:376912d192756c41` является старым development fallback, отсутствует
+в текущем HEAD и не является реальным production secret. Для неё не нужны
+ротация или history rewrite.
+
+`KNOWN_SAFE_HISTORY` разрешает только указанную тройку path/kind/fingerprint
+и только восемь перечисленных выше commits, включая
+`969bb1548ef65fefd2de118c3e67e508f86b8240`. Это правило применяется при
+составлении history-отчёта, после детектирования. Запись сохраняется в отдельном
+массиве `allowlisted` JSON-отчёта и в текстовом выводе со статусом
+`KNOWN_SAFE / ALLOWLISTED`. При отсутствии других findings history получает PASS.
+
+Это не общий bypass: тот же path с другим fingerprint, тот же fingerprint
+с другим path/kind, а также повторное появление даже точной записи в новом
+commit остаются FAIL. Working tree и HEAD вообще не используют это исключение.
+History scan, детекторы, остальные виды секретов и workflow не отключались
+и не ослаблялись. Восемь commits не заданы диапазоном с открытым концом.
+
+Проверки: `python -m pytest -q tests/test_secret_scanner.py` — **68 passed**.
+Дополнительные тесты покрывают точное разрешение, несовпадения path/kind/hash/
+commit, новые Telegram token и SECRET_KEY, чистую историю, защиту HEAD и
+working tree, одновременную известную и новую находки, text/JSON вывод и exit code.
+
+Команда: `python3 scripts/ci/scan_secrets.py --history --timeout 60`.
+Локальный проход: **5.139 s**, history **PASS** (51 commit, 351 путь,
+820 blobs, одна allowlisted запись), HEAD **PASS**. Working tree остаётся
+FAIL только из-за локального ignored `.env`, поэтому общий exit code равен 1.
+Этот локальный токен не исключается и не копируется в проверочный CI checkout.
+
+Отдельный чистый local clone с обновлённым scanner и тестами: **PASS**, exit **0**,
+**4.681 s**. Working tree/HEAD/history PASS; 51 commit, 351 путь, 815 blobs
+(без локальных служебных refs Codex); запись видна как KNOWN_SAFE / ALLOWLISTED.
+Это локальная проверка условий CI, remote workflow не запускался.
+`git diff --check` — PASS.
 
 ## F–H. Production architecture / Render / env
 
@@ -255,8 +296,8 @@ reminders на спящем или отсутствующем процессе. 
 ## J. Что не подтверждено / release gates
 
 До merge нужны зелёные remote CI (включая настоящий Linux Docker build и worker
-image smoke) и разбор найденного исторического fallback SECRET_KEY. History
-scan завершён, но имеет finding (см. E). До production rollout нужны проверка
+image smoke). History scan завершён с PASS и точным reviewed historical
+исключением (см. E). До production rollout нужны проверка
 реального bot username/token/header secret, публичного TLS/webhook, общей Render
 БД и always-on worker. Эти действия здесь не выполнялись и не подразумеваются.
 
@@ -273,8 +314,9 @@ SECRET_KEY не ротировать при обычном deploy: он учас
 
 ## K. Git status
 
-Предыдущий hardening уже входит в HEAD `1d45e3c5c43a1e2cc5ff81d75e0a7ffd0be24104`.
-В этапе завершения history scan изменены `scripts/ci/scan_secrets.py`,
-`.github/workflows/telegram-postgresql.yml` и этот отчёт; добавлен
-`tests/test_secret_scanner.py`. Изменения остаются unstaged/untracked.
+Предыдущий hardening и scanner входят в HEAD
+`0ee8235a8e45e8ea0fd485b2ccaaf02d2fa30232`.
+В этапе исправления historical false positive изменены
+`scripts/ci/scan_secrets.py`, `tests/test_secret_scanner.py` и этот отчёт.
+Изменения остаются unstaged; workflow менять не потребовалось.
 Commit/push/merge/deploy не выполнялись.
