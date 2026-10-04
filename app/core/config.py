@@ -54,7 +54,7 @@ def normalize_public_base_url(raw_value: str) -> str:
         return ''
 
     parsed = urlparse(value)
-    if parsed.scheme not in {'http', 'https'} or not parsed.netloc or parsed.path not in {'', '/'}:
+    if parsed.scheme not in {'http', 'https'} or not parsed.netloc or parsed.path not in {'', '/'} or parsed.username or parsed.password or parsed.query or parsed.fragment:
         raise RuntimeError('PUBLIC_BASE_URL must be an absolute http(s) origin without a path.')
     return value
 
@@ -105,10 +105,10 @@ def prepare_database_url(url: str, base_dir: Path) -> str:
 class Settings:
     app_env: str
     testing: bool
-    secret_key: str
+    secret_key: str = field(repr=False)
     cookie_secure: bool
     session_max_age_seconds: int
-    database_url: str
+    database_url: str = field(repr=False)
     timezone: str
     host: str
     allowed_hosts: tuple[str, ...]
@@ -182,7 +182,28 @@ def get_settings() -> Settings:
         base_dir,
     )
     host = (getenv('HOST') or '127.0.0.1').strip() or '127.0.0.1'
-    public_base_url = normalize_public_base_url(getenv('PUBLIC_BASE_URL', ''))
+    public_base_url = normalize_public_base_url(getenv('PUBLIC_ORIGIN') or getenv('PUBLIC_BASE_URL', ''))
+    if getenv('PUBLIC_ORIGIN') and getenv('PUBLIC_BASE_URL') and public_base_url != normalize_public_base_url(getenv('PUBLIC_BASE_URL')):
+        raise RuntimeError('PUBLIC_ORIGIN and PUBLIC_BASE_URL must identify the same origin.')
+    mode = (getenv('TELEGRAM_MODE') or '').strip().lower()
+    if mode and mode not in {'polling', 'webhook'}:
+        raise RuntimeError('TELEGRAM_MODE must be polling or webhook.')
+    use_webhook = mode == 'webhook' if mode else env_flag('TELEGRAM_USE_WEBHOOK')
+    if mode and getenv('TELEGRAM_USE_WEBHOOK') is not None and use_webhook != env_flag('TELEGRAM_USE_WEBHOOK'):
+        raise RuntimeError('TELEGRAM_MODE conflicts with TELEGRAM_USE_WEBHOOK.')
+    token = '' if disable_telegram else ((getenv('TELEGRAM_BOT_TOKEN') or '').strip() or (getenv('TELEGRAM_BOT_API_TOKEN') or '').strip())
+    if app_env == 'production' and token:
+        import re
+        if not database_url.startswith(('postgresql:', 'postgresql+')):
+            raise RuntimeError('Telegram production requires shared PostgreSQL: database_shared_across_services=false production_safe=false.')
+        if not use_webhook:
+            raise RuntimeError('Telegram production requires TELEGRAM_MODE=webhook.')
+        if not (getenv('TELEGRAM_BOT_USERNAME') or '').strip().lstrip('@'):
+            raise RuntimeError('Set TELEGRAM_BOT_USERNAME explicitly in production.')
+        if not public_base_url.startswith('https://'):
+            raise RuntimeError('Telegram production requires a public HTTPS PUBLIC_ORIGIN or PUBLIC_BASE_URL.')
+        if not re.fullmatch(r'[A-Za-z0-9_-]{32,256}', (getenv('TELEGRAM_WEBHOOK_SECRET') or '').strip()):
+            raise RuntimeError('Set a persistent TELEGRAM_WEBHOOK_SECRET of 32–256 URL-safe characters.')
     configured_allowed_hosts = parse_allowed_hosts(getenv('ALLOWED_HOSTS', ''))
     public_hostname = (urlparse(public_base_url).hostname or '').lower()
     render_hostname = (getenv('RENDER_EXTERNAL_HOSTNAME') or '').strip().lower()
@@ -234,7 +255,7 @@ def get_settings() -> Settings:
         ),
         telegram_bot_api_base_url=(getenv('TELEGRAM_BOT_API_BASE_URL') or '').strip().rstrip('/'),
         telegram_link_code_ttl_minutes=telegram_link_code_ttl_minutes,
-        telegram_use_webhook=env_flag('TELEGRAM_USE_WEBHOOK'),
+        telegram_use_webhook=use_webhook,
         telegram_webhook_base_url=(
             getenv('TELEGRAM_WEBHOOK_BASE_URL') or ''
         ).strip().rstrip('/'),

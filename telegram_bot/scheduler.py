@@ -5,304 +5,287 @@ import sys
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 
-from sqlalchemy import or_
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import String, cast
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.migrations import run_migrations
-from app.models import Task, TelegramDeadlineReminderLog, User
-from app.services.telegram_bot import (
-    TelegramAPIError,
-    TelegramReply,
-    send_telegram_message,
-)
-from app.services.telegram_digest import (
-    build_morning_digest_message,
-    digest_local_datetime,
-    digest_send_time,
-)
-from app.services.telegram_notifications import (
-    build_deadline_reminder_message,
-    deadline_reminder_date_key,
-    deadline_reminder_hours,
-)
-
+from app.models import Task, TelegramDeadlineReminderLog, TelegramState, User
+from app.services.telegram_bot import DEFAULT_SITE_URL, TelegramAPIError, TelegramReply, send_telegram_message
+from app.services.telegram_delivery import retry_pending_replies
+from app.services.telegram_digest import build_morning_digest_message, digest_local_datetime, digest_send_time
+from app.services.telegram_notifications import build_deadline_reminder_message, deadline_reminder_date_key, deadline_reminder_hours
+from app.services.telegram_state import state_row, utcnow
+from app.services.telegram_task_views import task_button
+from app.services import telegram_class_reminders, telegram_evening_digest, telegram_weekly_digest
 
 logger = logging.getLogger(__name__)
+# After downtime, only today's digest in the first two hours and future deadlines.
+DIGEST_GRACE = timedelta(hours=2)
 
 
 def is_digest_due(user: User, now_utc: datetime | None = None) -> bool:
-    if (
-        not user.telegram_morning_digest_enabled
-        or user.telegram_user_id is None
-        or user.telegram_chat_id is None
-    ):
+    if not user.telegram_morning_digest_enabled or user.telegram_user_id is None or not user.telegram_chat_id or user.telegram_chat_id < 0:
         return False
+    local = digest_local_datetime(user, now_utc)
+    due = datetime.combine(local.date(), digest_send_time(user))
+    return (user.telegram_morning_digest_last_sent_date != local.date()
+            and timedelta(0) <= local.replace(tzinfo=None) - due <= DIGEST_GRACE)
 
-    local_now = digest_local_datetime(user, now_utc)
-    if user.telegram_morning_digest_last_sent_date == local_now.date():
+
+def _keyboard(task_id=None, *, db=None, task=None):
+    if db is not None and task is not None:
+        return {'inline_keyboard': [
+            [task_button(db, task, '✅ Выполнено', 'task_done'), task_button(db, task, '⏰ Перенести', 'task_reschedule')],
+            [task_button(db, task, '✏️ Изменить', 'task_edit')],
+            [{'text': '📌 Все задачи', 'callback_data': 'tasks'}],
+        ]}
+    second = ({'text': '✅ Закрыть задачу', 'callback_data': f'done_task:{task_id}'}
+              if task_id is not None else {'text': '📅 Сегодня', 'callback_data': 'today'})
+    return {'inline_keyboard': [
+        [{'text': '📌 Задачи', 'callback_data': 'tasks'}, second],
+        [{'text': '🌐 Открыть сайт', 'url': settings.public_base_url or DEFAULT_SITE_URL}],
+    ]}
+
+
+def _send_notification(db, row, key, reply, send_message, user, *, now=None):
+    now = now or utcnow()
+    binding = f'{user.telegram_user_id}:{user.telegram_linked_at}:' + sha256(settings.telegram_bot_token.encode()).hexdigest()
+    if row.data.get('binding') == binding and row.data.get('error') in {'blocked', 'invalid_token', 'chat_not_found', 'missing_token'}:
         return False
-    return local_now.time().replace(tzinfo=None) >= digest_send_time(user)
+    data = row.data if row.data.get('delivery') == key else {}
+    if data.get('terminal') or (data and row.expires_at > now):
+        return False
+    attempts = data.get('attempts', 0) + 1
+    try:
+        send_message(reply)
+    except Exception as error:
+        if not isinstance(error, TelegramAPIError):
+            error = TelegramAPIError(category='network')
+        row.data = {'delivery': key, 'attempts': attempts,
+                    'terminal': not error.retryable or attempts >= 5,
+                    'error': error.category, 'binding': binding}
+        row.expires_at = now + timedelta(seconds=max(60, error.retry_after or 0))
+        db.commit()
+        logger.warning('Telegram stage=notification category=%s attempt=%s terminal=%s', error.category, attempts, row.data['terminal'])
+        return False
+    row.data = {'delivery': key, 'attempts': attempts, 'terminal': True, 'sent': True}
+    return True
 
 
-def process_due_digests(
-    db: Session,
-    *,
-    now_utc: datetime | None = None,
-    send_message: Callable[[TelegramReply], None] = send_telegram_message,
-) -> int:
-    current_utc = now_utc or datetime.now(UTC)
-    users = (
-        db.query(User)
-        .filter(
-            User.telegram_morning_digest_enabled.is_(True),
-            User.telegram_user_id.is_not(None),
-            User.telegram_chat_id.is_not(None),
-        )
-        .all()
-    )
-    sent_count = 0
-
-    for user in users:
-        if not is_digest_due(user, current_utc):
-            continue
-
-        local_now = digest_local_datetime(user, current_utc)
-        local_date = local_now.date()
-        previous_sent_date = user.telegram_morning_digest_last_sent_date
-        reservation_created = False
+def process_due_digests(db: Session, *, now_utc=None, send_message=send_telegram_message) -> int:
+    current = now_utc or datetime.now(UTC)
+    ids = db.query(User.id).filter(User.telegram_morning_digest_enabled.is_(True)).all()
+    sent = 0
+    for (user_id,) in ids:
         try:
-            message = build_morning_digest_message(
-                db,
-                user,
-                target_date=local_date,
-                current_local_time=local_now.time().replace(tzinfo=None),
-            )
-            reserved = (
-                db.query(User)
-                .filter(
-                    User.id == user.id,
-                    or_(
-                        User.telegram_morning_digest_last_sent_date.is_(None),
-                        User.telegram_morning_digest_last_sent_date != local_date,
-                    ),
-                )
-                .update(
-                    {
-                        User.telegram_morning_digest_last_sent_date: local_date,
-                    },
-                    synchronize_session=False,
-                )
-            )
-            db.commit()
-            if reserved != 1:
+            # Held through confirmed send + log commit. Crash releases the DB lock.
+            user = db.get(User, user_id)
+            db.refresh(user, with_for_update=True)
+            lock = state_row(db, f'digest-lock:{user_id}')
+            if not is_digest_due(user, current):
+                db.commit()
                 continue
-            reservation_created = True
-
-            send_message(
-                TelegramReply(
-                    chat_id=user.telegram_chat_id,
-                    text=message,
-                    reply_markup={
-                        'inline_keyboard': [
-                            [
-                                {'text': '📅 Сегодня', 'callback_data': 'today'},
-                                {'text': '📌 Задачи', 'callback_data': 'tasks'},
-                            ],
-                            [
-                                {
-                                    'text': '🌐 Открыть сайт',
-                                    'url': settings.public_base_url
-                                    or 'https://student-assistant-beby.onrender.com',
-                                }
-                            ],
-                        ]
-                    },
-                )
-            )
-            sent_count += 1
+            local = digest_local_datetime(user, current)
+            message = build_morning_digest_message(db, user, target_date=local.date(), current_local_time=local.time().replace(tzinfo=None))
+            db.refresh(user, with_for_update=True)  # Recheck consent immediately before network send.
+            if not is_digest_due(user, current):
+                db.commit()
+                continue
+            delivery_key = f'{local.date()}:{user.telegram_linked_at}'
+            if not _send_notification(db, lock, delivery_key, TelegramReply(chat_id=user.telegram_chat_id, text=message, reply_markup=_keyboard()), send_message, user):
+                db.commit()
+                continue
+            user.telegram_morning_digest_last_sent_date = local.date()
+            db.commit()
+            sent += 1
         except Exception as error:
             db.rollback()
-            if reservation_created:
-                (
-                    db.query(User)
-                    .filter(
-                        User.id == user.id,
-                        User.telegram_morning_digest_last_sent_date == local_date,
-                    )
-                    .update(
-                        {
-                            User.telegram_morning_digest_last_sent_date: previous_sent_date,
-                        },
-                        synchronize_session=False,
-                    )
-                )
-                db.commit()
-            if isinstance(error, TelegramAPIError):
-                logger.warning(
-                    'Telegram morning digest delivery failed for user id %s.',
-                    user.id,
-                )
-            else:
-                logger.exception(
-                    'Telegram morning digest processing failed for user id %s.',
-                    user.id,
-                )
-
-    return sent_count
+            logger.warning('Telegram stage=digest user_id=%s category=%s', user_id, getattr(error, 'category', 'processing'))
+    return sent
 
 
-def process_deadline_reminders(
-    db: Session,
-    *,
-    now_utc: datetime | None = None,
-    send_message: Callable[[TelegramReply], None] = send_telegram_message,
-) -> int:
-    current_utc = now_utc or datetime.now(UTC)
-    users = (
-        db.query(User)
-        .filter(
-            User.telegram_deadline_reminders_enabled.is_(True),
-            User.telegram_user_id.is_not(None),
-            User.telegram_chat_id.is_not(None),
-        )
-        .all()
-    )
-    sent_count = 0
-
-    for user in users:
-        local_now = digest_local_datetime(user, current_utc).replace(
-            tzinfo=None,
-            second=0,
-            microsecond=0,
-        )
-        reminder_hours = deadline_reminder_hours(user)
-        tasks = (
-            db.query(Task)
-            .filter(
-                Task.user_id == user.id,
-                Task.is_completed.is_(False),
-                Task.deadline.is_not(None),
-                Task.deadline > local_now,
-                Task.deadline <= local_now + timedelta(hours=reminder_hours),
-            )
-            .order_by(Task.deadline.asc())
-            .all()
-        )
-
-        for task in tasks:
-            date_key = deadline_reminder_date_key(task, reminder_hours)
-            log = TelegramDeadlineReminderLog(
-                user_id=user.id,
-                task_id=task.id,
-                reminder_hours=reminder_hours,
-                reminder_date_key=date_key,
-                sent_at=local_now,
-            )
-            db.add(log)
+def process_deadline_reminders(db: Session, *, now_utc=None, send_message=send_telegram_message) -> int:
+    current = now_utc or datetime.now(UTC)
+    ids = db.query(User.id).filter(User.telegram_deadline_reminders_enabled.is_(True)).all()
+    sent = 0
+    for (user_id,) in ids:
+        user = db.get(User, user_id)
+        local_now = digest_local_datetime(user, current).replace(tzinfo=None, second=0, microsecond=0)
+        task_ids = db.query(Task.id).filter(
+            Task.user_id == user_id, Task.is_completed.is_(False),
+            Task.deadline > local_now, Task.deadline <= local_now + timedelta(hours=24),
+        ).order_by(Task.deadline).all()
+        user_sent = 0
+        for (task_id,) in task_ids:
+            if user_sent >= 3:
+                break  # Catch-up is limited to three future deadlines per user/tick.
             try:
+                user = db.get(User, user_id)
+                db.refresh(user, with_for_update=True)
+                lock = state_row(db, f'deadline-lock:{user_id}:{task_id}')
+                task = db.get(Task, task_id)
+                if task is not None:
+                    db.refresh(task, with_for_update=True)
+                if not task or task.is_completed or not task.deadline or not user.telegram_deadline_reminders_enabled or user.telegram_user_id is None or not user.telegram_chat_id or user.telegram_chat_id < 0:
+                    db.commit()
+                    continue
+                local = digest_local_datetime(user, current).replace(tzinfo=None, second=0, microsecond=0)
+                hours = deadline_reminder_hours(user)
+                if not local < task.deadline <= local + timedelta(hours=hours):
+                    db.commit()
+                    continue
+                key = deadline_reminder_date_key(task, hours)
+                if db.query(TelegramDeadlineReminderLog.id).filter_by(user_id=user_id, task_id=task_id, reminder_hours=hours, reminder_date_key=key).first():
+                    db.commit()
+                    continue
+                if not _send_notification(db, lock, f'{key}:{user.telegram_linked_at}', TelegramReply(chat_id=user.telegram_chat_id, text=build_deadline_reminder_message(task, hours, user=user), reply_markup=_keyboard(task_id, db=db, task=task)), send_message, user):
+                    db.commit()
+                    continue
+                db.add(TelegramDeadlineReminderLog(user_id=user_id, task_id=task_id, reminder_hours=hours, reminder_date_key=key, sent_at=local))
                 db.commit()
-                db.refresh(log)
-            except IntegrityError:
-                db.rollback()
-                continue
-
-            try:
-                send_message(
-                    TelegramReply(
-                        chat_id=user.telegram_chat_id,
-                        text=build_deadline_reminder_message(task, reminder_hours),
-                        reply_markup={
-                            'inline_keyboard': [
-                                [
-                                    {'text': '📌 Задачи', 'callback_data': 'tasks'},
-                                    {
-                                        'text': '✅ Закрыть задачу',
-                                        'callback_data': f'done_task:{task.id}',
-                                    },
-                                ],
-                                [
-                                    {
-                                        'text': '🌐 Открыть сайт',
-                                        'url': settings.public_base_url
-                                        or 'https://student-assistant-beby.onrender.com',
-                                    }
-                                ],
-                            ]
-                        },
-                    )
-                )
-                sent_count += 1
+                sent += 1
+                user_sent += 1
             except Exception as error:
                 db.rollback()
-                delivery_log = db.get(TelegramDeadlineReminderLog, log.id)
-                if delivery_log is not None:
-                    db.delete(delivery_log)
-                    db.commit()
-                if isinstance(error, TelegramAPIError):
-                    logger.warning(
-                        'Telegram deadline reminder delivery failed for user id %s.',
-                        user.id,
-                    )
-                else:
-                    logger.exception(
-                        'Telegram deadline reminder processing failed for user id %s.',
-                        user.id,
-                    )
-
-    return sent_count
+                logger.warning('Telegram stage=deadline user_id=%s category=%s', user_id, getattr(error, 'category', 'processing'))
+    return sent
 
 
-def run_scheduler(
-    *,
-    session_factory=SessionLocal,
-    sleep: Callable[[float], None] = time.sleep,
-) -> None:
-    while True:
-        db = session_factory()
-        try:
-            try:
-                process_due_digests(db)
-            except Exception:
-                db.rollback()
-                logger.exception('Telegram digest scheduler iteration failed.')
-            try:
-                process_deadline_reminders(db)
-            except Exception:
-                db.rollback()
-                logger.exception('Telegram deadline reminder iteration failed.')
-        finally:
-            db.close()
-        sleep(settings.telegram_digest_check_interval_seconds)
-
-
-def configure_logging() -> None:
-    log_level = getattr(logging, settings.telegram_bot_log_level, logging.INFO)
-    logging.basicConfig(
-        level=log_level,
-        format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+def process_class_reminders(db, *, now_utc=None, send_message=send_telegram_message):
+    return telegram_class_reminders.process_class_reminders(
+        db, now_utc=now_utc, send_message=send_message, send_notification=_send_notification,
     )
+
+
+def _process_periodic_digest(db, *, kind, is_due, delivery_key, build_message, markup, now_utc, send_message):
+    """Deliver once per period key with the shared durable notification retry."""
+
+    current = now_utc or datetime.now(UTC)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=UTC)
+    now = current.astimezone(UTC).replace(tzinfo=None)
+    sent = 0
+    ids = db.query(User.id).join(
+        TelegramState, TelegramState.key == f'{kind}-settings:' + cast(User.id, String),
+    ).filter(User.telegram_user_id.isnot(None), User.telegram_chat_id > 0,
+             TelegramState.data['enabled'].as_boolean().is_(True)).all()
+
+    def retryable_send(reply):
+        try:
+            send_message(reply)
+        except TelegramAPIError:
+            raise
+        except Exception:
+            raise TelegramAPIError(category='network') from None
+
+    for (user_id,) in ids:
+        try:
+            user = db.get(User, user_id)
+            if not is_due(db, user, current):
+                db.commit()
+                continue
+            # Serialize preference changes and concurrent sends, then refresh consent.
+            db.refresh(user, with_for_update=True)
+            state_row(db, f'{kind}-settings:{user_id}')
+            if not is_due(db, user, current):
+                db.commit()
+                continue
+            key = delivery_key(user, current)
+            delivery = state_row(db, key)
+            if delivery.data.get('sent'):
+                db.commit()
+                continue
+            text = build_message(db, user, now_utc=current)
+            if _send_notification(db, delivery, key, TelegramReply(chat_id=user.telegram_chat_id, text=text, reply_markup=markup(user, current)),
+                                 retryable_send, user, now=now):
+                sent += 1
+            db.commit()
+        except Exception as error:
+            db.rollback()
+            logger.warning('Telegram stage=%s user_id=%s category=%s', kind, user_id, getattr(error, 'category', 'processing'))
+    return sent
+
+
+def process_evening_digests(db, *, now_utc=None, send_message=send_telegram_message):
+    return _process_periodic_digest(
+        db, kind='evening', is_due=telegram_evening_digest.is_due,
+        delivery_key=lambda user, current: f'evening-digest:{user.id}:{digest_local_datetime(user, current).date()}',
+        build_message=telegram_evening_digest.build_evening_digest_message,
+        markup=lambda user, current: telegram_evening_digest.digest_keyboard(),
+        now_utc=now_utc, send_message=send_message,
+    )
+
+
+def process_weekly_digests(db, *, now_utc=None, send_message=send_telegram_message):
+    return _process_periodic_digest(
+        db, kind='weekly', is_due=telegram_weekly_digest.is_due,
+        delivery_key=telegram_weekly_digest.delivery_key,
+        build_message=telegram_weekly_digest.automatic_message,
+        markup=telegram_weekly_digest.automatic_keyboard,
+        now_utc=now_utc, send_message=send_message,
+    )
+
+
+def scheduler_tick(db):
+    row = state_row(db, 'scheduler-heartbeat')
+    row.data = {'started_at': utcnow().isoformat(), 'state': 'running'}
+    row.expires_at = utcnow() + timedelta(seconds=max(180, settings.telegram_digest_check_interval_seconds * 3))
+    db.commit()
+    failed = []
+    for job in (retry_pending_replies, process_due_digests, process_deadline_reminders,
+                process_class_reminders, process_evening_digests, process_weekly_digests):
+        name = getattr(job, '__name__', 'notification')
+        try:
+            count = job(db)
+            logger.info('Telegram stage=scheduler job=%s status=success count=%s', name, count)
+        except Exception:
+            db.rollback()
+            failed.append(name)
+            logger.error('Telegram stage=scheduler job=%s status=failure', name)
+    row = state_row(db, 'scheduler-heartbeat')
+    row.data = {'completed_at': utcnow().isoformat(), 'state': 'degraded' if failed else 'completed', 'failed_jobs': failed}
+    row.expires_at = utcnow() + timedelta(seconds=max(180, settings.telegram_digest_check_interval_seconds * 3))
+    db.commit()
+
+
+def run_scheduler(*, session_factory=SessionLocal, sleep: Callable[[float], None] = time.sleep, stop_event=None):
+    while stop_event is None or not stop_event.is_set():
+        try:
+            with session_factory() as db:
+                try:
+                    scheduler_tick(db)
+                except Exception:
+                    db.rollback()
+                    raise
+        except Exception:
+            logger.error('Telegram stage=scheduler category=iteration_failed')
+        if stop_event is not None:
+            stop_event.wait(settings.telegram_digest_check_interval_seconds)
+        else:
+            sleep(settings.telegram_digest_check_interval_seconds)
 
 
 def main() -> int:
-    configure_logging()
+    logging.basicConfig(level=getattr(logging, settings.telegram_bot_log_level, logging.INFO))
     if not settings.telegram_bot_token:
-        print(
-            'Telegram token is missing. Set TELEGRAM_BOT_TOKEN '
-            'or TELEGRAM_BOT_API_TOKEN.',
-            file=sys.stderr,
-        )
+        print('Telegram token is missing or Telegram is disabled.', file=sys.stderr)
         return 1
-
+    import signal
+    from threading import Event
+    stop = Event()
+    signal.signal(signal.SIGTERM, lambda *_: stop.set())
+    signal.signal(signal.SIGINT, lambda *_: stop.set())
     run_migrations()
     print('Telegram notification scheduler started. Press Ctrl+C to stop.', flush=True)
     try:
-        run_scheduler()
+        run_scheduler(stop_event=stop)
     except KeyboardInterrupt:
         print('\nTelegram notification scheduler stopped.', flush=True)
+    logger.info('Telegram stage=scheduler status=stopped')
     return 0
 
 

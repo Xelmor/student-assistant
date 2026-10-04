@@ -220,6 +220,7 @@
                 class="profile-simple-card profile-telegram-card"
                 id="profile-telegram"
                 data-telegram-status="{{ telegram_status or '' }}"
+                data-telegram-waiting="{{ 'true' if telegram_link_code and not user.telegram_user_id else 'false' }}"
             >
                 <div class="profile-simple-card-heading">
                     <span class="profile-simple-card-icon profile-telegram-icon">{{ icon('telegram') }}</span>
@@ -242,7 +243,7 @@
                                 Telegram ID {{ user.telegram_user_id }}
                                 {% endif %}
                             </strong>
-                            <p>Бот видит только данные этого аккаунта Student Assistant.</p>
+                            <p>Связь сохранена. Доступность бота можно проверить тестовым сообщением.</p>
                         </div>
                     </div>
                     <div class="profile-telegram-connected-actions">
@@ -345,7 +346,7 @@
                         </section>
                     </div>
                     <div class="profile-telegram-settings-footer">
-                        <p>Уведомления работают только при подключённом Telegram.</p>
+                        <p>Автоматическая отправка зависит от доступности сервиса уведомлений.</p>
                         <button type="submit">Сохранить настройки</button>
                     </div>
                 </form>
@@ -362,6 +363,8 @@
                         <p>Код действует {{ telegram_link_code_ttl_minutes }} минут и исчезнет сразу после подключения.</p>
                     </div>
 
+                    {% if telegram_code_expired %}<p role="status">Код истёк. Создай новый код подключения.</p>{% endif %}
+                    <p id="telegramConnectionStatus" role="status"></p>
                     {% if telegram_link_code %}
                     <div class="profile-telegram-code-wrap">
                         <span>Команда для бота</span>
@@ -372,6 +375,7 @@
                             </button>
                         </div>
                         <p>Открой Telegram-бота Student Assistant и отправь эту команду в личном чате.</p>
+                        {% if telegram_bot_url %}<a href="{{ telegram_bot_url }}" target="_blank" rel="noopener noreferrer">Открыть бота и подключить</a>{% endif %}
                     </div>
                     {% endif %}
 
@@ -610,6 +614,6 @@
 {% block page_scripts %}
 <link rel="stylesheet" href="/static/css/pages/profile-logout.css?v=20260922-logout">
 <script src="/static/js/profile-logout.js?v=20260922-logout"></script>
-<script src="/static/js/profile-telegram.js?v=20260614-notifications-v1"></script>
+<script src="/static/js/profile-telegram.js?v=20260929-telegram-v2"></script>
 <script src="/static/js/device-sync.js?v=20260922-sync-v1"></script>
 {% endblock %}

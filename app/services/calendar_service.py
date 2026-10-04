@@ -141,6 +141,17 @@ def should_show_schedule_on_day(user: User, day: date) -> bool:
     return not is_summer_break_day(day)
 
 
+def effective_schedule_for_day(db: Session, user: User, day: date) -> list[dict]:
+    """Calendar lesson events, including replacements of an overridden day.
+
+    The calendar suppresses recurring slots for overrides/term boundaries while
+    retaining explicit changed_class events. Do not interpret an override as a
+    cancellation of those replacements, or manufacture ScheduleItem rows for them.
+    """
+    events = build_calendar_event_map(user, db, day.year, day.month)['event_map']
+    return [event for event in events.get(day, []) if event['type'] in {'schedule', 'schedule-change'}]
+
+
 def get_intensity_level(day_events):
     weight = get_event_weight(day_events)
     if weight >= 7:
@@ -293,6 +304,7 @@ def build_calendar_event_map(user: User, db: Session, year: int, month: int):
             event_map.setdefault(current_day, []).append(
                 {
                     'type': 'schedule',
+                    'schedule_item_id': item.id,
                     'title': item.subject.name,
                     'subject': item.subject.name,
                     'start': start_dt,

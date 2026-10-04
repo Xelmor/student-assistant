@@ -1,4 +1,4 @@
-# Test image only. The deployment Dockerfile is deliberately unchanged.
+# Isolated lock test image; the main Dockerfile's default startup is checked separately.
 FROM python:3.12-slim
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 \

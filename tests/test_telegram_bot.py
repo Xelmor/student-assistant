@@ -61,12 +61,14 @@ class TelegramBotTests(unittest.TestCase):
         if self.db_path.exists():
             self.db_path.unlink()
 
-        self.engine = create_engine(
+        from telegram_database import postgres_test_engine
+        self.engine = postgres_test_engine() or create_engine(
             f"sqlite:///{self.db_path.resolve().as_posix()}",
             connect_args={'check_same_thread': False},
         )
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        Base.metadata.create_all(bind=self.engine)
+        if self.engine.dialect.name == "sqlite":
+            Base.metadata.create_all(bind=self.engine)
 
         def override_get_db():
             db = self.SessionLocal()
@@ -172,7 +174,7 @@ class TelegramBotTests(unittest.TestCase):
             self.assertEqual(reply.parse_mode, 'HTML')
             self.assertEqual(
                 reply.reply_markup['inline_keyboard'][0][0]['callback_data'],
-                'today',
+                'now',
             )
             self.assertEqual(user.telegram_user_id, 7001)
             self.assertEqual(user.telegram_chat_id, 8001)
@@ -240,9 +242,9 @@ class TelegramBotTests(unittest.TestCase):
 
             self.assertIn('Аккаунт не подключён', reply.text)
             self.assertEqual(db.query(Task).count(), 0)
-            buttons = reply.reply_markup['inline_keyboard'][0]
-            self.assertEqual(buttons[0]['text'], '🌐 Открыть сайт')
-            self.assertEqual(buttons[1]['callback_data'], 'help')
+            rows = reply.reply_markup['inline_keyboard']
+            self.assertEqual(rows[0][0]['callback_data'], 'connect')
+            self.assertEqual(rows[1][0]['text'], '🌐 Открыть сайт')
 
     def test_add_task_without_text_starts_dialog(self):
         with self.SessionLocal() as db:
@@ -254,10 +256,10 @@ class TelegramBotTests(unittest.TestCase):
             command_reply = handle_telegram_update(db, self._update('/add_task'))
 
             self.assertIn('<b>Новая задача</b>', command_reply.text)
-            self.assertIn('Напиши название', command_reply.text)
-            self.assertEqual(
+            self.assertIn('Опиши её одним сообщением', command_reply.text)
+            self.assertRegex(
                 command_reply.reply_markup['inline_keyboard'][0][0]['callback_data'],
-                'add_task_cancel',
+                r'^add_task_cancel\|[a-f0-9]{8}:0$',
             )
             self.assertEqual(db.query(Task).count(), 0)
 
@@ -375,6 +377,17 @@ class TelegramBotTests(unittest.TestCase):
             self.assertIn('&lt;Отчёт &amp; практика&gt;', listed.text)
             self.assertNotIn('<Отчёт & практика>', created.text)
 
+    def _click_dialog(self, db, reply, action):
+        callback = next(button['callback_data'] for row in reply.reply_markup['inline_keyboard']
+                        for button in row if button.get('callback_data', '').split('|')[0] == action)
+        return handle_telegram_update(db, self._callback(callback))
+
+    def _open_task_editor(self, db, title):
+        preview = handle_telegram_update(db, self._update(title))
+        title_step = self._click_dialog(db, preview, 'add_task_quick_customize')
+        return self._click_dialog(db, title_step, 'add_task_keep')
+
+    @patch('app.services.telegram_bot.digest_local_datetime', lambda user: datetime(2026, 9, 30, 12, tzinfo=UTC))
     def test_add_task_dialog_saves_title_today_priority_and_creates_task(self):
         with self.SessionLocal() as db:
             user = db.get(User, self.first_user_id)
@@ -383,10 +396,7 @@ class TelegramBotTests(unittest.TestCase):
             db.commit()
 
             handle_telegram_update(db, self._update('/add_task'))
-            deadline_step = handle_telegram_update(
-                db,
-                self._update('Сделать практику по Python'),
-            )
+            deadline_step = self._open_task_editor(db, 'Сделать практику по Python')
             subject_step = handle_telegram_update(
                 db,
                 self._callback('add_task_deadline_today'),
@@ -401,7 +411,7 @@ class TelegramBotTests(unittest.TestCase):
             )
             created = handle_telegram_update(
                 db,
-                self._callback('add_task_confirm_create'),
+                self._callback(next(button['callback_data'] for row in confirmation.reply_markup['inline_keyboard'] for button in row if button.get('callback_data', '').startswith('add_task_quick_create|'))),
             )
 
             task = db.query(Task).one()
@@ -409,14 +419,15 @@ class TelegramBotTests(unittest.TestCase):
             self.assertIn('<b>К какому предмету', subject_step.text)
             self.assertIn('<b>Выбери приоритет</b>', priority_step.text)
             self.assertIn('Сделать практику по Python', confirmation.text)
-            self.assertIn('🔴 высокий', confirmation.text)
+            self.assertIn('🔴 Высокий приоритет', confirmation.text)
             self.assertIn('Задача добавлена', created.text)
             self.assertEqual(task.title, 'Сделать практику по Python')
-            self.assertEqual(task.deadline.date(), current_date())
+            self.assertEqual(task.deadline.date(), date(2026, 9, 30))
             self.assertEqual(task.deadline.time(), time(23, 59))
             self.assertEqual(task.priority, 'high')
             self.assertIsNone(task.subject_id)
 
+    @patch('app.services.telegram_bot.digest_local_datetime', lambda user: datetime(2026, 9, 30, 12, tzinfo=UTC))
     def test_add_task_dialog_supports_tomorrow_and_no_deadline(self):
         with self.SessionLocal() as db:
             user = db.get(User, self.first_user_id)
@@ -425,29 +436,30 @@ class TelegramBotTests(unittest.TestCase):
             db.commit()
 
             handle_telegram_update(db, self._update('/add_task'))
-            handle_telegram_update(db, self._update('Задача на завтра'))
+            self._open_task_editor(db, 'Задача на завтра')
             handle_telegram_update(db, self._callback('add_task_deadline_tomorrow'))
             handle_telegram_update(db, self._callback('add_task_subject_none'))
-            handle_telegram_update(db, self._callback('add_task_priority_medium'))
-            handle_telegram_update(db, self._callback('add_task_confirm_create'))
+            confirmation = handle_telegram_update(db, self._callback('add_task_priority_medium'))
+            self._click_dialog(db, confirmation, 'add_task_quick_create')
 
             tomorrow_task = db.query(Task).one()
             self.assertEqual(
                 tomorrow_task.deadline.date(),
-                current_date() + timedelta(days=1),
+                date(2026, 9, 30) + timedelta(days=1),
             )
 
             handle_telegram_update(db, self._update('/add_task'))
-            handle_telegram_update(db, self._update('Задача без даты'))
+            self._open_task_editor(db, 'Задача без даты')
             handle_telegram_update(db, self._callback('add_task_deadline_none'))
             handle_telegram_update(db, self._callback('add_task_subject_none'))
-            handle_telegram_update(db, self._callback('add_task_priority_low'))
-            handle_telegram_update(db, self._callback('add_task_confirm_create'))
+            confirmation = handle_telegram_update(db, self._callback('add_task_priority_low'))
+            self._click_dialog(db, confirmation, 'add_task_quick_create')
 
             undated = db.query(Task).filter(Task.title == 'Задача без даты').one()
             self.assertIsNone(undated.deadline)
             self.assertEqual(undated.priority, 'low')
 
+    @patch('app.services.telegram_bot.digest_local_datetime', lambda user: datetime(2026, 9, 30, 12, tzinfo=UTC))
     def test_add_task_dialog_custom_deadline_retries_and_accepts_russian_date(self):
         with self.SessionLocal() as db:
             user = db.get(User, self.first_user_id)
@@ -456,7 +468,7 @@ class TelegramBotTests(unittest.TestCase):
             db.commit()
 
             handle_telegram_update(db, self._update('/add_task'))
-            handle_telegram_update(db, self._update('Задача с датой'))
+            self._open_task_editor(db, 'Задача с датой')
             prompt = handle_telegram_update(
                 db,
                 self._callback('add_task_deadline_custom'),
@@ -468,6 +480,7 @@ class TelegramBotTests(unittest.TestCase):
             self.assertIn('Не получилось распознать дату', invalid.text)
             self.assertIn('К какому предмету', subject.text)
 
+    @patch('app.services.telegram_bot.digest_local_datetime', lambda user: datetime(2026, 9, 30, 12, tzinfo=UTC))
     def test_add_task_dialog_subject_selection_is_scoped_to_user(self):
         with self.SessionLocal() as db:
             user = db.get(User, self.first_user_id)
@@ -479,7 +492,7 @@ class TelegramBotTests(unittest.TestCase):
             db.commit()
 
             handle_telegram_update(db, self._update('/add_task'))
-            handle_telegram_update(db, self._update('Предметная задача'))
+            self._open_task_editor(db, 'Предметная задача')
             subject_prompt = handle_telegram_update(
                 db,
                 self._callback('add_task_deadline_none'),
@@ -548,7 +561,7 @@ class TelegramBotTests(unittest.TestCase):
             )
 
             self.assertIn('Есть незавершённая задача', repeated.text)
-            self.assertIn('Когда дедлайн', continued.text)
+            self.assertIn('Всё верно?', continued.text)
             self.assertIn('Новая задача', restarted.text)
 
     def test_plain_text_offers_quick_task_and_creates_it(self):
@@ -564,18 +577,18 @@ class TelegramBotTests(unittest.TestCase):
             )
             created = handle_telegram_update(
                 db,
-                self._callback('add_task_quick_create'),
+                self._callback(offer.reply_markup['inline_keyboard'][0][0]['callback_data']),
             )
 
             task = db.query(Task).one()
-            self.assertIn('Добавить это как задачу?', offer.text)
+            self.assertIn('Новая задача', offer.text)
             self.assertIn('Сделать доклад по философии', offer.text)
             self.assertIn('Задача добавлена', created.text)
             self.assertEqual(task.title, 'Сделать доклад по философии')
             self.assertIsNone(task.deadline)
             self.assertEqual(task.priority, 'medium')
 
-    def test_plain_text_customize_goes_directly_to_deadline(self):
+    def test_plain_text_customize_opens_prefilled_title(self):
         with self.SessionLocal() as db:
             user = db.get(User, self.first_user_id)
             user.telegram_user_id = 7001
@@ -588,7 +601,8 @@ class TelegramBotTests(unittest.TestCase):
                 self._callback('add_task_quick_customize'),
             )
 
-            self.assertIn('Когда дедлайн', deadline.text)
+            self.assertIn('Новая задача', deadline.text)
+            self.assertIn('Сейчас: Настраиваемая задача', deadline.text)
 
     def test_telegram_deadline_parser_supports_relative_and_iso_formats(self):
         now = datetime(2026, 6, 13, 12, 0)
@@ -628,14 +642,14 @@ class TelegramBotTests(unittest.TestCase):
                     ScheduleItem(
                         user_id=first.id,
                         subject_id=first_subject.id,
-                        weekday=current_date().weekday(),
+                        weekday=date(2026, 9, 29).weekday(),
                         start_time=time(9, 0),
                         end_time=time(10, 30),
                     ),
                     ScheduleItem(
                         user_id=second.id,
                         subject_id=second_subject.id,
-                        weekday=current_date().weekday(),
+                        weekday=date(2026, 9, 29).weekday(),
                         start_time=time(8, 0),
                         end_time=time(9, 0),
                     ),
@@ -643,7 +657,10 @@ class TelegramBotTests(unittest.TestCase):
             )
             db.commit()
 
-            reply = handle_telegram_update(db, self._update('/today'))
+            with patch('app.services.telegram_bot.digest_local_datetime', return_value=datetime(2026, 9, 29, 9, 20, tzinfo=UTC)):
+                first.telegram_morning_digest_timezone = 'UTC'
+                db.commit()
+                reply = handle_telegram_update(db, self._update('/today'))
 
             self.assertIn('Visible subject', reply.text)
             self.assertNotIn('Private subject', reply.text)
@@ -682,6 +699,7 @@ class TelegramBotTests(unittest.TestCase):
             db.add_all([owned, foreign])
             db.commit()
 
+            handle_telegram_update(db, self._update('/tasks'))
             reply = handle_telegram_update(db, self._update('/done 1'))
             db.refresh(owned)
             db.refresh(foreign)
@@ -739,8 +757,8 @@ class TelegramBotTests(unittest.TestCase):
             completed = handle_telegram_update(db, self._callback(callback_data))
             db.refresh(task)
 
-            self.assertEqual(callback_data, f'done_task:{task.id}')
-            self.assertIn('✅ Закрыть 1', tasks_reply.reply_markup['inline_keyboard'][0][0]['text'])
+            self.assertTrue(callback_data.startswith(f'task_done:{task.id}:'))
+            self.assertEqual('✅ Выполнено', tasks_reply.reply_markup['inline_keyboard'][0][0]['text'])
             self.assertIn('&lt;Закрыть &amp; проверить&gt;', completed.text)
             self.assertEqual(completed.callback_query_id, f'callback-{callback_data}')
             self.assertTrue(task.is_completed)
@@ -844,8 +862,8 @@ class TelegramBotTests(unittest.TestCase):
             db.commit()
 
             empty = handle_telegram_update(db, self._update('/week'))
-            self.assertIn('<b>Ближайшая неделя</b>', empty.text)
-            self.assertIn('пока ничего не запланировано', empty.text)
+            self.assertIn('<b>Эта неделя</b>', empty.text)
+            self.assertIn('На этой неделе занятий нет', empty.text)
 
     def test_week_is_compact_sorted_and_limited_to_five_deadlines(self):
         start = current_date()
@@ -888,7 +906,7 @@ class TelegramBotTests(unittest.TestCase):
             )
             db.commit()
 
-            reply = handle_telegram_update(db, self._update('/week'))
+            reply = handle_telegram_update(db, self._callback('week_details'))
 
             self.assertIn('<b>Кратко по дням</b>', reply.text)
             self.assertIn('1 пара', reply.text)
@@ -956,9 +974,9 @@ class TelegramBotTests(unittest.TestCase):
 
             self.assertIn('<b>Сегодня</b>', today.text)
             self.assertIn('<b>Завтра</b>', tomorrow.text)
-            self.assertIn('<b>Ближайшая неделя</b>', week.text)
-            self.assertIn('<b>Ближайшие задачи</b>', tasks.text)
-            self.assertIn('<b>Команды Student Assistant</b>', help_reply.text)
+            self.assertIn('<b>Эта неделя</b>', week.text)
+            self.assertIn('<b>Задачи</b>', tasks.text)
+            self.assertIn('<b>Что умеет Student Assistant:</b>', help_reply.text)
             self.assertIn('<b>Новая задача</b>', add_task.text)
             self.assertIn('<b>Student Assistant</b>', site.text)
             self.assertEqual(today.callback_query_id, 'callback-today')
@@ -1001,21 +1019,21 @@ class TelegramBotTests(unittest.TestCase):
         with self.SessionLocal() as db:
             reply = handle_telegram_update(db, self._update('что ты умеешь?'))
 
-        self.assertIn('Аккаунт не подключён', reply.text)
+        self.assertIn('Что умеет Student Assistant', reply.text)
 
     def test_message_builders_have_consistent_polish(self):
         user = SimpleNamespace(display_name='Лёля', username='telegram-first')
 
-        self.assertIn(MESSAGE_DIVIDER, build_start_unlinked_message())
-        self.assertIn(MESSAGE_DIVIDER, build_start_linked_message(user))
-        self.assertIn(MESSAGE_DIVIDER, build_help_message())
+        self.assertIn('<b>Student Assistant</b>', build_start_unlinked_message())
+        self.assertIn('Привет, Лёля!', build_start_linked_message(user))
+        self.assertIn('Что умеет Student Assistant:', build_help_message())
         self.assertIn(MESSAGE_DIVIDER, build_link_success_message())
         self.assertIn('Личный кабинет студента', build_site_message())
         self.assertIn('Отключить Telegram?', build_unlink_confirm_message())
         self.assertIn('Я пока не понял команду', build_unknown_command_message())
-        self.assertIn('<code>/tomorrow</code>', build_help_message())
-        self.assertIn('<code>/week</code>', build_help_message())
-        self.assertIn('<code>/done</code>', build_help_message())
+        self.assertIn('📆 Завтра', build_help_message())
+        self.assertIn('🗓 Неделя', build_help_message())
+        self.assertNotIn('<code>/', build_help_message())
 
     def test_tasks_use_priority_markers_and_polished_footer(self):
         with self.SessionLocal() as db:
@@ -1070,6 +1088,7 @@ class TelegramBotTests(unittest.TestCase):
         api_call.assert_any_call(
             'answerCallbackQuery',
             {'callback_query_id': 'callback-1'},
+            request_timeout=2,
         )
         api_call.assert_any_call(
             'sendMessage',
@@ -1095,25 +1114,28 @@ class TelegramBotTests(unittest.TestCase):
         api_call.assert_any_call(
             'sendChatAction',
             {'chat_id': 8001, 'action': 'typing'},
+            request_timeout=2,
         )
 
     def test_webhook_rejects_wrong_secret_and_handles_valid_update(self):
         route_settings = SimpleNamespace(
             telegram_webhook_secret='test-webhook-secret',
-            telegram_bot_token='',
+            telegram_bot_token='test-token',
+            telegram_use_webhook=True,
         )
         webhook_path = settings.telegram_webhook_path
 
-        with patch('app.web.routes.telegram.settings', route_settings):
+        with patch('app.web.routes.telegram.settings', route_settings), patch('app.web.routes.telegram.send_telegram_message') as send:
             rejected = self.client.post(
                 f'{webhook_path}/wrong-secret',
                 json=self._update('/start'),
             )
             accepted = self.client.post(
                 f'{webhook_path}/test-webhook-secret',
-                json=self._update('/start'),
+                json={**self._update('/start'), 'update_id': 999},
             )
 
+        send.assert_called_once()
         self.assertEqual(rejected.status_code, 403)
         self.assertEqual(accepted.status_code, 200)
         self.assertEqual(accepted.json(), {'ok': True})
@@ -1145,6 +1167,7 @@ class TelegramBotTests(unittest.TestCase):
         target_date = date(2026, 6, 15)
         with self.SessionLocal() as db:
             user = db.get(User, self.first_user_id)
+            user.last_study_day = target_date
             subject = Subject(user_id=user.id, name='Теория <систем>')
             db.add(subject)
             db.flush()
@@ -1610,7 +1633,7 @@ class TelegramBotTests(unittest.TestCase):
                 if button.get('callback_data')
             ]
             self.assertIn('tasks', callbacks)
-            self.assertTrue(any(value.startswith('done_task:') for value in callbacks))
+            self.assertTrue(any(value.startswith('task_done:') for value in callbacks))
             self.assertEqual(db.query(TelegramDeadlineReminderLog).count(), 1)
 
     def test_deadline_scheduler_skips_disabled_unlinked_completed_and_undated(self):
@@ -1699,48 +1722,21 @@ class TelegramBotTests(unittest.TestCase):
             request_timeout=35,
         )
 
-    def test_install_commands_syncs_all_task_and_planning_commands(self):
+    def test_install_commands_syncs_only_public_navigation_commands(self):
         with patch('app.services.telegram_bot.call_telegram_api') as api_call:
             install_telegram_commands()
 
-        api_call.assert_called_once_with(
-            'setMyCommands',
-            {'commands': BOT_COMMANDS},
-        )
-        self.assertIn(
+        api_call.assert_called_once_with('setMyCommands', {'commands': BOT_COMMANDS})
+        self.assertEqual(BOT_COMMANDS, [
+            {'command': 'start', 'description': 'Главное меню'},
+            {'command': 'today', 'description': 'Сегодня'},
+            {'command': 'tomorrow', 'description': 'Завтра'},
+            {'command': 'week', 'description': 'Неделя'},
+            {'command': 'tasks', 'description': 'Задачи'},
             {'command': 'add_task', 'description': 'Добавить задачу'},
-            BOT_COMMANDS,
-        )
-        self.assertIn(
-            {'command': 'done', 'description': 'Закрыть задачу'},
-            BOT_COMMANDS,
-        )
-        self.assertIn(
-            {'command': 'tomorrow', 'description': 'Планы на завтра'},
-            BOT_COMMANDS,
-        )
-        self.assertIn(
-            {'command': 'week', 'description': 'Обзор недели'},
-            BOT_COMMANDS,
-        )
-        self.assertIn(
-            {'command': 'cancel', 'description': 'Отменить действие'},
-            BOT_COMMANDS,
-        )
-        self.assertIn(
-            {'command': 'digest', 'description': 'Настройки утренней сводки'},
-            BOT_COMMANDS,
-        )
-        self.assertIn(
-            {'command': 'digest_test', 'description': 'Проверить утреннюю сводку'},
-            BOT_COMMANDS,
-        )
-        self.assertIn(
-            {'command': 'notifications', 'description': 'Настройки уведомлений'},
-            BOT_COMMANDS,
-        )
+        ])
 
-    def test_polling_advances_offset_even_when_processor_fails(self):
+    def test_polling_preserves_offset_when_processor_fails(self):
         processed = []
 
         def processor(update):
@@ -1754,8 +1750,8 @@ class TelegramBotTests(unittest.TestCase):
             processor=processor,
         )
 
-        self.assertEqual(processed, [10, 12])
-        self.assertEqual(next_offset, 13)
+        self.assertEqual(processed, [10])
+        self.assertIsNone(next_offset)
 
     def test_polling_passes_advanced_offset_to_next_get_updates(self):
         calls = []
@@ -1784,39 +1780,18 @@ class TelegramBotTests(unittest.TestCase):
         self.assertEqual(processed, [55])
 
     def test_polling_process_update_uses_shared_command_handler(self):
-        class FakeSession:
-            def __init__(self):
-                self.closed = False
-                self.rolled_back = False
-
-            def rollback(self):
-                self.rolled_back = True
-
-            def close(self):
-                self.closed = True
-
-        session = FakeSession()
         sent = []
-        update = self._update('/help')
+        update = {**self._update('/help'), 'update_id': 500}
         expected_reply = TelegramReply(chat_id=8001, text='shared reply')
-
-        with patch(
-            'telegram_bot.polling.handle_telegram_update',
-            return_value=expected_reply,
-        ) as handler:
-            polling.process_update(
-                update,
-                session_factory=lambda: session,
-                send_message=sent.append,
-            )
-
-        handler.assert_called_once_with(session, update)
+        with patch('app.services.telegram_delivery.handle_telegram_update', return_value=expected_reply) as handler:
+            polling.process_update(update, session_factory=self.SessionLocal, send_message=sent.append)
+            polling.process_update(update, session_factory=self.SessionLocal, send_message=sent.append)
+        self.assertEqual(handler.call_count, 1)
         self.assertEqual(sent, [expected_reply])
-        self.assertTrue(session.closed)
-        self.assertFalse(session.rolled_back)
 
     def test_polling_main_requires_token(self):
         local_settings = SimpleNamespace(
+            app_env="development",
             telegram_bot_token='',
             telegram_use_webhook=False,
             telegram_bot_log_level='INFO',
@@ -1826,6 +1801,7 @@ class TelegramBotTests(unittest.TestCase):
 
     def test_polling_main_rejects_webhook_mode(self):
         local_settings = SimpleNamespace(
+            app_env="development",
             telegram_bot_token='test-token',
             telegram_use_webhook=True,
             telegram_bot_log_level='INFO',
@@ -1833,8 +1809,9 @@ class TelegramBotTests(unittest.TestCase):
         with patch('telegram_bot.polling.settings', local_settings):
             self.assertEqual(polling.main(), 1)
 
-    def test_polling_main_deletes_webhook_and_starts_loop(self):
+    def test_polling_main_checks_webhook_and_starts_loop(self):
         local_settings = SimpleNamespace(
+            app_env="development",
             telegram_bot_token='test-token',
             telegram_use_webhook=False,
             telegram_bot_log_level='INFO',
@@ -1842,18 +1819,19 @@ class TelegramBotTests(unittest.TestCase):
         with (
             patch('telegram_bot.polling.settings', local_settings),
             patch('telegram_bot.polling.run_migrations') as migrations,
-            patch('telegram_bot.polling.delete_telegram_webhook') as delete_webhook,
+            patch('telegram_bot.polling.call_telegram_api', return_value={'result': {'url': ''}}) as get_webhook,
             patch('telegram_bot.polling.run_polling', side_effect=KeyboardInterrupt) as run,
         ):
             result = polling.main()
 
         self.assertEqual(result, 0)
         migrations.assert_called_once_with()
-        delete_webhook.assert_called_once_with()
-        run.assert_called_once_with()
+        get_webhook.assert_called_once_with('getWebhookInfo', {})
+        run.assert_called_once_with(retry_replies=polling.drain_pending_replies)
 
-    def test_polling_continues_when_delete_webhook_fails(self):
+    def test_polling_stops_when_webhook_check_fails(self):
         local_settings = SimpleNamespace(
+            app_env="development",
             telegram_bot_token='test-token',
             telegram_use_webhook=False,
             telegram_bot_log_level='INFO',
@@ -1862,15 +1840,15 @@ class TelegramBotTests(unittest.TestCase):
             patch('telegram_bot.polling.settings', local_settings),
             patch('telegram_bot.polling.run_migrations'),
             patch(
-                'telegram_bot.polling.delete_telegram_webhook',
+                'telegram_bot.polling.call_telegram_api',
                 side_effect=TelegramAPIError('test failure'),
             ),
             patch('telegram_bot.polling.run_polling', side_effect=KeyboardInterrupt) as run,
         ):
             result = polling.main()
 
-        self.assertEqual(result, 0)
-        run.assert_called_once_with()
+        self.assertEqual(result, 1)
+        run.assert_not_called()
 
 
 if __name__ == '__main__':

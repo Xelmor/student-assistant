@@ -3,7 +3,7 @@ import logging
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -20,6 +20,7 @@ from ...services.telegram_bot import (
     send_telegram_message,
     unlink_telegram_user,
 )
+from ...services.telegram_state import consume_limit
 from ...services.telegram_digest import build_morning_digest_message
 from ...services.telegram_notifications import VALID_DEADLINE_REMINDER_HOURS
 from ...services.workspace_sync import ensure_workspace
@@ -100,12 +101,13 @@ def _build_profile_context(
         'data_error': data_error,
         'schedule_unit_options': SCHEDULE_UNIT_OPTIONS,
         'telegram_status': telegram_status,
+        'telegram_code_expired': bool(user.telegram_link_code_expires_at and user.telegram_link_code_expires_at <= current_time()),
         'telegram_link_code': get_active_link_code(user),
         'telegram_link_code_ttl_minutes': settings.telegram_link_code_ttl_minutes,
         'telegram_digest_timezones': TELEGRAM_DIGEST_TIMEZONES,
         'telegram_digest_default_timezone': settings.timezone,
         'telegram_bot_url': (
-            f'https://t.me/{settings.telegram_bot_username}'
+            f'https://t.me/{settings.telegram_bot_username}' + (f'?start=link_{get_active_link_code(user)}' if get_active_link_code(user) else '')
             if settings.telegram_bot_username
             else None
         ),
@@ -224,6 +226,19 @@ def update_profile(
     )
 
 
+@router.get('/profile/telegram/status')
+def telegram_link_status(request: Request, db: Session = Depends(get_db)):
+    user = require_user(request, db)
+    if not user:
+        return JSONResponse({'ok': False, 'error': 'authentication_required'}, status_code=401)
+    linked = user.telegram_user_id is not None
+    state = 'linked' if linked else 'waiting' if get_active_link_code(user) else 'expired' if user.telegram_link_code_expires_at else 'unlinked'
+    return JSONResponse({'ok': True, 'state': state,
+                         'digest_enabled': bool(user.telegram_morning_digest_enabled),
+                         'deadline_enabled': bool(user.telegram_deadline_reminders_enabled),
+                         'bot_availability': 'not_measured'}, headers={'Cache-Control': 'no-store'})
+
+
 @router.post('/profile/telegram/link-code')
 def create_telegram_link_code(
     request: Request,
@@ -239,6 +254,10 @@ def create_telegram_link_code(
             status_code=302,
         )
 
+    if not consume_limit(db, f'profile-code:{user.id}', 5, 300):
+        db.commit()
+        return RedirectResponse('/profile?telegram_status=rate-limited#profile-telegram', status_code=302)
+    db.commit()
     try:
         generate_link_code(db, user)
     except RuntimeError:
@@ -364,6 +383,14 @@ def send_telegram_digest_test(
             status_code=302,
         )
 
+    if not consume_limit(db, f'profile-test:{user.id}', 3, 60):
+        db.commit()
+        return RedirectResponse('/profile?telegram_status=rate-limited#profile-telegram', status_code=302)
+    db.commit()
+    db.refresh(user)
+    if user.telegram_user_id is None or user.telegram_chat_id is None:
+        return RedirectResponse('/profile?telegram_status=digest-not-linked#profile-telegram', status_code=302)
+
     try:
         send_telegram_message(
             TelegramReply(
@@ -377,7 +404,7 @@ def send_telegram_digest_test(
             status_code=302,
         )
     except Exception:
-        logger.exception('Telegram digest test send failed for user id %s.', user.id)
+        logger.error('Telegram digest test send failed for user id %s.', user.id)
         return RedirectResponse(
             '/profile?telegram_status=digest-test-error#profile-telegram',
             status_code=302,

@@ -1,9 +1,10 @@
+"""Publish the six public menu commands; hidden commands keep their handlers."""
 from __future__ import annotations
 
 import sys
 
 from app.core.config import settings
-from app.services.telegram_bot import TelegramAPIError, install_telegram_commands
+from app.services.telegram_bot import BOT_COMMANDS, TelegramAPIError, install_telegram_commands
 
 
 def main() -> int:
@@ -21,7 +22,7 @@ def main() -> int:
         print(f'Telegram commands were not updated: {error}', file=sys.stderr)
         return 1
 
-    print('Telegram bot commands updated.')
+    print(f'Telegram menu updated: {len(BOT_COMMANDS)} commands. Hidden commands remain available.')
     return 0
 
 

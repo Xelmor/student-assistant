@@ -69,10 +69,21 @@ python -m pip install --require-hashes -r requirements.lock.txt
 python -m pip check
 ```
 
-**Статус:** установка, QR SVG и запуск проверены на macOS arm64 / Python 3.12.14;
-Linux wheels проверены, но запуск на Linux и Docker-сборка ещё не выполнены.
-Поэтому Dockerfile пока устанавливает `requirements.txt`.
+Основной Dockerfile устанавливает этот production-lock с `--require-hashes`
+и выполняет `pip check`. Job `production-image` проверяет именно основной образ,
+его штатный запуск `python run.py` и HTTP-ответ через опубликованный порт.
 [Проверки и повторная генерация lock](docs/DEPLOYMENT.md#dependency-installation-and-lock-regeneration).
+
+### Docker
+
+```bash
+docker build --platform linux/amd64 -t student-assistant .
+docker run --rm --env-file .env -e HOST=0.0.0.0 -p 127.0.0.1:8000:8000 student-assistant
+```
+
+`.env` передаётся при запуске и не входит в образ. Для постоянных данных используйте
+PostgreSQL или отдельный volume SQLite. Режим развёртывания и настройки действующего
+Render-сервиса этот переход не меняет.
 
 ## Переменные окружения
 

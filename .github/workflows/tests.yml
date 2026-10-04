@@ -2,7 +2,7 @@ name: Linux dependency validation
 
 on:
   push:
-    branches: [fix/dependency-reproducibility]
+    branches: [main, fix/dependency-reproducibility, fix/production-docker-lock]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -79,6 +79,42 @@ jobs:
             ${{ runner.temp }}/production-reports/pip-check.txt
             ${{ runner.temp }}/production-reports/runtime.json
             ${{ runner.temp }}/production-reports/smoke.txt
+          if-no-files-found: warn
+          retention-days: 7
+
+  production-image:
+    name: Main Dockerfile / default application startup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      MAIN_IMAGE: student-assistant-production-ci
+      MAIN_CONTAINER: student-assistant-main-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the main Dockerfile with production lock
+        timeout-minutes: 10
+        run: |
+          mkdir -p "$RUNNER_TEMP/main-image-reports"
+          docker build --platform linux/amd64 --progress plain -f Dockerfile -t "$MAIN_IMAGE" . 2>&1 | tee "$RUNNER_TEMP/main-image-reports/build.txt"
+      - name: Runtime pins, QR SVG and published-port HTTP with the default CMD
+        timeout-minutes: 3
+        run: |
+          bash scripts/ci/check_main_image.sh "$MAIN_IMAGE" "$MAIN_CONTAINER" 2>&1 | tee "$RUNNER_TEMP/main-image-reports/checks.txt"
+      - name: Remove test container and image even after failure or cancellation
+        if: ${{ always() }}
+        run: |
+          docker rm --force "$MAIN_CONTAINER" >/dev/null 2>&1 || true
+          docker image rm "$MAIN_IMAGE" >/dev/null 2>&1 || true
+      - name: Save main image diagnostics (no environment, DB or HTTP content)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: main-production-image
+          path: |
+            ${{ runner.temp }}/main-image-reports/build.txt
+            ${{ runner.temp }}/main-image-reports/checks.txt
           if-no-files-found: warn
           retention-days: 7
 

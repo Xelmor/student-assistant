@@ -4,7 +4,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from .config import settings
 
 
-engine_kwargs = {'pool_pre_ping': True}
+engine_kwargs = {'pool_pre_ping': True, 'hide_parameters': True}
 if settings.database_url.startswith('sqlite'):
     engine_kwargs['connect_args'] = {'check_same_thread': False}
 

@@ -385,6 +385,11 @@ def _add_workspace_device_sync(connection: Connection) -> None:
                 )
 
 
+def _add_telegram_runtime(connection):
+    for name in ('telegram_updates', 'telegram_state'):
+        Base.metadata.tables[name].create(bind=connection, checkfirst=True)
+
+
 MIGRATIONS = [
     Migration(
         version='20260430_01_add_users_schedule_unit',
@@ -446,14 +451,21 @@ MIGRATIONS = [
         description='Add workspaces, per-device access, pairing, and recovery metadata.',
         upgrade=_add_workspace_device_sync,
     ),
+    Migration(
+        version='20260929_01_telegram_runtime',
+        description='Add durable Telegram replies, dialogs and scheduler heartbeat.',
+        upgrade=_add_telegram_runtime,
+    ),
 ]
 
 
 def run_migrations(target_engine: Engine | None = None) -> None:
     active_engine = target_engine or engine
-    Base.metadata.create_all(bind=active_engine)
-
     with active_engine.begin() as connection:
+        if connection.dialect.name == "postgresql":
+            # Web and worker may start together; serialize all DDL and version writes.
+            connection.execute(text("SELECT pg_advisory_xact_lock(734102941)"))
+        Base.metadata.create_all(bind=connection)
         connection.execute(
             text(
                 """
